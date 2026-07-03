@@ -17,7 +17,7 @@
         </div>
         <div id="PinryNav" class="navbar-menu" :class="{ 'is-active': active}">
           <div class="navbar-start">
-            <a class="navbar-item" :href="bookmarklet">
+            <a v-show="user.loggedIn" class="navbar-item" :href="bookmarklet">
               {{ $t("bookmarkletLink") }}
             </a>
             <div
@@ -63,13 +63,16 @@
                 </router-link>
               </div>
             </div>
-            <div class="navbar-item has-dropdown is-hoverable">
+            <div v-if="false" class="navbar-item has-dropdown is-hoverable">
               <a class="navbar-link">
                 {{ $t("browserExtensionsLink") }}
               </a>
               <div class="navbar-dropdown">
                 <a class="navbar-item" href="https://chrome.google.com/webstore/detail/jmhdcnmfkglikfjafdmdikoonedgijpa/">
                   {{ $t("chromeLink") }}
+                </a>
+                <a class="navbar-item" href="https://addons.mozilla.org/en-US/firefox/addon/add-to-pinry/">
+                  {{ $t("firefoxLink") }}
                 </a>
                 <a class="navbar-item" href="https://addons.mozilla.org/en-US/firefox/addon/add-to-pinry/">
                   {{ $t("firefoxLink") }}
@@ -109,6 +112,7 @@
             <div class="navbar-item">
               <div class="buttons">
                 <a
+                  v-if="false"
                   @click="signUp"
                   v-show="!user.loggedIn"
                   class="button is-primary">

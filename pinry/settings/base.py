@@ -67,7 +67,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'pinry/static')]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-MEDIA_ROOT = os.path.join(STATIC_ROOT, 'media')
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', '/data/media')
 
 WSGI_APPLICATION = 'pinry.wsgi.application'
 
@@ -110,7 +110,7 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
 # Set to False to disable people from creating new accounts.
-ALLOW_NEW_REGISTRATIONS = True
+ALLOW_NEW_REGISTRATIONS = False
 
 # Set to False to force users to login before seeing any pins.
 PUBLIC = True

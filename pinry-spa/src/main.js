@@ -6,7 +6,7 @@ import localeUtils from './components/utils/i18n';
 import App from './App.vue';
 import router from './router';
 import setUpAxiosCsrfConfig from './components/utils/csrf';
-import './registerServiceWorker';
+// import './registerServiceWorker';
 
 
 Vue.config.productionTip = false;

@@ -1,4 +1,10 @@
+const path = require('path');
+
 module.exports = {
+  publicPath: '/static/spa/',
+  outputDir: path.resolve(__dirname, '../pinry/static/spa'),
+  indexPath: path.resolve(__dirname, '../pinry/templates/index.html'),
+
   devServer: {
     proxy: {
       '/api': {
@@ -16,18 +22,16 @@ module.exports = {
       },
     },
   },
+
   pwa: {
     name: 'Pinry Mobile',
     appleMobileWebAppCapable: 'yes',
     appleMobileWebAppStatusBarStyle: 'black',
-    // configure the workbox plugin
     workboxPluginMode: 'GenerateSW',
     iconPaths: {
       favicon32: 'favicon.png',
       favicon16: 'favicon.png',
       appleTouchIcon: 'favicon.png',
-      // FIXME(winkidney): Add svg file for safari
-      // maskIcon: 'img/icons/safari-pinned-tab.svg',
       msTileImage: 'favicon.png',
     },
   },
