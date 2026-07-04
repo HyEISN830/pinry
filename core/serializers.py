@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from taggit.models import Tag
@@ -16,7 +16,14 @@ def filter_private_pin(request, query):
         query = query.exclude(~Q(submitter=request.user), private=True)
     else:
         query = query.exclude(private=True)
-    return query.select_related('image', 'submitter', 'submitter__pinry_profile')
+    visible_boards = filter_private_board(request, Board.objects.all())
+    return query.select_related(
+        'image',
+        'submitter',
+        'submitter__pinry_profile',
+    ).prefetch_related(
+        Prefetch('pins', queryset=visible_boards, to_attr='visible_boards'),
+    )
 
 
 def filter_private_board(request, query):
@@ -85,6 +92,17 @@ class TagSerializer(serializers.SlugRelatedField):
         return obj
 
 
+class PinBoardSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Board
+        fields = (
+            settings.DRF_URL_FIELD_NAME,
+            'id',
+            'name',
+            'private',
+        )
+
+
 class PinSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Pin
@@ -99,6 +117,7 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
             "image",
             "image_by_id",
             "tags",
+            "boards",
         )
 
     submitter = UserSerializer(read_only=True)
@@ -113,6 +132,14 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
         write_only=True,
         required=False,
     )
+    boards = serializers.SerializerMethodField(read_only=True)
+
+    def get_boards(self, instance):
+        boards = getattr(instance, 'visible_boards', None)
+        if boards is None:
+            request = self.context['request']
+            boards = filter_private_board(request, instance.pins.all())
+        return PinBoardSerializer(boards, many=True, context=self.context).data
 
     def create(self, validated_data):
         if 'url' not in validated_data and\

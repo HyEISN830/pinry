@@ -48,7 +48,7 @@ function getBoardFromResp(boardObject) {
 
 function getAvailableOptions(vm, filter) {
   let availableOptions;
-  if (filter === '' || filter === null) {
+  if (!filter) {
     availableOptions = vm.allOptions;
   } else {
     availableOptions = AutoComplete.getFilteredOptions(
@@ -77,9 +77,22 @@ export default {
       helper: model,
       availableOptions: [],
       createdOptions: [],
+      syncingSelectionName: false,
     };
   },
   methods: {
+    getSelectedBoards() {
+      const options = this.createdOptions.concat(this.allOptions);
+      return options.filter(
+        option => this.selectedOptions.indexOf(option.value) !== -1,
+      );
+    },
+    syncNameFromSelection() {
+      const boards = this.getSelectedBoards();
+      this.syncingSelectionName = true;
+      this.form.name.value = boards.map(board => board.name).join(', ');
+      this.availableOptions = this.createdOptions.concat(this.allOptions);
+    },
     select(board) {
       this.selectedOptions = [board.value];
     },
@@ -94,7 +107,6 @@ export default {
           const options = getAvailableOptions(this);
           this.availableOptions = this.createdOptions.concat(options);
           self.select(board);
-          self.form.name.value = null;
         },
         (resp) => {
           self.helper.markFieldsAsDanger(resp.data);
@@ -105,6 +117,10 @@ export default {
   watch: {
     // eslint-disable-next-line func-names
     'form.name.value': function (newVal) {
+      if (this.syncingSelectionName) {
+        this.syncingSelectionName = false;
+        return;
+      }
       const options = getAvailableOptions(this, newVal);
       this.availableOptions = this.createdOptions.concat(options);
     },
@@ -113,6 +129,7 @@ export default {
     },
     selectedOptions() {
       this.helper.resetAllFields();
+      this.syncNameFromSelection();
       this.$emit('selected', this.selectedOptions);
     },
   },

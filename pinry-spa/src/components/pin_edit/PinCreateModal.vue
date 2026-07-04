@@ -48,6 +48,7 @@
               </b-field>
               <b-field v-bind:label="$t('tagsLabel')">
                 <b-taginput
+                    ref="tagInput"
                     v-model="pinModel.form.tags.value"
                     :data="editorMeta.filteredTagOptions"
                     autocomplete
@@ -117,6 +118,26 @@ import niceLinks from '../utils/niceLinks';
 
 function isURLBlank(url) {
   return url !== null && url === '';
+}
+
+function splitTags(tagText) {
+  return tagText.split(/[,，]/)
+    .map(tag => tag.trim())
+    .filter(tag => tag.length > 0);
+}
+
+function uniqueTags(tags) {
+  const seen = {};
+  const normalized = [];
+  tags.forEach(
+    (tag) => {
+      if (!seen[tag]) {
+        seen[tag] = true;
+        normalized.push(tag);
+      }
+    },
+  );
+  return normalized;
 }
 
 const fields = ['url', 'referer', 'description', 'tags', 'private'];
@@ -190,11 +211,46 @@ export default {
         },
       );
     },
+    setTagInputText(text) {
+      this.$nextTick(
+        () => {
+          if (this.$refs.tagInput) {
+            this.$refs.tagInput.newTag = text;
+          }
+        },
+      );
+    },
+    normalizeTags() {
+      const tags = [];
+      this.pinModel.form.tags.value.forEach(
+        (tag) => {
+          splitTags(tag).forEach(
+            item => tags.push(item),
+          );
+        },
+      );
+      this.pinModel.form.tags.value = uniqueTags(tags);
+    },
+    absorbTypedTags(text) {
+      if (text.indexOf(',') === -1 && text.indexOf('，') === -1) {
+        return text;
+      }
+      const shouldKeepLastText = !/[，,]\s*$/.test(text);
+      const parts = text.split(/[,，]/);
+      const remainingText = shouldKeepLastText ? parts.pop().trim() : '';
+      const tags = splitTags(parts.join(','));
+      this.pinModel.form.tags.value = uniqueTags(
+        this.pinModel.form.tags.value.concat(tags),
+      );
+      this.setTagInputText(remainingText);
+      return remainingText;
+    },
     getFilteredTags(text) {
+      const filterText = this.absorbTypedTags(text);
       const filteredTagOptions = [];
       AutoComplete.getFilteredOptions(
         this.tagOptions,
-        text,
+        filterText,
       ).forEach(
         (option) => {
           filteredTagOptions.push(option.name);
@@ -230,6 +286,7 @@ export default {
     },
     savePin() {
       const self = this;
+      this.normalizeTags();
       const data = this.pinModel.asDataByFields(
         ['referer', 'description', 'tags', 'private'],
       );
@@ -250,9 +307,11 @@ export default {
         return;
       }
       if (this.formUpload.imageId === null) {
+        this.normalizeTags();
         const data = this.pinModel.asDataByFields(fields);
         promise = API.Pin.createFromURL(data);
       } else {
+        this.normalizeTags();
         const data = this.pinModel.asDataByFields(
           ['referer', 'description', 'tags', 'private'],
         );

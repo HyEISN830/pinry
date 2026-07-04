@@ -37,6 +37,17 @@
                 </div>
                 <div class="pin-footer">
                   <div class="description" v-show="item.description" v-html="niceLinks(item.description)"></div>
+                  <div class="board-list" v-if="item.boards.length > 0">
+                    <span class="dim">{{ $t("boardsLink") }}:&nbsp;</span>
+                    <template v-for="board in item.boards">
+                      <router-link
+                        v-bind:key="board.id"
+                        class="board-link"
+                        :to="{ name: 'board', params: { boardId: board.id } }">
+                        {{ board.name }}
+                      </router-link>
+                    </template>
+                  </div>
                   <div class="details">
                     <div class="is-pulled-left">
                       <img class="avatar" :src="item.avatar" alt="">
@@ -94,6 +105,7 @@ function createImageItem(pin) {
   image.private = pin.private;
   image.description = pin.description;
   image.tags = pin.tags;
+  image.boards = pin.boards || [];
   image.author = pin.submitter.username;
   image.avatar = (pin.submitter.avatar && pin.submitter.avatar.small)
     || `//gravatar.com/avatar/${pin.submitter.gravatar}?s=30`;
@@ -105,7 +117,9 @@ function createImageItem(pin) {
     width: `${pin.image.thumbnail.width}px`,
     height: `${pin.image.thumbnail.height}px`,
   };
-  image.class = {};
+  image.class = {
+    'has-board': image.boards.length > 0,
+  };
   return image;
 }
 
@@ -170,9 +184,11 @@ export default {
       this.editorMeta.currentEditId = null;
     },
     onPinImageLoaded(itemId) {
-      this.blocksMap[itemId].class = {
-        'image-loaded': true,
-      };
+      this.blocksMap[itemId].class = Object.assign(
+        {},
+        this.blocksMap[itemId].class,
+        { 'image-loaded': true },
+      );
       this.blocksMap[itemId].style.height = 'auto';
     },
     registerScrollEvent() {
@@ -329,6 +345,9 @@ $avatar-height: 30px;
 @import './utils/loader.scss';
 
 .pin-card{
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  border-radius: 4px;
   .pin-preview-image {
     cursor: zoom-in;
   }
@@ -347,6 +366,12 @@ $avatar-height: 30px;
     margin-right: 0.2rem;
   }
 }
+.pin-masonry.has-board {
+  .pin-card {
+    border-color: #3273dc;
+    box-shadow: 0 0 0 2px rgba(50, 115, 220, 0.14);
+  }
+}
 .pin-footer {
   position: relative;
   overflow-wrap: break-word;
@@ -360,6 +385,17 @@ $avatar-height: 30px;
     border-bottom: 1px solid #DDDDDD;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  .board-list {
+    @include secondary-font;
+    padding: 8px 10px;
+    border-bottom: 1px solid #DDDDDD;
+    background-color: #f7fbff;
+  }
+  .board-link {
+    display: inline-block;
+    margin-right: 0.35rem;
+    font-weight: bold;
   }
   .details {
     @include secondary-font;
