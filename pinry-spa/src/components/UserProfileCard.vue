@@ -133,7 +133,8 @@ export default {
               { name: 'PageNotFound' },
             );
           } else {
-            self.user.avatar = `//gravatar.com/avatar/${user.gravatar}`;
+            self.user.avatar = (user.avatar && user.avatar.medium)
+              || `//gravatar.com/avatar/${user.gravatar}?s=48`;
             self.user.username = user.username;
             self.user.meta = user;
           }

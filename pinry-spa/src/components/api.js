@@ -225,6 +225,24 @@ const User = {
       },
     );
   },
+  uploadAvatar(user, fileObject) {
+    const data = new FormData();
+    data.append('avatar_file', fileObject);
+    return axios.patch(
+      user.resource_link,
+      data,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    ).then(
+      (resp) => {
+        storage.set(this.storageKey, resp.data, 60 * 5 * 1000);
+        return resp;
+      },
+    );
+  },
   fetchUserInfoByName(username) {
     /* returns null if user not logged in */
     const url = `${API_PREFIX}profile/public-users/?username=${username}`;

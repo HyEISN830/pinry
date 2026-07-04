@@ -141,6 +141,14 @@ IMAGE_SIZES = {
     'square': {'crop': True, 'size': [125, 125]},
 }
 
+AVATAR_MAX_UPLOAD_SIZE = 2 * 1024 * 1024
+
+AVATAR_SIZES = {
+    'small': {'crop': True, 'size': [30, 30], 'upscale': True},
+    'medium': {'crop': True, 'size': [48, 48], 'upscale': True},
+    'large': {'crop': True, 'size': [96, 96], 'upscale': True},
+}
+
 # IS_TEST is a variable to mark if the test is running
 IS_TEST = False
 

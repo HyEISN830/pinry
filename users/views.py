@@ -33,13 +33,14 @@ class PublicUserViewSet(
 
     def get_queryset(self):
         username = self.request.GET.get("username", "")
-        return User.objects.filter(username=username)
+        return User.objects.filter(username=username).select_related('pinry_profile')
 
 
 class UserViewSet(
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
     GenericViewSet,
 ):
     class Permission(BasePermission):
@@ -54,11 +55,12 @@ class UserViewSet(
     permission_classes = [Permission, ]
     serializer_class = UserSerializer
     pagination_class = None
+    http_method_names = ['get', 'post', 'patch', 'head', 'options']
 
     def get_queryset(self):
         if self.request.user.is_anonymous:
             return User.objects.none()
-        return User.objects.filter(id=self.request.user.id)
+        return User.objects.filter(id=self.request.user.id).select_related('pinry_profile')
 
 
 def login_user(request):

@@ -1,8 +1,15 @@
+import shutil
+import tempfile
+from io import BytesIO
+
 from django.test import TestCase
 from django.test.utils import override_settings
 
 import mock
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from PIL import Image
+from rest_framework.test import APIClient
 from rest_framework.reverse import reverse as drf_reverse
 
 from .auth.backends import CombinedAuthBackend
@@ -93,3 +100,61 @@ class ProfileViewTest(TestCase):
         response = self.client.get(f"{url}?username={self.second_user.username}")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data[0]['token'], None)
+
+
+class AvatarUploadTest(TestCase):
+    def setUp(self):
+        self.media_root = tempfile.mkdtemp()
+        self.user = User.objects.create_user(username='jdoe', password='password')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def tearDown(self):
+        shutil.rmtree(self.media_root)
+
+    def make_image_file(self, name='avatar.png', size=(200, 120)):
+        image = Image.new('RGB', size, color='red')
+        image_bytes = BytesIO()
+        image.save(image_bytes, format='PNG')
+        image_bytes.seek(0)
+        return SimpleUploadedFile(name, image_bytes.read(), content_type='image/png')
+
+    def test_upload_avatar_creates_multiple_sizes(self):
+        with self.settings(MEDIA_ROOT=self.media_root):
+            url = drf_reverse('users:user-detail', args=[self.user.id])
+            response = self.client.patch(
+                url,
+                {'avatar_file': self.make_image_file()},
+                format='multipart',
+            )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertIsNotNone(response.data['avatar']['small'])
+            self.assertIsNotNone(response.data['avatar']['medium'])
+            self.assertIsNotNone(response.data['avatar']['large'])
+
+            self.user.pinry_profile.refresh_from_db()
+            self.assertEqual(self.user.pinry_profile.avatar_small.width, 30)
+            self.assertEqual(self.user.pinry_profile.avatar_small.height, 30)
+            self.assertEqual(self.user.pinry_profile.avatar_medium.width, 48)
+            self.assertEqual(self.user.pinry_profile.avatar_medium.height, 48)
+            self.assertEqual(self.user.pinry_profile.avatar_large.width, 96)
+            self.assertEqual(self.user.pinry_profile.avatar_large.height, 96)
+
+    def test_upload_avatar_rejects_files_larger_than_2mb(self):
+        with self.settings(MEDIA_ROOT=self.media_root):
+            url = drf_reverse('users:user-detail', args=[self.user.id])
+            response = self.client.patch(
+                url,
+                {
+                    'avatar_file': SimpleUploadedFile(
+                        'large-avatar.jpg',
+                        b'0' * (2 * 1024 * 1024 + 1),
+                        content_type='image/jpeg',
+                    )
+                },
+                format='multipart',
+            )
+
+            self.assertEqual(response.status_code, 400)
+            self.assertIn('avatar_file', response.data)

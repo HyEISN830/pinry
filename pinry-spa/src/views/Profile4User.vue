@@ -1,8 +1,8 @@
 <template>
   <div class="profile-for-user">
     <PHeader></PHeader>
-    <UserProfileCard :in-profile="true" :username="filters.userFilter"></UserProfileCard>
-    <Profile v-if="profile.token" :token="profile.token"></Profile>
+    <UserProfileCard :key="profileCardKey" :in-profile="true" :username="filters.userFilter"></UserProfileCard>
+    <Profile v-if="profile.token" :user="profile" v-on:profile-updated="onProfileUpdated"></Profile>
   </div>
 </template>
 
@@ -24,6 +24,14 @@ export default {
     PHeader,
     UserProfileCard,
     Profile,
+  },
+  computed: {
+    profileCardKey() {
+      const avatar = this.profile.avatar && this.profile.avatar.medium
+        ? this.profile.avatar.medium
+        : '';
+      return `${this.filters.userFilter}-${avatar}`;
+    },
   },
   created() {
     this.initializeBoard();
@@ -50,6 +58,9 @@ export default {
           }
         },
       );
+    },
+    onProfileUpdated(user) {
+      this.profile = user;
     },
   },
 };

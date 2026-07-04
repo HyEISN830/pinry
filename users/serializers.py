@@ -3,7 +3,46 @@ from django.contrib.auth import login
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
-from users.models import User, create_token_if_necessary
+from users.models import AVATAR_FIELD_BY_SIZE, User, UserProfile, create_token_if_necessary
+
+
+class AvatarImageField(serializers.ImageField):
+    default_error_messages = {
+        'max_size': 'Avatar cannot be larger than 2MB.',
+    }
+
+    def to_internal_value(self, data):
+        if data.size > settings.AVATAR_MAX_UPLOAD_SIZE:
+            self.fail('max_size')
+        return super(AvatarImageField, self).to_internal_value(data)
+
+
+def get_file_url(request, field):
+    if not field:
+        return None
+    url = field.url
+    if request is None:
+        return url
+    return request.build_absolute_uri(url)
+
+
+def get_avatar_data(user, request):
+    try:
+        profile = user.pinry_profile
+    except UserProfile.DoesNotExist:
+        return {
+            'original': None,
+            'small': None,
+            'medium': None,
+            'large': None,
+        }
+
+    avatar = {
+        'original': get_file_url(request, profile.avatar),
+    }
+    for size_name, field_name in AVATAR_FIELD_BY_SIZE.items():
+        avatar[size_name] = get_file_url(request, getattr(profile, field_name))
+    return avatar
 
 
 class PublicUserSerializer(serializers.HyperlinkedModelSerializer):
@@ -12,6 +51,7 @@ class PublicUserSerializer(serializers.HyperlinkedModelSerializer):
         fields = (
             'username',
             'gravatar',
+            'avatar',
             settings.DRF_URL_FIELD_NAME,
         )
         extra_kwargs = {
@@ -19,6 +59,11 @@ class PublicUserSerializer(serializers.HyperlinkedModelSerializer):
                 "view_name": "public-users:user-detail",
             },
         }
+
+    avatar = serializers.SerializerMethodField(read_only=True)
+
+    def get_avatar(self, obj: User):
+        return get_avatar_data(obj, self.context.get('request'))
 
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
@@ -29,6 +74,8 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             'token',
             'email',
             'gravatar',
+            'avatar',
+            'avatar_file',
             'password',
             'password_repeat',
             settings.DRF_URL_FIELD_NAME,
@@ -54,8 +101,11 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
         max_length=32,
     )
     token = serializers.SerializerMethodField(read_only=True)
+    avatar = serializers.SerializerMethodField(read_only=True)
+    avatar_file = AvatarImageField(write_only=True, required=False)
 
     def create(self, validated_data):
+        avatar_file = validated_data.pop('avatar_file', None)
         if validated_data['password'] != validated_data['password_repeat']:
             raise ValidationError(
                 detail={
@@ -74,9 +124,30 @@ class UserSerializer(serializers.HyperlinkedModelSerializer):
             user=user,
             backend=settings.AUTHENTICATION_BACKENDS[0],
         )
+        if avatar_file is not None:
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            profile.set_avatar(avatar_file)
+        return user
+
+    def update(self, instance, validated_data):
+        avatar_file = validated_data.pop('avatar_file', None)
+        if validated_data:
+            raise ValidationError(
+                detail={
+                    field: "This field cannot be updated here."
+                    for field in validated_data.keys()
+                }
+            )
+        user = instance
+        if avatar_file is not None:
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            profile.set_avatar(avatar_file)
         return user
 
     def get_token(self, obj: User):
         if self.context['request'].user == obj:
             return create_token_if_necessary(obj).key
         return None
+
+    def get_avatar(self, obj: User):
+        return get_avatar_data(obj, self.context.get('request'))
