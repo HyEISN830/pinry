@@ -3,6 +3,15 @@ import storage from './utils/storage';
 
 const API_PREFIX = '/api/v2/';
 
+function sameOriginUrl(url) {
+  if (!url) {
+    return url;
+  }
+  const parsed = document.createElement('a');
+  parsed.href = url;
+  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+}
+
 const Board = {
   create(name, private_ = false) {
     const url = `${API_PREFIX}boards/`;
@@ -229,7 +238,7 @@ const User = {
     const data = new FormData();
     data.append('avatar_file', fileObject);
     return axios.patch(
-      user.resource_link,
+      sameOriginUrl(user.resource_link),
       data,
       {
         headers: {

@@ -20,10 +20,7 @@ class AvatarImageField(serializers.ImageField):
 def get_file_url(request, field):
     if not field:
         return None
-    url = field.url
-    if request is None:
-        return url
-    return request.build_absolute_uri(url)
+    return field.url
 
 
 def get_avatar_data(user, request):
