@@ -538,8 +538,9 @@ $avatar-height: 30px;
 
 .pin-card{
   position: relative;
+  isolation: isolate;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   background: #fff;
   border: 1px solid #e8ebf0;
   border-radius: 8px;
@@ -555,6 +556,7 @@ $avatar-height: 30px;
     position: relative;
     overflow: hidden;
     background-color: #f5f7fa;
+    border-radius: 8px 8px 0 0;
   }
   .pin-preview-image {
     display: block;
@@ -611,10 +613,42 @@ $avatar-height: 30px;
 }
 .pin-masonry.has-board {
   .pin-card {
-    border-color: #1f6feb;
+    border-color: rgba(31, 111, 235, 0.68);
     box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.12), 0 8px 20px rgba(16, 24, 40, 0.08);
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      transition: opacity .18s ease, box-shadow .18s ease;
+    }
+    &::before {
+      inset: -5px;
+      z-index: -1;
+      border-radius: 12px;
+      background:
+        radial-gradient(circle, rgba(31, 111, 235, 0.3) 0 1.4px, transparent 1.6px) 0 0 / 10px 10px,
+        linear-gradient(135deg, rgba(31, 111, 235, 0.12), rgba(20, 184, 166, 0.1));
+      opacity: 0.72;
+    }
+    &::after {
+      inset: 5px;
+      z-index: 2;
+      border: 1px dashed rgba(31, 111, 235, 0.28);
+      border-radius: 6px;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+      opacity: 0.72;
+    }
     &:hover {
+      border-color: rgba(31, 111, 235, 0.82);
       box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.18), 0 14px 30px rgba(16, 24, 40, 0.16);
+      &::before {
+        opacity: 0.9;
+      }
+      &::after {
+        border-color: rgba(31, 111, 235, 0.36);
+        opacity: 0.86;
+      }
     }
   }
 }
@@ -623,6 +657,7 @@ $avatar-height: 30px;
   overflow-wrap: break-word;
   background-color: white;
   border-top: 1px solid #eef1f5;
+  border-radius: 0 0 8px 8px;
   .description {
     @include description-font;
     padding: 10px 12px;
