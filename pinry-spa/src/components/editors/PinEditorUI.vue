@@ -1,28 +1,53 @@
 <template>
-  <div class="editor">
-    <div class="editor-buttons">
-      <span class="icon-container" v-if="inOwnedBoard" @click="removeFromBoard">
+  <div class="editor pin-editor">
+    <div class="editor-buttons" v-if="isOwner">
+      <span
+        class="icon-container"
+        v-if="inOwnedBoard"
+        data-tooltip="移出画板"
+        title="移出画板"
+        aria-label="移出画板"
+        @click.stop="removeFromBoard"
+        @touchstart.stop="noop">
           <b-icon
             type="is-light"
             icon="minus-box"
             custom-size="mdi-24px">
          </b-icon>
       </span>
-      <span class="icon-container" @click="addToBoard">
+      <span
+        class="icon-container"
+        data-tooltip="添加到画板"
+        title="添加到画板"
+        aria-label="添加到画板"
+        @click.stop="addToBoard"
+        @touchstart.stop="noop">
           <b-icon
             type="is-light"
             icon="plus-box"
             custom-size="mdi-24px">
          </b-icon>
       </span>
-      <span class="icon-container" @click="deletePin" v-if="isOwner">
+      <span
+        class="icon-container"
+        data-tooltip="删除"
+        title="删除"
+        aria-label="删除"
+        @click.stop="deletePin"
+        @touchstart.stop="noop">
          <b-icon
            type="is-light"
            icon="delete"
            custom-size="mdi-24px">
          </b-icon>
       </span>
-      <span class="icon-container" v-if="isOwner" @click="editPin">
+      <span
+        class="icon-container"
+        data-tooltip="编辑"
+        title="编辑"
+        aria-label="编辑"
+        @click.stop="editPin"
+        @touchstart.stop="noop">
        <b-icon
          type="is-light"
          icon="pencil"
@@ -62,7 +87,6 @@ export default {
       return this.pin.author === this.currentUsername;
     },
     inOwnedBoard() {
-      console.log(this.currentBoard, this.currentUsername);
       return (
         Object.values(this.currentBoard).length !== 0
         && this.currentBoard.submitter.username === this.currentUsername
@@ -70,6 +94,9 @@ export default {
     },
   },
   methods: {
+    noop() {
+      return true;
+    },
     addToBoard() {
       modals.openAdd2Board(this, this.pin, this.currentUsername);
     },

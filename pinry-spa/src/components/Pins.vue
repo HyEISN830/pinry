@@ -19,18 +19,21 @@
               <div class="gutter-sizer"></div>
               <div
                 class="pin-card grid-item"
-                @mouseenter="showEditButtons(item.id)"
+                @mouseenter="showEditButtons(item)"
+                @touchstart="handleCardTouch(item)"
                 @mouseleave="hideEditButtons(item.id)">
                 <div>
-                  <EditorUI
-                    v-show="shouldShowEdit(item.id)"
-                    class="pin-editor-overlay"
-                    :pin="item"
-                    :currentUsername="editorMeta.user.meta.username"
-                    :currentBoard="editorMeta.currentBoard"
-                    v-on:pin-delete-succeed="reset"
-                    v-on:pin-remove-from-board-succeed="reset"
-                  ></EditorUI>
+                  <transition name="pin-editor-menu">
+                    <EditorUI
+                      v-show="shouldShowEdit(item)"
+                      class="pin-editor-overlay"
+                      :pin="item"
+                      :currentUsername="editorMeta.user.meta.username"
+                      :currentBoard="editorMeta.currentBoard"
+                      v-on:pin-delete-succeed="reset"
+                      v-on:pin-remove-from-board-succeed="reset"
+                    ></EditorUI>
+                  </transition>
                   <div
                     class="pin-image-shell"
                     :style="item.style"
@@ -39,7 +42,7 @@
                        v-if="item.imageVisible"
                        :src="item.url"
                        @load="onPinImageLoaded(item.id)"
-                       @click="openPreview(item)"
+                       @click="openPreview(item, $event)"
                        :alt="item.description"
                        class="pin-preview-image">
                     <div v-else class="lazy-image-placeholder"></div>
@@ -182,6 +185,8 @@ function initialData() {
     gridColumns: getResponsiveGridColumns(),
     masonryKey: 0,
     resizeTimer: null,
+    suppressNextPreviewId: null,
+    suppressPreviewTimer: null,
     status: {
       loading: false,
       hasNext: true,
@@ -226,14 +231,36 @@ export default {
     },
   },
   methods: {
-    shouldShowEdit(id) {
+    isPinOwner(pin) {
       if (!this.editorMeta.user.loggedIn) {
         return false;
       }
-      return this.editorMeta.currentEditId === id;
+      return pin.author === this.editorMeta.user.meta.username;
     },
-    showEditButtons(id) {
-      this.editorMeta.currentEditId = id;
+    shouldShowEdit(pin) {
+      return this.isPinOwner(pin) && this.editorMeta.currentEditId === pin.id;
+    },
+    showEditButtons(pin) {
+      if (!this.isPinOwner(pin)) {
+        return;
+      }
+      this.editorMeta.currentEditId = pin.id;
+    },
+    handleCardTouch(pin) {
+      const wasVisible = this.shouldShowEdit(pin);
+      this.showEditButtons(pin);
+      if (this.suppressPreviewTimer) {
+        window.clearTimeout(this.suppressPreviewTimer);
+      }
+      this.suppressNextPreviewId = (!wasVisible && this.isPinOwner(pin))
+        ? pin.id
+        : null;
+      if (this.suppressNextPreviewId !== null) {
+        this.suppressPreviewTimer = window.setTimeout(() => {
+          this.suppressNextPreviewId = null;
+          this.suppressPreviewTimer = null;
+        }, 700);
+      }
     },
     hideEditButtons() {
       this.editorMeta.currentEditId = null;
@@ -341,7 +368,19 @@ export default {
       );
       return blocks;
     },
-    openPreview(pinItem) {
+    openPreview(pinItem, event) {
+      if (this.suppressNextPreviewId === pinItem.id) {
+        this.suppressNextPreviewId = null;
+        if (this.suppressPreviewTimer) {
+          window.clearTimeout(this.suppressPreviewTimer);
+          this.suppressPreviewTimer = null;
+        }
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        return;
+      }
       this.$buefy.modal.open(
         {
           parent: this,
@@ -459,6 +498,9 @@ export default {
     if (this.resizeTimer) {
       window.clearTimeout(this.resizeTimer);
     }
+    if (this.suppressPreviewTimer) {
+      window.clearTimeout(this.suppressPreviewTimer);
+    }
     window.removeEventListener('resize', this.handleResize);
   },
 };
@@ -541,9 +583,23 @@ $avatar-height: 30px;
 }
 .pin-editor-overlay {
   position: absolute;
-  z-index: 8;
+  z-index: 12;
   top: 8px;
   right: 8px;
+  opacity: 0.9;
+  transition: opacity .18s ease;
+}
+.pin-card:hover .pin-editor-overlay {
+  opacity: 0.98;
+}
+.pin-editor-menu-enter-active,
+.pin-editor-menu-leave-active {
+  transition: opacity .18s ease, transform .18s ease;
+}
+.pin-editor-menu-enter,
+.pin-editor-menu-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.96);
 }
 .lazy-image-placeholder {
   width: 100%;
