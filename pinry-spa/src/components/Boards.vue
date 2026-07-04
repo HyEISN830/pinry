@@ -4,6 +4,7 @@
       <div id="boards-container" class="container" v-if="blocks">
         <div
           v-masonry=""
+          :key="masonryKey"
           transition-duration="0.12s"
           item-selector=".grid-item"
           column-width=".grid-sizer"
@@ -71,6 +72,24 @@ import placeholder from '../assets/pinry-placeholder.jpg';
 import BoardEditorUI from './editors/BoardEditUI.vue';
 import bus from './utils/bus';
 
+function getResponsiveGridColumns() {
+  if (typeof window === 'undefined') {
+    return 1;
+  }
+  const viewportWidth = window.innerWidth
+    || document.documentElement.clientWidth
+    || 0;
+  const itemWidth = 240;
+  const gutterWidth = 15;
+  const sidePadding = 48;
+  return Math.max(
+    1,
+    Math.floor(
+      (viewportWidth - sidePadding + gutterWidth) / (itemWidth + gutterWidth),
+    ),
+  );
+}
+
 function createBoardItem(board) {
   const defaultPreviewImage = placeholder;
   const boardItem = {};
@@ -106,6 +125,9 @@ function initialData() {
     currentEditBoard: null,
     blocks: [],
     blocksMap: {},
+    gridColumns: getResponsiveGridColumns(),
+    masonryKey: 0,
+    resizeTimer: null,
     status: {
       loading: false,
       hasNext: true,
@@ -231,6 +253,28 @@ export default {
       );
       this.blocksMap[itemId].style.height = 'auto';
     },
+    refreshMasonryLayout() {
+      this.masonryKey += 1;
+      this.$nextTick(() => {
+        this.observeLazyImages();
+        if (this.$redrawVueMasonry) {
+          this.$redrawVueMasonry();
+        }
+      });
+    },
+    handleResize() {
+      if (this.resizeTimer) {
+        window.clearTimeout(this.resizeTimer);
+      }
+      this.resizeTimer = window.setTimeout(() => {
+        const columns = getResponsiveGridColumns();
+        if (columns === this.gridColumns) {
+          return;
+        }
+        this.gridColumns = columns;
+        this.refreshMasonryLayout();
+      }, 120);
+    },
     registerScrollEvent() {
       const self = this;
       scroll.bindScroll2Bottom(
@@ -306,12 +350,17 @@ export default {
     this.lazyObserver = null;
     bus.bus.$on(bus.events.refreshBoards, this.reset);
     this.registerScrollEvent();
+    window.addEventListener('resize', this.handleResize);
     this.initialize();
   },
   beforeDestroy() {
     if (this.lazyObserver) {
       this.lazyObserver.disconnect();
     }
+    if (this.resizeTimer) {
+      window.clearTimeout(this.resizeTimer);
+    }
+    window.removeEventListener('resize', this.handleResize);
   },
 };
 </script>

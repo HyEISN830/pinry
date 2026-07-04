@@ -12,6 +12,12 @@
 /*     fn(i)
 */
 @mixin screen-grid-layout($selector) {
+  #{$selector} {
+    width: 100%;
+    max-width: 240px;
+    margin-right: auto;
+    margin-left: auto;
+  }
   @media screen and (min-width: 288px) {
     #{$selector} {
       max-width: 240px;
