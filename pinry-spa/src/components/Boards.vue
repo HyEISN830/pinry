@@ -203,8 +203,9 @@ export default {
       if (!window.IntersectionObserver) {
         this.blocks.forEach(
           (item) => {
-            item.imageVisible = true;
-            item.class = Object.assign({}, item.class, { 'is-visible': true });
+            const block = this.blocksMap[item.id];
+            block.imageVisible = true;
+            block.class = Object.assign({}, block.class, { 'is-visible': true });
           },
         );
         return;
@@ -212,11 +213,12 @@ export default {
       this.createLazyObserver();
       this.$el.querySelectorAll('[data-board-id]').forEach(
         (element) => {
-          if (element.dataset.lazyObserved === 'true') {
+          const target = element;
+          if (target.dataset.lazyObserved === 'true') {
             return;
           }
-          element.dataset.lazyObserved = 'true';
-          this.lazyObserver.observe(element);
+          target.dataset.lazyObserved = 'true';
+          this.lazyObserver.observe(target);
         },
       );
     },
