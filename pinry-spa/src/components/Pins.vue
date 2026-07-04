@@ -17,12 +17,14 @@
                  class="grid pin-masonry">
               <div class="grid-sizer"></div>
               <div class="gutter-sizer"></div>
-              <div class="pin-card grid-item">
-                <div @mouseenter="showEditButtons(item.id)"
-                     @mouseleave="hideEditButtons(item.id)"
-                >
+              <div
+                class="pin-card grid-item"
+                @mouseenter="showEditButtons(item.id)"
+                @mouseleave="hideEditButtons(item.id)">
+                <div>
                   <EditorUI
                     v-show="shouldShowEdit(item.id)"
+                    class="pin-editor-overlay"
                     :pin="item"
                     :currentUsername="editorMeta.user.meta.username"
                     :currentBoard="editorMeta.currentBoard"
@@ -493,6 +495,7 @@ $avatar-height: 30px;
 @import './utils/loader.scss';
 
 .pin-card{
+  position: relative;
   box-sizing: border-box;
   overflow: hidden;
   background: #fff;
@@ -500,6 +503,7 @@ $avatar-height: 30px;
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  will-change: transform;
   &:hover {
     transform: translateY(-4px);
     border-color: #d3d9e4;
@@ -533,7 +537,13 @@ $avatar-height: 30px;
 }
 .pin-masonry.is-visible .pin-card,
 .pin-masonry.image-loaded .pin-card {
-  animation: cardAppear .28s ease both;
+  animation: cardAppear .28s ease;
+}
+.pin-editor-overlay {
+  position: absolute;
+  z-index: 8;
+  top: 8px;
+  right: 8px;
 }
 .lazy-image-placeholder {
   width: 100%;
