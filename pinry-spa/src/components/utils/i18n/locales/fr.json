@@ -46,6 +46,7 @@
     "imageLoadFailedText": "Echec du chargement de l'image.",
     "pinnedByInfo": "Posté par",
     "sourceLink": "Source",
+    "missingSourceNotice": "Aucune source. A utiliser avec prudence.",
     "userProfileCardContent": "Un utilisateur de Pinry.",
     "avatarUserProfileCardTitle": "Avatar",
     "avatarUploadButton": "Telecharger l'avatar",

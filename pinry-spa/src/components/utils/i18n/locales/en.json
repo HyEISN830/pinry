@@ -46,6 +46,7 @@
     "imageLoadFailedText": "Failed to load image.",
     "pinnedByInfo": "Pinned by",
     "sourceLink": "Source",
+    "missingSourceNotice": "No source. Use with care.",
     "userProfileCardContent": "Yet another Pinry user.",
     "avatarUserProfileCardTitle": "Avatar",
     "avatarUploadButton": "Upload Avatar",

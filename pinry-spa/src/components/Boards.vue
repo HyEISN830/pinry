@@ -3,7 +3,8 @@
     <section class="section">
       <div id="boards-container" class="container" v-if="blocks">
         <div
-          v-masonry=""          transition-duration="0.3s"
+          v-masonry=""
+          transition-duration="0.12s"
           item-selector=".grid-item"
           column-width=".grid-sizer"
           gutter=".gutter-sizer"
@@ -330,13 +331,11 @@ export default {
 
 .grid {
   opacity: 0;
-  transform: translateY(12px);
 }
 .grid.is-visible,
 .grid.image-loaded {
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity .32s ease, transform .32s ease;
+  transition: opacity .24s ease;
 }
 
 /* card */
@@ -397,6 +396,10 @@ $avatar-height: 30px;
     @include loader('../assets/loader.gif');
   }
 }
+.grid.is-visible .board-card,
+.grid.image-loaded .board-card {
+  animation: cardAppear .28s ease both;
+}
 .lazy-image-placeholder {
   width: 100%;
   height: 100%;
@@ -433,6 +436,16 @@ $avatar-height: 30px;
 @keyframes placeholderPulse {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
+}
+@keyframes cardAppear {
+  from {
+    opacity: 0.86;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @import 'utils/grid-layout';

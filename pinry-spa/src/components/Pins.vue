@@ -4,7 +4,7 @@
       <div id="pins-container" class="container" v-if="blocks">
         <div
           v-masonry=""
-          transition-duration="0.3s"
+          transition-duration="0.12s"
           item-selector=".grid-item"
           column-width=".grid-sizer"
           gutter=".gutter-sizer"
@@ -76,10 +76,20 @@
                             </span>
                           </template>
                         </template>
-                        <span v-if="item.referer">• <a :href="item.referer" target="_blank">{{ $t("sourceLink") }}</a></span>
+                        <span v-if="hasSource(item.referer)">
+                          &middot;
+                          <a
+                            v-if="isWebUrl(item.referer)"
+                            :href="item.referer"
+                            target="_blank">{{ $t("sourceLink") }}</a>
+                          <span v-else class="source-text">{{ sourceText(item.referer) }}</span>
+                        </span>
                       </span>
                     </div>
                     <div class="is-clearfix"></div>
+                  </div>
+                  <div class="source-warning" v-if="!hasSource(item.referer)">
+                    {{ $t("missingSourceNotice") }}
                   </div>
                 </div>
               </div>
@@ -103,6 +113,18 @@ import scroll from './utils/scroll';
 import bus from './utils/bus';
 import EditorUI from './editors/PinEditorUI.vue';
 import niceLinks from './utils/niceLinks';
+
+function isWebUrl(url) {
+  return /^https?:\/\//i.test((url || '').trim());
+}
+
+function hasSource(url) {
+  return !!(url || '').trim();
+}
+
+function sourceText(url) {
+  return (url || '').trim();
+}
 
 function createImageItem(pin) {
   const image = {};
@@ -373,6 +395,9 @@ export default {
       );
     },
     niceLinks,
+    hasSource,
+    isWebUrl,
+    sourceText,
   },
   created() {
     this.lazyObserver = null;
@@ -405,12 +430,10 @@ export default {
 .pin-masonry.is-visible,
 .pin-masonry.image-loaded{
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity .32s ease, transform .32s ease;
+  transition: opacity .24s ease;
 }
 .pin-masonry {
   opacity: 0;
-  transform: translateY(12px);
 }
 
 /* card */
@@ -458,6 +481,10 @@ $avatar-height: 30px;
   .pin-tag {
     margin-right: 0.2rem;
   }
+}
+.pin-masonry.is-visible .pin-card,
+.pin-masonry.image-loaded .pin-card {
+  animation: cardAppear .28s ease both;
 }
 .lazy-image-placeholder {
   width: 100%;
@@ -517,11 +544,35 @@ $avatar-height: 30px;
       font-weight: bold;
     }
   }
+  .source-text {
+    color: #1f6feb;
+    font-weight: 600;
+  }
+  .source-warning {
+    margin: 0 12px 12px 47px;
+    padding: 5px 8px;
+    border: 1px solid #f2df9b;
+    border-radius: 6px;
+    background: #fffaf0;
+    color: #8a6d1d;
+    font-size: 12px;
+    line-height: 1.35;
+  }
 }
 
 @keyframes placeholderPulse {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
+}
+@keyframes cardAppear {
+  from {
+    opacity: 0.86;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @import 'utils/grid-layout';

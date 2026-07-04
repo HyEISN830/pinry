@@ -44,14 +44,25 @@
                   </p>
                 </div>
                 <div class="is-pulled-right">
-                  <a :href="pinItem.referer" target="_blank">
+                  <a
+                    v-if="isWebUrl(pinItem.referer)"
+                    :href="pinItem.referer"
+                    target="_blank">
                     <b-button
-                        v-show="pinItem.referer !== null"
                         class="meta-link"
                         type="is-warning">
                       {{ $t("sourceButton") }}
                     </b-button>
                   </a>
+                  <span
+                    v-else-if="hasSource(pinItem.referer)"
+                    class="meta-link source-text-button"
+                    :title="sourceText(pinItem.referer)">
+                    {{ sourceText(pinItem.referer) }}
+                  </span>
+                  <span v-else class="meta-link source-missing-pill">
+                    {{ $t("missingSourceNotice") }}
+                  </span>
                   <a :href="pinItem.original_image_url" target="_blank">
                     <b-button
                         v-show="pinItem.original_image_url !== null"
@@ -139,6 +150,18 @@ function cacheImage(imageId, blob) {
     cachedImages.delete(oldestKey);
   }
   return cached;
+}
+
+function isWebUrl(url) {
+  return /^https?:\/\//i.test((url || '').trim());
+}
+
+function hasSource(url) {
+  return !!(url || '').trim();
+}
+
+function sourceText(url) {
+  return (url || '').trim();
 }
 
 export default {
@@ -305,7 +328,10 @@ export default {
         { name: 'pin', params: { pinId: this.pinItem.id } },
       );
     },
+    hasSource,
+    isWebUrl,
     niceLinks,
+    sourceText,
   },
 };
 </script>
@@ -316,6 +342,32 @@ export default {
 .meta-link {
   margin-left: 0.45rem;
   margin-bottom: 0.35rem;
+}
+.source-text-button,
+.source-missing-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.25em;
+  max-width: 220px;
+  padding: 0 0.75em;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  vertical-align: top;
+}
+.source-text-button {
+  overflow: hidden;
+  color: #8fb8ff;
+  border: 1px solid rgba(143, 184, 255, 0.22);
+  background: rgba(31, 111, 235, 0.1);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.source-missing-pill {
+  color: #d7bd75;
+  border: 1px solid rgba(215, 189, 117, 0.25);
+  background: rgba(215, 189, 117, 0.1);
 }
 .dim {
   @include secondary-font-color-in-dark;
