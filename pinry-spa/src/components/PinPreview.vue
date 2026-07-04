@@ -4,7 +4,18 @@
         <div class="card">
           <div class="card-image">
             <figure class="image">
-              <img :src="pinItem.large_image_url" alt="Image">
+              <img v-if="previewImageUrl" :src="previewImageUrl" alt="Image">
+              <div v-else class="preview-loading">
+                <p v-if="imageLoadFailed">{{ $t("imageLoadFailedText") }}</p>
+                <p v-else>{{ $t("imageLoadingText") }}</p>
+                <progress
+                  v-if="imageLoading && downloadPercent !== null"
+                  class="progress is-info"
+                  :value="downloadPercent"
+                  max="100">
+                  {{ downloadPercent }}%
+                </progress>
+              </div>
             </figure>
           </div>
           <div class="card-content">
@@ -50,6 +61,14 @@
                       type="is-success">
                       {{ $t("permalinkButton") }}
                   </b-button>
+                  <b-button
+                      @click="downloadImage"
+                      :disabled="!imageBlob"
+                      :loading="imageLoading"
+                      class="meta-link"
+                      type="is-info">
+                      {{ $t("downloadButton") }}
+                  </b-button>
                 </div>
               </div>
             </div>
@@ -60,12 +79,113 @@
 </template>
 
 <script>
+import API from './api';
 import niceLinks from './utils/niceLinks';
+
+function fileNameFromUrl(url, fallback) {
+  if (!url) {
+    return fallback;
+  }
+  const cleanUrl = url.split('?')[0].split('#')[0];
+  const name = cleanUrl.split('/').pop();
+  return name || fallback;
+}
 
 export default {
   name: 'PinPreview',
   props: ['pinItem'],
+  data() {
+    return {
+      downloadLoaded: 0,
+      downloadTotal: null,
+      imageBlob: null,
+      imageContentType: 'application/octet-stream',
+      imageLoadFailed: false,
+      imageLoading: true,
+      imageRequestController: null,
+      previewImageUrl: null,
+    };
+  },
+  computed: {
+    downloadPercent() {
+      if (!this.downloadTotal) {
+        return null;
+      }
+      return Math.round((this.downloadLoaded / this.downloadTotal) * 100);
+    },
+  },
+  created() {
+    this.loadOriginalImage();
+  },
+  beforeDestroy() {
+    if (this.imageRequestController) {
+      this.imageRequestController.abort();
+    }
+    if (this.previewImageUrl) {
+      URL.revokeObjectURL(this.previewImageUrl);
+    }
+  },
   methods: {
+    readStream(reader, chunks) {
+      return reader.read().then(
+        ({ done, value }) => {
+          if (done) {
+            return new Blob(chunks, { type: this.imageContentType });
+          }
+          chunks.push(value);
+          this.downloadLoaded += value.length;
+          return this.readStream(reader, chunks);
+        },
+      );
+    },
+    loadOriginalImage() {
+      if (window.AbortController) {
+        this.imageRequestController = new AbortController();
+      }
+      const signal = this.imageRequestController
+        ? this.imageRequestController.signal
+        : null;
+      API.Pin.fetchOriginalImage(this.pinItem.image_id, signal).then(
+        (response) => {
+          if (!response.ok) {
+            throw new Error('Failed to load original image');
+          }
+          const total = parseInt(response.headers.get('Content-Length'), 10);
+          this.downloadTotal = Number.isNaN(total) ? null : total;
+          this.imageContentType = response.headers.get('Content-Type')
+            || 'application/octet-stream';
+          if (!response.body || !response.body.getReader) {
+            return response.blob();
+          }
+          return this.readStream(response.body.getReader(), []);
+        },
+      ).then(
+        (blob) => {
+          this.imageBlob = blob;
+          this.previewImageUrl = URL.createObjectURL(blob);
+          this.imageLoading = false;
+        },
+      ).catch(
+        () => {
+          this.imageLoadFailed = true;
+          this.imageLoading = false;
+        },
+      );
+    },
+    downloadImage() {
+      if (!this.imageBlob || !this.previewImageUrl) {
+        return;
+      }
+      const link = document.createElement('a');
+      link.href = this.previewImageUrl;
+      link.download = fileNameFromUrl(
+        this.pinItem.large_image_url,
+        `pin-${this.pinItem.id}`,
+      );
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    },
     closeAndGoTo() {
       this.$parent.close();
       this.$router.push(
@@ -117,6 +237,16 @@ export default {
 .pin-preview-tag {
   margin-right: 0.2rem;
   margin-bottom: 2px;
+}
+.preview-loading {
+  min-height: 240px;
+  padding: 3rem 1rem;
+  color: white;
+  text-align: center;
+}
+.preview-loading .progress {
+  max-width: 360px;
+  margin: 1rem auto;
 }
 /* preview size should always less then screen */
 .card-image img {

@@ -117,6 +117,14 @@ const Pin = {
       data,
     );
   },
+  fetchOriginalImage(imageId, signal) {
+    const url = `${API_PREFIX}images/${imageId}/original/`;
+    const options = { credentials: 'same-origin' };
+    if (signal) {
+      options.signal = signal;
+    }
+    return fetch(url, options);
+  },
 };
 
 

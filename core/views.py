@@ -1,6 +1,13 @@
+import mimetypes
+import time
+
+from django.conf import settings
+from django.db.models import Q
+from django.http import Http404, StreamingHttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
 from rest_framework import viewsets, mixins, routers
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.viewsets import GenericViewSet
@@ -18,6 +25,45 @@ class ImageViewSet(mixins.CreateModelMixin, GenericViewSet):
 
     def create(self, request, *args, **kwargs):
         return super(ImageViewSet, self).create(request, *args, **kwargs)
+
+    @staticmethod
+    def user_can_view_image(request, image):
+        pins = image.pin.all()
+        if request.user.is_authenticated:
+            return pins.filter(
+                Q(private=False) | Q(submitter=request.user)
+            ).exists()
+        return pins.filter(private=False).exists()
+
+    @staticmethod
+    def throttled_chunks(image_file, bytes_per_second):
+        chunk_size = 64 * 1024
+        with image_file.open('rb') as stream:
+            while True:
+                chunk = stream.read(chunk_size)
+                if not chunk:
+                    break
+                yield chunk
+                time.sleep(len(chunk) / bytes_per_second)
+
+    @action(detail=True, methods=['get'], url_path='original')
+    def original(self, request, pk=None):
+        image = self.get_object()
+        if not self.user_can_view_image(request, image):
+            raise Http404()
+
+        image_file = image.image
+        content_type, _ = mimetypes.guess_type(image_file.name)
+        response = StreamingHttpResponse(
+            self.throttled_chunks(
+                image_file,
+                settings.IMAGE_PREVIEW_THROTTLE_BYTES_PER_SECOND,
+            ),
+            content_type=content_type or 'application/octet-stream',
+        )
+        response['Content-Length'] = image_file.size
+        response['Content-Disposition'] = 'inline'
+        return response
 
 
 class PinViewSet(viewsets.ModelViewSet):

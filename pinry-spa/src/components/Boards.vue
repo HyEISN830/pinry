@@ -266,6 +266,11 @@ $avatar-height: 30px;
 @import './utils/loader.scss';
 
 .board-card{
+  transition: transform .18s ease, box-shadow .18s ease;
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(10, 10, 10, 0.14);
+  }
   .card-image > img {
     min-width: $pin-preview-width;
     background-color: white;

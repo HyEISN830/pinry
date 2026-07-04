@@ -101,6 +101,7 @@ function createImageItem(pin) {
   const image = {};
   image.url = pinHandler.escapeUrl(pin.image.thumbnail.image);
   image.id = pin.id;
+  image.image_id = pin.image.id;
   image.owner_id = pin.submitter.id;
   image.private = pin.private;
   image.description = pin.description;
@@ -348,6 +349,11 @@ $avatar-height: 30px;
   box-sizing: border-box;
   border: 1px solid transparent;
   border-radius: 4px;
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 18px rgba(10, 10, 10, 0.14);
+  }
   .pin-preview-image {
     cursor: zoom-in;
   }
@@ -370,6 +376,9 @@ $avatar-height: 30px;
   .pin-card {
     border-color: #3273dc;
     box-shadow: 0 0 0 2px rgba(50, 115, 220, 0.14);
+    &:hover {
+      box-shadow: 0 0 0 2px rgba(50, 115, 220, 0.18), 0 8px 18px rgba(10, 10, 10, 0.14);
+    }
   }
 }
 .pin-footer {
