@@ -28,12 +28,19 @@
                     v-on:pin-delete-succeed="reset"
                     v-on:pin-remove-from-board-succeed="reset"
                   ></EditorUI>
-                  <img :src="item.url"
-                     @load="onPinImageLoaded(item.id)"
-                     @click="openPreview(item)"
-                     :alt="item.description"
-                     :style="item.style"
-                     class="pin-preview-image">
+                  <div
+                    class="pin-image-shell"
+                    :style="item.style"
+                    :data-pin-id="item.id">
+                    <img
+                       v-if="item.imageVisible"
+                       :src="item.url"
+                       @load="onPinImageLoaded(item.id)"
+                       @click="openPreview(item)"
+                       :alt="item.description"
+                       class="pin-preview-image">
+                    <div v-else class="lazy-image-placeholder"></div>
+                  </div>
                 </div>
                 <div class="pin-footer">
                   <div class="description" v-show="item.description" v-html="niceLinks(item.description)"></div>
@@ -118,6 +125,7 @@ function createImageItem(pin) {
     width: `${pin.image.thumbnail.width}px`,
     height: `${pin.image.thumbnail.height}px`,
   };
+  image.imageVisible = false;
   image.class = {
     'has-board': image.boards.length > 0,
   };
@@ -183,6 +191,54 @@ export default {
     },
     hideEditButtons() {
       this.editorMeta.currentEditId = null;
+    },
+    createLazyObserver() {
+      if (this.lazyObserver || !window.IntersectionObserver) {
+        return;
+      }
+      this.lazyObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(
+            (entry) => {
+              if (!entry.isIntersecting) {
+                return;
+              }
+              const itemId = parseInt(entry.target.dataset.pinId, 10);
+              if (this.blocksMap[itemId]) {
+                this.blocksMap[itemId].imageVisible = true;
+                this.blocksMap[itemId].class = Object.assign(
+                  {},
+                  this.blocksMap[itemId].class,
+                  { 'is-visible': true },
+                );
+              }
+              this.lazyObserver.unobserve(entry.target);
+            },
+          );
+        },
+        { rootMargin: '420px 0px' },
+      );
+    },
+    observeLazyImages() {
+      if (!window.IntersectionObserver) {
+        this.blocks.forEach(
+          (item) => {
+            item.imageVisible = true;
+            item.class = Object.assign({}, item.class, { 'is-visible': true });
+          },
+        );
+        return;
+      }
+      this.createLazyObserver();
+      this.$el.querySelectorAll('[data-pin-id]').forEach(
+        (element) => {
+          if (element.dataset.lazyObserved === 'true') {
+            return;
+          }
+          element.dataset.lazyObserved = 'true';
+          this.lazyObserver.observe(element);
+        },
+      );
     },
     onPinImageLoaded(itemId) {
       this.blocksMap[itemId].class = Object.assign(
@@ -258,6 +314,10 @@ export default {
       );
     },
     reset() {
+      if (this.lazyObserver) {
+        this.lazyObserver.disconnect();
+        this.lazyObserver = null;
+      }
       const data = initialData();
       Object.entries(data).forEach(
         (kv) => {
@@ -302,6 +362,7 @@ export default {
           this.status.offset = newBlocks.length;
           this.status.hasNext = !(next === null);
           this.status.loading = false;
+          this.$nextTick(() => this.observeLazyImages());
         },
         () => { this.status.loading = false; },
       );
@@ -309,9 +370,15 @@ export default {
     niceLinks,
   },
   created() {
+    this.lazyObserver = null;
     bus.bus.$on(bus.events.refreshPin, this.reset);
     this.registerScrollEvent();
     this.initialize();
+  },
+  beforeDestroy() {
+    if (this.lazyObserver) {
+      this.lazyObserver.disconnect();
+    }
   },
 };
 </script>
@@ -323,19 +390,22 @@ export default {
 .grid-sizer,
 .grid-item { width: $pin-preview-width; }
 .grid-item {
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 }
 .gutter-sizer {
   width: 15px;
 }
 
 /* pin-image transition */
+.pin-masonry.is-visible,
 .pin-masonry.image-loaded{
   opacity: 1;
-  transition: opacity .3s;
+  transform: translateY(0);
+  transition: opacity .32s ease, transform .32s ease;
 }
 .pin-masonry {
   opacity: 0;
+  transform: translateY(12px);
 }
 
 /* card */
@@ -347,14 +417,26 @@ $avatar-height: 30px;
 
 .pin-card{
   box-sizing: border-box;
-  border: 1px solid transparent;
-  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e8ebf0;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 18px rgba(10, 10, 10, 0.14);
+    border-color: #d3d9e4;
+    box-shadow: 0 12px 28px rgba(16, 24, 40, 0.16);
+  }
+  .pin-image-shell {
+    position: relative;
+    overflow: hidden;
+    background-color: #f5f7fa;
   }
   .pin-preview-image {
+    display: block;
+    width: 100%;
+    height: auto;
     cursor: zoom-in;
   }
   > img {
@@ -372,45 +454,57 @@ $avatar-height: 30px;
     margin-right: 0.2rem;
   }
 }
+.lazy-image-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  background: linear-gradient(90deg, #f2f4f7 0%, #e6eaf0 45%, #f2f4f7 100%);
+  background-size: 220% 100%;
+  animation: placeholderPulse 1.4s ease-in-out infinite;
+}
 .pin-masonry.has-board {
   .pin-card {
-    border-color: #3273dc;
-    box-shadow: 0 0 0 2px rgba(50, 115, 220, 0.14);
+    border-color: #1f6feb;
+    box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.12), 0 8px 20px rgba(16, 24, 40, 0.08);
     &:hover {
-      box-shadow: 0 0 0 2px rgba(50, 115, 220, 0.18), 0 8px 18px rgba(10, 10, 10, 0.14);
+      box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.18), 0 14px 30px rgba(16, 24, 40, 0.16);
     }
   }
 }
 .pin-footer {
   position: relative;
   overflow-wrap: break-word;
-  top: $pin-footer-position-fix;
   background-color: white;
-  border-radius: 0 0 3px 3px ;
-  box-shadow: 0 1px 0 #bbb;
+  border-top: 1px solid #eef1f5;
   .description {
     @include description-font;
-    padding: 8px;
-    border-bottom: 1px solid #DDDDDD;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eef1f5;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 14px;
+    line-height: 1.45;
+    color: #263238;
   }
   .board-list {
     @include secondary-font;
-    padding: 8px 10px;
-    border-bottom: 1px solid #DDDDDD;
+    padding: 9px 12px;
+    border-bottom: 1px solid #eef1f5;
     background-color: #f7fbff;
+    font-size: 13px;
   }
   .board-link {
     display: inline-block;
-    margin-right: 0.35rem;
+    margin-right: 0.4rem;
     font-weight: bold;
+    color: #1f6feb;
   }
   .details {
     @include secondary-font;
-    padding: 10px;
+    padding: 12px;
+    font-size: 13px;
     > .pin-info {
-      line-height: 16px;
+      line-height: 18px;
       width: 220px;
       padding-left: $avatar-width + 5px;
     }
@@ -418,6 +512,11 @@ $avatar-height: 30px;
       font-weight: bold;
     }
   }
+}
+
+@keyframes placeholderPulse {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
 
 @import 'utils/grid-layout';

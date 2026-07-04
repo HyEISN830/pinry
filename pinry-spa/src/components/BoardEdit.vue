@@ -142,3 +142,29 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.modal-card {
+  overflow: hidden;
+  border: 1px solid #e7ebf2;
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(16, 24, 40, 0.22);
+}
+.modal-card-head,
+.modal-card-foot {
+  border-color: #edf1f6;
+  background: #f8fafc;
+}
+.modal-card-title {
+  color: #22313f;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.modal-card-body {
+  background: #fff;
+}
+.button {
+  border-radius: 6px;
+  font-weight: 600;
+}
+</style>

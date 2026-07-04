@@ -135,3 +135,25 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.filter-select {
+  padding: 0.75rem;
+  border: 1px solid #edf1f6;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.button {
+  border-radius: 6px;
+  font-weight: 600;
+}
+.select-list {
+  width: 100%;
+}
+.select-list ::v-deep select {
+  border-color: #d8e0eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+}
+</style>

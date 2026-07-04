@@ -90,7 +90,23 @@ export default {
 .preview > img {
   width: $pin-preview-width;
   height: auto;
+  border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(16, 24, 40, 0.14);
   @include loader('../../assets/loader.gif');
+}
+.image-upload {
+  border-radius: 8px;
+}
+.image-upload ::v-deep .upload-draggable {
+  border-color: #d8e0eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.image-upload ::v-deep .upload-draggable:hover {
+  border-color: #1f6feb;
+  box-shadow: 0 10px 26px rgba(16, 24, 40, 0.12);
+  transform: translateY(-2px);
 }
 
 </style>

@@ -27,11 +27,17 @@
                       v-on:board-save-succeed="reset"
                     ></BoardEditorUI>
                     <router-link :to="{ name: 'board', params: { boardId: item.id } }">
-                      <img :src="item.preview_image_url"
-                         @load="onPinImageLoaded(item.id)"
-                         :style="item.style"
-                         v-show="item.preview_image_url"
-                         class="preview-image">
+                      <div
+                        class="board-image-shell"
+                        :style="item.style"
+                        :data-board-id="item.id">
+                        <img
+                           v-if="item.imageVisible"
+                           :src="item.preview_image_url"
+                           @load="onPinImageLoaded(item.id)"
+                           class="preview-image">
+                        <div v-else class="lazy-image-placeholder"></div>
+                      </div>
                     </router-link>
                   </div>
                   <div class="board-footer">
@@ -88,6 +94,7 @@ function createBoardItem(board) {
     width: `${previewImage.image.thumbnail.width}px`,
     height: `${previewImage.image.thumbnail.height}px`,
   };
+  boardItem.imageVisible = false;
   boardItem.class = {};
   boardItem.author = board.submitter.username;
   return boardItem;
@@ -143,6 +150,10 @@ export default {
       );
     },
     reset() {
+      if (this.lazyObserver) {
+        this.lazyObserver.disconnect();
+        this.lazyObserver = null;
+      }
       const data = initialData();
       Object.entries(data).forEach(
         (kv) => {
@@ -161,10 +172,60 @@ export default {
       }
       return this.currentEditBoard === board.id;
     },
+    createLazyObserver() {
+      if (this.lazyObserver || !window.IntersectionObserver) {
+        return;
+      }
+      this.lazyObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach(
+            (entry) => {
+              if (!entry.isIntersecting) {
+                return;
+              }
+              const itemId = parseInt(entry.target.dataset.boardId, 10);
+              if (this.blocksMap[itemId]) {
+                this.blocksMap[itemId].imageVisible = true;
+                this.blocksMap[itemId].class = Object.assign(
+                  {},
+                  this.blocksMap[itemId].class,
+                  { 'is-visible': true },
+                );
+              }
+              this.lazyObserver.unobserve(entry.target);
+            },
+          );
+        },
+        { rootMargin: '420px 0px' },
+      );
+    },
+    observeLazyImages() {
+      if (!window.IntersectionObserver) {
+        this.blocks.forEach(
+          (item) => {
+            item.imageVisible = true;
+            item.class = Object.assign({}, item.class, { 'is-visible': true });
+          },
+        );
+        return;
+      }
+      this.createLazyObserver();
+      this.$el.querySelectorAll('[data-board-id]').forEach(
+        (element) => {
+          if (element.dataset.lazyObserved === 'true') {
+            return;
+          }
+          element.dataset.lazyObserved = 'true';
+          this.lazyObserver.observe(element);
+        },
+      );
+    },
     onPinImageLoaded(itemId) {
-      this.blocksMap[itemId].class = {
-        'image-loaded': true,
-      };
+      this.blocksMap[itemId].class = Object.assign(
+        {},
+        this.blocksMap[itemId].class,
+        { 'image-loaded': true },
+      );
       this.blocksMap[itemId].style.height = 'auto';
     },
     registerScrollEvent() {
@@ -232,15 +293,22 @@ export default {
           this.status.offset = newBlocks.length;
           this.status.hasNext = !(next === null);
           this.status.loading = false;
+          this.$nextTick(() => this.observeLazyImages());
         },
         () => { this.status.loading = false; },
       );
     },
   },
   created() {
+    this.lazyObserver = null;
     bus.bus.$on(bus.events.refreshBoards, this.reset);
     this.registerScrollEvent();
     this.initialize();
+  },
+  beforeDestroy() {
+    if (this.lazyObserver) {
+      this.lazyObserver.disconnect();
+    }
   },
 };
 </script>
@@ -252,10 +320,21 @@ export default {
 .grid-sizer,
 .grid-item { width: $pin-preview-width; }
 .grid-item {
-  margin-bottom: 15px;
+  margin-bottom: 22px;
 }
 .gutter-sizer {
   width: 15px;
+}
+
+.grid {
+  opacity: 0;
+  transform: translateY(12px);
+}
+.grid.is-visible,
+.grid.image-loaded {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity .32s ease, transform .32s ease;
 }
 
 /* card */
@@ -266,40 +345,92 @@ $avatar-height: 30px;
 @import './utils/loader.scss';
 
 .board-card{
-  transition: transform .18s ease, box-shadow .18s ease;
+  position: relative;
+  overflow: visible;
+  background: #fff;
+  border: 1px solid #e4e8ef;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    height: 14px;
+    border: 1px solid #d7deea;
+    border-radius: 0 0 8px 8px;
+    background: #f8fafc;
+    pointer-events: none;
+  }
+  &::before {
+    bottom: -8px;
+    z-index: -1;
+  }
+  &::after {
+    bottom: -14px;
+    left: 20px;
+    right: 20px;
+    background: #eef3f8;
+    z-index: -2;
+  }
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 18px rgba(10, 10, 10, 0.14);
+    border-color: #1f6feb;
+    box-shadow: 0 16px 32px rgba(16, 24, 40, 0.16);
   }
-  .card-image > img {
+  .board-image-shell {
+    position: relative;
+    overflow: hidden;
+    background-color: #f5f7fa;
+    border-radius: 8px 8px 0 0;
+  }
+  .card-image img {
+    display: block;
+    width: 100%;
+    height: auto;
     min-width: $pin-preview-width;
     background-color: white;
-    border-radius: 3px 3px 0 0;
     @include loader('../assets/loader.gif');
   }
 }
+.lazy-image-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 150px;
+  background: linear-gradient(90deg, #f2f4f7 0%, #e6eaf0 45%, #f2f4f7 100%);
+  background-size: 220% 100%;
+  animation: placeholderPulse 1.4s ease-in-out infinite;
+}
 .board-footer {
   position: relative;
-  top: $pin-footer-position-fix;
   background-color: white;
-  border-radius: 0 0 3px 3px ;
-  box-shadow: 0 1px 0 #bbb;
+  border-top: 1px solid #eef1f5;
+  border-radius: 0 0 8px 8px;
   font-weight: bold;
   .description {
     @include secondary-font;
-    padding-left: 10px;
-    padding-bottom: 5px;
+    padding: 0 12px 12px;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 13px;
   }
   .board-info {
-    padding: 10px;
-    color: $main-title-font-color;
+    padding: 12px 12px 6px;
+    color: #22313f;
+    font-size: 15px;
+    line-height: 1.3;
   }
   .num-pins {
-    font-size: 0.8rem;
-    color: $main-title-font-color;
+    font-size: 0.9rem;
+    color: #1f6feb;
   }
+}
+
+@keyframes placeholderPulse {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
 }
 
 @import 'utils/grid-layout';

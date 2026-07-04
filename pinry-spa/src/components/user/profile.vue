@@ -118,14 +118,41 @@ export default {
   margin-top: 2rem;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 5px 5px 2px 1px rgba(0, 0, 255, .1);
+}
+.card {
+  overflow: hidden;
+  border: 1px solid #e7ebf2;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.12);
+}
+.card-header {
+  border-bottom-color: #edf1f6;
+  background: #f8fafc;
+  box-shadow: none;
+}
+.card-header-title {
+  color: #22313f;
+  font-size: 1rem;
+}
+.card-content {
+  background: #fff;
 }
 .card + .card {
   margin-top: 1rem;
 }
 .avatar-preview {
-  border-radius: 4px;
+  border-radius: 8px;
   object-fit: cover;
+  box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
+}
+.button {
+  border-radius: 6px;
+  font-weight: 600;
+}
+pre {
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #22313f;
 }
 
 @import '../utils/grid-layout';

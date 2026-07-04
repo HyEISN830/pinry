@@ -121,7 +121,7 @@ function isURLBlank(url) {
 }
 
 function splitTags(tagText) {
-  return tagText.split(/[,，]/)
+  return tagText.split(/[,\uFF0C]/)
     .map(tag => tag.trim())
     .filter(tag => tag.length > 0);
 }
@@ -232,11 +232,11 @@ export default {
       this.pinModel.form.tags.value = uniqueTags(tags);
     },
     absorbTypedTags(text) {
-      if (text.indexOf(',') === -1 && text.indexOf('，') === -1) {
+      if (text.indexOf(',') === -1 && text.indexOf('\uFF0C') === -1) {
         return text;
       }
-      const shouldKeepLastText = !/[，,]\s*$/.test(text);
-      const parts = text.split(/[,，]/);
+      const shouldKeepLastText = !(/[,\uFF0C]\s*$/.test(text));
+      const parts = text.split(/[,\uFF0C]/);
       const remainingText = shouldKeepLastText ? parts.pop().trim() : '';
       const tags = splitTags(parts.join(','));
       this.pinModel.form.tags.value = uniqueTags(
@@ -350,3 +350,39 @@ export default {
   },
 };
 </script>
+
+<style lang="scss" scoped>
+.modal-card {
+  overflow: hidden;
+  border: 1px solid #e7ebf2;
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(16, 24, 40, 0.22);
+}
+.modal-card-head,
+.modal-card-foot {
+  border-color: #edf1f6;
+  background: #f8fafc;
+}
+.modal-card-title {
+  color: #22313f;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.modal-card-body {
+  background: #fff;
+}
+.description {
+  margin-top: 0.75rem;
+  padding: 0.8rem;
+  border: 1px solid #edf1f6;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #263238;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.button {
+  border-radius: 6px;
+  font-weight: 600;
+}
+</style>

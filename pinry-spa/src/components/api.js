@@ -44,7 +44,7 @@ const Board = {
     const url = `${API_PREFIX}boards-auto-complete/`;
     return axios.get(url);
   },
-  fetchListWhichContains(text, offset = 0, limit = 50) {
+  fetchListWhichContains(text, offset = 0, limit = 24) {
     const prefix = `${API_PREFIX}boards/?search=${text}`;
     const url = `${prefix}&offset=${offset}&limit=${limit}`;
     return axios.get(url);
@@ -133,7 +133,7 @@ function fetchPins(offset, tagFilter, userFilter, boardFilter) {
   const queryArgs = {
     format: 'json',
     ordering: '-id',
-    limit: 30,
+    limit: 18,
     offset,
   };
   if (tagFilter) queryArgs.tags__name = tagFilter;
@@ -167,7 +167,7 @@ function fetchPin(pinId) {
   );
 }
 
-function fetchBoardForUser(username, offset = 0, limit = 50) {
+function fetchBoardForUser(username, offset = 0, limit = 24) {
   const prefix = `${API_PREFIX}boards/?submitter__username=${username}`;
   const url = `${prefix}&offset=${offset}&limit=${limit}`;
   return axios.get(url);

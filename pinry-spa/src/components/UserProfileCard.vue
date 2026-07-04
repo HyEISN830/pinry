@@ -150,7 +150,34 @@ export default {
   margin-top: 2rem;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 5px 5px 2px 1px rgba(0, 0, 255, .1);
+}
+.card {
+  overflow: hidden;
+  border: 1px solid #e7ebf2;
+  border-radius: 8px;
+  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.12);
+}
+.card-content {
+  padding: 1.25rem;
+}
+.media .image img {
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(16, 24, 40, 0.14);
+}
+.title {
+  color: #22313f;
+}
+.subtitle,
+.content {
+  color: #64748b;
+  font-size: 14px;
+}
+.tabs {
+  margin-bottom: 0;
+}
+.tabs a {
+  border-radius: 6px;
+  font-weight: 600;
 }
 @import '../components/utils/grid-layout';
 @include screen-grid-layout("#user-home-container");
