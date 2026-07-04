@@ -354,7 +354,10 @@ export default {
       }
       promise.then(
         (resp) => {
-          const { results, next } = resp.data;
+          const { count, results, next } = resp.data;
+          if (count !== undefined) {
+            this.$emit('pins-meta-loaded', { count });
+          }
           let newBlocks = this.buildBlocks(results);
           newBlocks.forEach(
             (item) => { this.blocksMap[item.id] = item; },

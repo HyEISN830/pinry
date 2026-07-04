@@ -1,0 +1,150 @@
+<template>
+  <section class="collection-hero">
+    <div class="collection-mark">{{ typeLabel }}</div>
+    <div class="collection-main">
+      <h1>{{ displayTitle }}</h1>
+      <p>{{ description }}</p>
+    </div>
+    <div class="collection-count">
+      <strong>{{ displayCount }}</strong>
+      <span>{{ $t("collectionArtworksLabel") }}</span>
+    </div>
+  </section>
+</template>
+
+<script>
+export default {
+  name: 'CollectionHero',
+  props: {
+    type: {
+      type: String,
+      required: true,
+    },
+    title: {
+      type: String,
+      required: true,
+    },
+    count: {
+      type: Number,
+      default: null,
+    },
+    owner: {
+      type: String,
+      default: '',
+    },
+    isPrivate: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  computed: {
+    displayTitle() {
+      if (this.type === 'tag') {
+        return `#${this.title}`;
+      }
+      return this.title;
+    },
+    displayCount() {
+      if (this.count === null || this.count === undefined) {
+        return '-';
+      }
+      return this.count;
+    },
+    typeLabel() {
+      if (this.type === 'tag') {
+        return this.$t('collectionTagLabel');
+      }
+      return this.$t('collectionBoardLabel');
+    },
+    description() {
+      if (this.type === 'tag') {
+        return this.$t('collectionTagDescription');
+      }
+      if (this.owner) {
+        const privacy = this.isPrivate
+          ? this.$t('collectionPrivateBoardLabel')
+          : this.$t('collectionPublicBoardLabel');
+        return `${privacy} - ${this.$t('collectionByLabel')} ${this.owner}`;
+      }
+      return this.$t('collectionBoardDescription');
+    },
+  },
+};
+</script>
+
+<style lang="scss" scoped>
+@import './utils/grid-layout';
+
+.collection-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem auto 0;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid #e7ebf2;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.12);
+}
+.collection-mark {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+  background: #edf5ff;
+  color: #1f6feb;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.collection-main {
+  min-width: 0;
+  flex: 1;
+}
+.collection-main h1 {
+  margin: 0;
+  color: #22313f;
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1.2;
+  word-break: break-word;
+}
+.collection-main p {
+  margin: 0.35rem 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+.collection-count {
+  flex: 0 0 auto;
+  min-width: 84px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #edf1f6;
+  border-radius: 8px;
+  background: #f8fafc;
+  text-align: center;
+}
+.collection-count strong {
+  display: block;
+  color: #22313f;
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+.collection-count span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+@media screen and (max-width: 542px) {
+  .collection-hero {
+    display: block;
+  }
+  .collection-main {
+    margin-top: 0.8rem;
+  }
+  .collection-count {
+    margin-top: 1rem;
+    text-align: left;
+  }
+}
+
+@include screen-grid-layout(".collection-hero");
+</style>

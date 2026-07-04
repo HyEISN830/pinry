@@ -87,9 +87,10 @@
 import API from './api';
 import niceLinks from './utils/niceLinks';
 
-const MAX_CACHED_IMAGES = 90;
-const MAX_CACHED_IMAGE_SIZE = 10 * 1024 * 1024;
+const MAX_CACHED_IMAGES = 100;
+const MAX_CACHED_IMAGE_BYTES = 1.5 * 1024 * 1024 * 1024;
 const cachedImages = new Map();
+let cachedImageBytes = 0;
 
 function fileNameFromUrl(url, fallback) {
   if (!url) {
@@ -111,17 +112,29 @@ function getCachedImage(imageId) {
 }
 
 function cacheImage(imageId, blob) {
-  if (blob.size > MAX_CACHED_IMAGE_SIZE) {
+  if (blob.size > MAX_CACHED_IMAGE_BYTES) {
     return null;
+  }
+  const existing = cachedImages.get(imageId);
+  if (existing) {
+    cachedImageBytes -= existing.size;
+    URL.revokeObjectURL(existing.objectUrl);
+    cachedImages.delete(imageId);
   }
   const cached = {
     blob,
     objectUrl: URL.createObjectURL(blob),
+    size: blob.size,
   };
   cachedImages.set(imageId, cached);
-  while (cachedImages.size > MAX_CACHED_IMAGES) {
+  cachedImageBytes += cached.size;
+  while (
+    cachedImages.size > MAX_CACHED_IMAGES
+    || cachedImageBytes > MAX_CACHED_IMAGE_BYTES
+  ) {
     const oldestKey = cachedImages.keys().next().value;
     const oldest = cachedImages.get(oldestKey);
+    cachedImageBytes -= oldest.size;
     URL.revokeObjectURL(oldest.objectUrl);
     cachedImages.delete(oldestKey);
   }
