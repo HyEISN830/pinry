@@ -17,8 +17,8 @@
         </div>
         <div id="PinryNav" class="navbar-menu" :class="{ 'is-active': active}">
           <div class="navbar-start">
-            <a v-show="user.loggedIn" class="navbar-item" :href="bookmarklet">
-              {{ $t("bookmarkletLink") }}
+            <a class="navbar-item" href="https://hyeisn.cn/">
+              HyEISN's
             </a>
             <div
               v-if="user.loggedIn"
