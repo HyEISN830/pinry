@@ -9,6 +9,13 @@
       <strong>{{ displayCount }}</strong>
       <span>{{ $t("collectionArtworksLabel") }}</span>
     </div>
+    <button
+      v-if="canCreatePin"
+      class="button is-primary collection-action"
+      type="button"
+      @click="$emit('create-pin')">
+      {{ $t("addPinToBoardButton") }}
+    </button>
   </section>
 </template>
 
@@ -33,6 +40,10 @@ export default {
       default: '',
     },
     isPrivate: {
+      type: Boolean,
+      default: false,
+    },
+    canCreatePin: {
       type: Boolean,
       default: false,
     },
@@ -132,6 +143,17 @@ export default {
   color: #64748b;
   font-size: 12px;
 }
+.collection-action {
+  flex: 0 0 auto;
+  border-radius: 7px;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(31, 111, 235, 0.18);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.collection-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(31, 111, 235, 0.24);
+}
 
 @media screen and (max-width: 542px) {
   .collection-hero {
@@ -143,6 +165,10 @@ export default {
   .collection-count {
     margin-top: 1rem;
     text-align: left;
+  }
+  .collection-action {
+    width: 100%;
+    margin-top: 1rem;
   }
 }
 

@@ -73,6 +73,8 @@
   "pinCreateModalEmptySlot": "没有内容",
   "pinCreateModalCreatePinButton": "创建 Pin",
   "pinCreateModalSaveChangesButton": "保存更改",
+  "addPinToBoardButton": "添加 Pin",
+  "fixedBoardLabel": "将添加到画板",
   "passwordSignUpPlaceholder": "密码",
   "passwordLoginPlaceholder": "密码",
   "boardNamePlaceholder": "画板名称",

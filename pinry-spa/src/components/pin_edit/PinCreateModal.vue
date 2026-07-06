@@ -13,7 +13,11 @@
                 v-on:imageUploadSucceed="onUploadDone"
                 v-on:imageUploadProcessing="onUploadProcessing"
               ></FileUpload>
-              <div class="description" v-show="pinModel.form.description.value" v-html="niceLinks(pinModel.form.description.value)"></div>
+              <div
+                class="description"
+                v-show="pinModel.form.description.value"
+                v-html="niceLinks(pinModel.form.description.value)">
+              </div>
             </div>
             <div class="column">
               <b-field v-bind:label="$t('imageUrlLabel')"
@@ -77,7 +81,13 @@
                 </b-input>
               </b-field>
             </div>
-            <div class="column" v-if="!isEdit">
+            <div class="column" v-if="!isEdit && defaultBoard">
+              <div class="fixed-board-card">
+                <span class="fixed-board-label">{{ $t("fixedBoardLabel") }}</span>
+                <strong>{{ defaultBoard.name }}</strong>
+              </div>
+            </div>
+            <div class="column" v-if="!isEdit && !defaultBoard">
               <FilterSelect
                 :allOptions="boardOptions"
                 v-on:selected="onSelectBoard"
@@ -86,7 +96,12 @@
           </div>
         </section>
         <footer class="modal-card-foot">
-          <button class="button" type="button" @click="$parent.close()">{{ $t("closeButton") }}</button>
+          <button
+            class="button"
+            type="button"
+            @click="$parent.close()">
+            {{ $t("closeButton") }}
+          </button>
           <button
             v-if="!isEdit"
             @click="createPin"
@@ -161,6 +176,10 @@ export default {
       type: Object,
       default: null,
     },
+    defaultBoard: {
+      type: Object,
+      default: null,
+    },
   },
   components: {
     FileUpload,
@@ -175,7 +194,7 @@ export default {
       formUpload: {
         imageId: null,
       },
-      boardId: null,
+      boardIds: [],
       boardOptions: [],
       tagOptions: [],
       editorMeta: {
@@ -187,6 +206,9 @@ export default {
   created() {
     this.fetchBoardList();
     this.fetchTagList();
+    if (this.defaultBoard) {
+      this.boardIds = [this.defaultBoard.id];
+    }
     if (this.isEdit) {
       this.editorMeta.title = 'EditPinTitle';
       this.pinModel.form.url.value = this.existedPin.url;
@@ -259,6 +281,12 @@ export default {
       this.editorMeta.filteredTagOptions = filteredTagOptions;
     },
     fetchBoardList() {
+      if (this.defaultBoard) {
+        this.boardOptions = [
+          { name: this.defaultBoard.name, value: this.defaultBoard.id },
+        ];
+        return;
+      }
       API.Board.fetchFullList(this.username).then(
         (resp) => {
           const boardOptions = [];
@@ -322,11 +350,11 @@ export default {
         (resp) => {
           const promises = [];
           function done() {
+            bus.bus.$emit(bus.events.refreshPin);
             self.$emit('pinCreated', resp);
             self.$parent.close();
             loading.close();
           }
-          bus.bus.$emit(bus.events.refreshPin);
           if (self.boardIds) {
             // FIXME(winkidney): Should handle error for add-to board
             self.boardIds.forEach(
@@ -380,6 +408,20 @@ export default {
   color: #263238;
   font-size: 14px;
   line-height: 1.45;
+}
+.fixed-board-card {
+  padding: 0.9rem;
+  border: 1px solid #d7e6ff;
+  border-radius: 8px;
+  background: #f4f8ff;
+  color: #22313f;
+}
+.fixed-board-label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
 }
 .button {
   border-radius: 6px;

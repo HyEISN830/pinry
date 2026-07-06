@@ -73,6 +73,8 @@
     "pinCreateModalEmptySlot": "Rien n'a été trouvé",
     "pinCreateModalCreatePinButton": "Créer une fiche",
     "pinCreateModalSaveChangesButton": "Enregistrer les changements",
+    "addPinToBoardButton": "Ajouter une fiche",
+    "fixedBoardLabel": "Sera ajoute au tableau",
     "passwordSignUpPlaceholder": "Ton mot de passe",
     "passwordLoginPlaceholder": "Ton mot de passe",
     "boardNamePlaceholder": "nom du tableau",

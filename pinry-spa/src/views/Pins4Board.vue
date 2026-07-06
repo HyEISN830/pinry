@@ -6,7 +6,9 @@
       :title="collection.title"
       :count="collection.count"
       :owner="collection.owner"
-      :is-private="collection.private">
+      :is-private="collection.private"
+      :can-create-pin="canCreatePin"
+      v-on:create-pin="createPinForBoard">
     </CollectionHero>
     <Pins
       :pin-filters="filters"
@@ -20,6 +22,7 @@ import API from '../components/api';
 import PHeader from '../components/PHeader.vue';
 import Pins from '../components/Pins.vue';
 import CollectionHero from '../components/CollectionHero.vue';
+import modals from '../components/modals';
 
 export default {
   name: 'Pins4Board',
@@ -27,10 +30,15 @@ export default {
     return {
       filters: { boardFilter: null },
       collection: {
+        id: null,
         title: '',
         count: null,
         owner: '',
         private: false,
+      },
+      user: {
+        loggedIn: false,
+        meta: {},
       },
     };
   },
@@ -39,9 +47,18 @@ export default {
     PHeader,
     Pins,
   },
+  computed: {
+    canCreatePin() {
+      return (
+        this.user.loggedIn
+        && this.collection.owner === this.user.meta.username
+      );
+    },
+  },
   beforeRouteUpdate(to, from, next) {
     this.filters = { boardFilter: to.params.boardId };
     this.collection = {
+      id: null,
       title: '',
       count: null,
       owner: '',
@@ -56,11 +73,26 @@ export default {
   methods: {
     initializeBoard() {
       this.filters = { boardFilter: this.$route.params.boardId };
+      this.fetchUserMeta();
       this.fetchBoardMeta(this.$route.params.boardId);
+    },
+    fetchUserMeta() {
+      API.User.fetchUserInfo().then(
+        (user) => {
+          if (user === null) {
+            this.user.loggedIn = false;
+            this.user.meta = {};
+            return;
+          }
+          this.user.loggedIn = true;
+          this.user.meta = user;
+        },
+      );
     },
     fetchBoardMeta(boardId) {
       API.Board.get(boardId).then(
         (resp) => {
+          this.collection.id = resp.data.id;
           this.collection.title = resp.data.name;
           this.collection.count = resp.data.total_pins;
           this.collection.owner = resp.data.submitter.username;
@@ -73,6 +105,21 @@ export default {
     },
     onPinsMetaLoaded(meta) {
       this.collection.count = meta.count;
+    },
+    createPinForBoard() {
+      if (!this.canCreatePin) {
+        return;
+      }
+      modals.openPinEdit(
+        this,
+        {
+          username: this.user.meta.username,
+          defaultBoard: {
+            id: this.collection.id,
+            name: this.collection.title,
+          },
+        },
+      );
     },
   },
 };

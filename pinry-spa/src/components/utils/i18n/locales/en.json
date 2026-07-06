@@ -73,6 +73,8 @@
     "pinCreateModalEmptySlot": "There are no items",
     "pinCreateModalCreatePinButton": "Create Pin",
     "pinCreateModalSaveChangesButton": "Save Changes",
+    "addPinToBoardButton": "Add Pin",
+    "fixedBoardLabel": "Will be added to board",
     "passwordSignUpPlaceholder": "Your password",
     "passwordLoginPlaceholder": "Your password",
     "boardNamePlaceholder": "board name",
