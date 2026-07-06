@@ -1,7 +1,7 @@
 <template>
   <div class="pin-create-modal">
     <div>
-      <div class="modal-card" style="width: auto">
+      <div class="modal-card">
         <header class="modal-card-head">
           <p class="modal-card-title">{{ $t(editorMeta.title) }}</p>
         </header>
@@ -381,6 +381,8 @@ export default {
 
 <style lang="scss" scoped>
 .modal-card {
+  width: min(96vw, 1180px);
+  max-height: 92vh;
   overflow: hidden;
   border: 1px solid #e7ebf2;
   border-radius: 8px;
@@ -397,6 +399,8 @@ export default {
   font-weight: 700;
 }
 .modal-card-body {
+  max-height: calc(92vh - 132px);
+  overflow: auto;
   background: #fff;
 }
 .description {
@@ -426,5 +430,13 @@ export default {
 .button {
   border-radius: 6px;
   font-weight: 600;
+}
+@media screen and (max-width: 768px) {
+  .modal-card {
+    width: 96vw;
+  }
+  .modal-card-body {
+    max-height: calc(92vh - 128px);
+  }
 }
 </style>

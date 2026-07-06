@@ -76,6 +76,32 @@ const Board = {
   },
 };
 
+const Comic = {
+  create(data) {
+    const url = `${API_PREFIX}comics/`;
+    return axios.post(url, data);
+  },
+  fetchList(offset = 0, limit = 18) {
+    const url = `${API_PREFIX}comics/`;
+    return axios.get(
+      url,
+      { params: { offset, limit, ordering: '-id' } },
+    );
+  },
+  get(comicId) {
+    const url = `${API_PREFIX}comics/${comicId}/`;
+    return axios.get(url);
+  },
+  saveChanges(comicId, data) {
+    const url = `${API_PREFIX}comics/${comicId}/`;
+    return axios.patch(url, data);
+  },
+  delete(comicId) {
+    const url = `${API_PREFIX}comics/${comicId}/`;
+    return axios.delete(url);
+  },
+};
+
 const Pin = {
   create(jsonData) {
     const url = `${API_PREFIX}pins/`;
@@ -318,6 +344,7 @@ export default {
   Tag,
   Pin,
   Board,
+  Comic,
   fetchPin,
   fetchPins,
   fetchBoardForUser,

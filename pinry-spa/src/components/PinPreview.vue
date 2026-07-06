@@ -97,11 +97,10 @@
 <script>
 import API from './api';
 import niceLinks from './utils/niceLinks';
-
-const MAX_CACHED_IMAGES = 100;
-const MAX_CACHED_IMAGE_BYTES = 1.5 * 1024 * 1024 * 1024;
-const cachedImages = new Map();
-let cachedImageBytes = 0;
+import {
+  cacheImage,
+  getCachedImage,
+} from './utils/originalImageCache';
 
 function fileNameFromUrl(url, fallback) {
   if (!url) {
@@ -110,46 +109,6 @@ function fileNameFromUrl(url, fallback) {
   const cleanUrl = url.split('?')[0].split('#')[0];
   const name = cleanUrl.split('/').pop();
   return name || fallback;
-}
-
-function getCachedImage(imageId) {
-  const cached = cachedImages.get(imageId);
-  if (!cached) {
-    return null;
-  }
-  cachedImages.delete(imageId);
-  cachedImages.set(imageId, cached);
-  return cached;
-}
-
-function cacheImage(imageId, blob) {
-  if (blob.size > MAX_CACHED_IMAGE_BYTES) {
-    return null;
-  }
-  const existing = cachedImages.get(imageId);
-  if (existing) {
-    cachedImageBytes -= existing.size;
-    URL.revokeObjectURL(existing.objectUrl);
-    cachedImages.delete(imageId);
-  }
-  const cached = {
-    blob,
-    objectUrl: URL.createObjectURL(blob),
-    size: blob.size,
-  };
-  cachedImages.set(imageId, cached);
-  cachedImageBytes += cached.size;
-  while (
-    cachedImages.size > MAX_CACHED_IMAGES
-    || cachedImageBytes > MAX_CACHED_IMAGE_BYTES
-  ) {
-    const oldestKey = cachedImages.keys().next().value;
-    const oldest = cachedImages.get(oldestKey);
-    cachedImageBytes -= oldest.size;
-    URL.revokeObjectURL(oldest.objectUrl);
-    cachedImages.delete(oldestKey);
-  }
-  return cached;
 }
 
 function isWebUrl(url) {

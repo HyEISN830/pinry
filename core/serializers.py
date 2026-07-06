@@ -1,10 +1,11 @@
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Prefetch, Q
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from taggit.models import Tag
 
-from core.models import Image, Board
+from core.models import Image, Board, Comic, ComicPage
 from core.models import Pin
 from django_images.models import Thumbnail
 from users.serializers import UserSerializer
@@ -32,6 +33,21 @@ def filter_private_board(request, query):
     else:
         query = query.exclude(private=True)
     return query
+
+
+def filter_private_comic(request, query):
+    if request.user.is_authenticated:
+        query = query.exclude(~Q(submitter=request.user), private=True)
+    else:
+        query = query.exclude(private=True)
+    return query.select_related(
+        'submitter',
+        'submitter__pinry_profile',
+    ).prefetch_related(
+        'pages',
+        'pages__image',
+        'pages__image__thumbnail_set',
+    )
 
 
 class ThumbnailSerializer(serializers.HyperlinkedModelSerializer):
@@ -182,6 +198,172 @@ class PinIdListField(serializers.ListField):
     child = serializers.IntegerField(
         min_value=1
     )
+
+
+class ComicPageAddSerializer(serializers.Serializer):
+    image_by_id = serializers.PrimaryKeyRelatedField(
+        queryset=Image.objects.all(),
+    )
+    order = serializers.IntegerField(min_value=1, required=False)
+    caption = serializers.CharField(
+        allow_blank=True,
+        allow_null=True,
+        required=False,
+    )
+
+
+class ComicPageMoveSerializer(serializers.Serializer):
+    id = serializers.IntegerField(min_value=1)
+    order = serializers.IntegerField(min_value=1)
+
+
+class ComicPageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ComicPage
+        fields = (
+            'id',
+            'order',
+            'caption',
+            'image',
+        )
+
+    image = ImageSerializer(read_only=True)
+
+
+class ComicSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Comic
+        fields = (
+            settings.DRF_URL_FIELD_NAME,
+            'id',
+            'title',
+            'description',
+            'private',
+            'published',
+            'submitter',
+            'total_pages',
+            'cover',
+            'pages',
+            'pages_to_add',
+            'pages_to_remove',
+            'pages_to_reorder',
+        )
+        read_only_fields = ('submitter', 'published')
+
+    submitter = UserSerializer(read_only=True)
+    total_pages = serializers.SerializerMethodField(read_only=True)
+    cover = serializers.SerializerMethodField(read_only=True)
+    pages = ComicPageSerializer(many=True, read_only=True)
+    pages_to_add = ComicPageAddSerializer(
+        many=True,
+        write_only=True,
+        required=False,
+    )
+    pages_to_remove = PinIdListField(
+        max_length=50,
+        write_only=True,
+        required=False,
+        allow_empty=False,
+    )
+    pages_to_reorder = ComicPageMoveSerializer(
+        many=True,
+        write_only=True,
+        required=False,
+    )
+
+    def get_total_pages(self, instance):
+        return instance.pages.count()
+
+    def get_cover(self, instance):
+        page = instance.pages.order_by('order', 'id').first()
+        if page is None:
+            return None
+        return ComicPageSerializer(page, context=self.context).data
+
+    @staticmethod
+    def _normalize_orders(comic, ordered_pages=None):
+        if ordered_pages is None:
+            ordered_pages = list(comic.pages.order_by('order', 'id'))
+        with transaction.atomic():
+            for index, page in enumerate(ordered_pages, start=10001):
+                page.order = index
+                page.save(update_fields=['order'])
+            for index, page in enumerate(ordered_pages, start=1):
+                page.order = index
+                page.save(update_fields=['order'])
+
+    def _add_page(self, comic, image, order=None, caption=None):
+        pages = list(comic.pages.order_by('order', 'id'))
+        if order is None:
+            order = len(pages) + 1
+        order = min(max(order, 1), len(pages) + 1)
+        page = ComicPage(
+            comic=comic,
+            image=image,
+            order=order,
+            caption=caption,
+        )
+        pages.insert(order - 1, page)
+        with transaction.atomic():
+            for index, current_page in enumerate(pages, start=10001):
+                if current_page.id is None:
+                    continue
+                current_page.order = index
+                current_page.save(update_fields=['order'])
+            for index, current_page in enumerate(pages, start=1):
+                current_page.order = index
+                current_page.comic = comic
+                current_page.save()
+
+    def _remove_pages(self, comic, page_ids):
+        comic.pages.filter(id__in=page_ids).delete()
+        self._normalize_orders(comic)
+
+    def _reorder_pages(self, comic, move_items):
+        pages = list(comic.pages.order_by('order', 'id'))
+        for move_item in move_items:
+            page_id = move_item['id']
+            matched = [page for page in pages if page.id == page_id]
+            if not matched:
+                continue
+            page = matched[0]
+            pages.remove(page)
+            new_index = min(max(move_item['order'], 1), len(pages) + 1) - 1
+            pages.insert(new_index, page)
+        self._normalize_orders(comic, pages)
+
+    def create(self, validated_data):
+        pages_to_add = validated_data.pop('pages_to_add', [])
+        validated_data.pop('pages_to_remove', None)
+        validated_data.pop('pages_to_reorder', None)
+        validated_data['submitter'] = self.context['request'].user
+        comic = super(ComicSerializer, self).create(validated_data)
+        for page_data in pages_to_add:
+            self._add_page(
+                comic,
+                page_data['image_by_id'],
+                page_data.get('order'),
+                page_data.get('caption'),
+            )
+        return comic
+
+    def update(self, instance, validated_data):
+        pages_to_add = validated_data.pop('pages_to_add', [])
+        pages_to_remove = validated_data.pop('pages_to_remove', [])
+        pages_to_reorder = validated_data.pop('pages_to_reorder', [])
+        instance = super(ComicSerializer, self).update(instance, validated_data)
+        if pages_to_remove:
+            self._remove_pages(instance, pages_to_remove)
+        if pages_to_reorder:
+            self._reorder_pages(instance, pages_to_reorder)
+        for page_data in pages_to_add:
+            self._add_page(
+                instance,
+                page_data['image_by_id'],
+                page_data.get('order'),
+                page_data.get('caption'),
+            )
+        return instance
 
 
 class BoardAutoCompleteSerializer(serializers.HyperlinkedModelSerializer):

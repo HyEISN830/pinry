@@ -10,6 +10,8 @@ import Profile4User from '../views/Profile4User.vue';
 import PinCreate from '../views/PinCreate.vue';
 import Search from '../views/Search.vue';
 import PageNotFound from '../views/PageNotFound.vue';
+import Comics from '../views/Comics.vue';
+import ComicReader from '../views/ComicReader.vue';
 
 Vue.use(VueRouter);
 
@@ -58,6 +60,16 @@ const routes = [
     path: '/search',
     name: 'search',
     component: Search,
+  },
+  {
+    path: '/comics',
+    name: 'comics',
+    component: Comics,
+  },
+  {
+    path: '/comics/:comicId',
+    name: 'comic',
+    component: ComicReader,
   },
   {
     path: '*',

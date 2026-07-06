@@ -14,9 +14,13 @@ from rest_framework.viewsets import GenericViewSet
 from taggit.models import Tag
 
 from core import serializers as api
-from core.models import Image, Pin, Board
+from core.models import Image, Pin, Board, Comic
 from core.permissions import IsOwnerOrReadOnly, OwnerOnlyIfPrivate
-from core.serializers import filter_private_pin, filter_private_board
+from core.serializers import (
+    filter_private_pin,
+    filter_private_board,
+    filter_private_comic,
+)
 
 
 class ImageViewSet(mixins.CreateModelMixin, GenericViewSet):
@@ -29,11 +33,21 @@ class ImageViewSet(mixins.CreateModelMixin, GenericViewSet):
     @staticmethod
     def user_can_view_image(request, image):
         pins = image.pin.all()
+        comics = image.comic_pages.select_related(
+            'comic',
+        )
         if request.user.is_authenticated:
-            return pins.filter(
+            can_view_pin = pins.filter(
                 Q(private=False) | Q(submitter=request.user)
             ).exists()
-        return pins.filter(private=False).exists()
+            can_view_comic = comics.filter(
+                Q(comic__private=False) | Q(comic__submitter=request.user)
+            ).exists()
+            return can_view_pin or can_view_comic
+        return (
+            pins.filter(private=False).exists()
+            or comics.filter(comic__private=False).exists()
+        )
 
     @staticmethod
     def throttled_chunks(image_file, bytes_per_second):
@@ -93,6 +107,19 @@ class BoardViewSet(viewsets.ModelViewSet):
         return filter_private_board(self.request, Board.objects.all())
 
 
+class ComicViewSet(viewsets.ModelViewSet):
+    serializer_class = api.ComicSerializer
+    filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
+    search_fields = ("title", "description")
+    filter_fields = ("submitter__username", )
+    ordering_fields = ('-id', )
+    ordering = ('-id', )
+    permission_classes = [IsOwnerOrReadOnly("submitter"), OwnerOnlyIfPrivate("submitter")]
+
+    def get_queryset(self):
+        return filter_private_comic(self.request, Comic.objects.all())
+
+
 class BoardAutoCompleteViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
@@ -127,5 +154,6 @@ drf_router = routers.DefaultRouter()
 drf_router.register(r'pins', PinViewSet, basename="pin")
 drf_router.register(r'images', ImageViewSet)
 drf_router.register(r'boards', BoardViewSet, basename="board")
+drf_router.register(r'comics', ComicViewSet, basename="comic")
 drf_router.register(r'tags-auto-complete', TagAutoCompleteViewSet)
 drf_router.register(r'boards-auto-complete', BoardAutoCompleteViewSet, basename="board")

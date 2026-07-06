@@ -37,6 +37,11 @@
                   class="navbar-item">
                   {{ $t("boardLink") }}
                 </a>
+                <a
+                  @click="createComic"
+                  class="navbar-item">
+                  {{ $t("comicLink") }}
+                </a>
               </div>
             </div>
             <div
@@ -79,6 +84,11 @@
                 </a>
               </div>
             </div>
+            <router-link
+              :to="{ name: 'comics' }"
+              class="navbar-item">
+              {{ $t("comicsLink") }}
+            </router-link>
           </div>
           <div class="navbar-end">
             <router-link
@@ -195,6 +205,13 @@ export default {
     },
     createBoard() {
       modals.openBoardCreate(this);
+    },
+    createComic() {
+      modals.openComicCreate(
+        this,
+        this.user.meta.username,
+        () => this.$router.push({ name: 'comics' }),
+      );
     },
     signUp() {
       modals.openSignUp(this, this.onSignUpSucceed);

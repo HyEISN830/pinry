@@ -97,6 +97,34 @@ class Board(models.Model):
     published = models.DateTimeField(auto_now_add=True)
 
 
+class Comic(models.Model):
+    submitter = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=128, blank=False, null=False)
+    description = models.TextField(blank=True, null=True)
+    private = models.BooleanField(default=False, blank=False)
+    published = models.DateTimeField(auto_now_add=True)
+
+
+class ComicPage(models.Model):
+    class Meta:
+        unique_together = ("comic", "order")
+        ordering = ("order", "id")
+
+    comic = models.ForeignKey(
+        Comic,
+        related_name="pages",
+        on_delete=models.CASCADE,
+    )
+    image = models.ForeignKey(
+        Image,
+        related_name="comic_pages",
+        on_delete=models.CASCADE,
+    )
+    order = models.PositiveIntegerField()
+    caption = models.TextField(blank=True, null=True)
+    published = models.DateTimeField(auto_now_add=True)
+
+
 class Pin(models.Model):
     submitter = models.ForeignKey(User, on_delete=models.CASCADE)
     private = models.BooleanField(default=False, blank=False)

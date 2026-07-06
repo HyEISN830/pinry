@@ -3,6 +3,7 @@ import LoginForm from './LoginForm.vue';
 import SignUpForm from './SignUpForm.vue';
 import BoardEdit from './BoardEdit.vue';
 import Add2Board from './pin_edit/Add2Board.vue';
+import ComicCreateModal from './comic/ComicCreateModal.vue';
 
 
 function openPinEdit(vm, props = null, onCreated = null) {
@@ -40,6 +41,20 @@ function openBoardCreate(vm) {
       parent: vm,
       component: BoardEdit,
       hasModalCard: true,
+    },
+  );
+}
+
+function openComicCreate(vm, username, onCreated) {
+  vm.$buefy.modal.open(
+    {
+      parent: vm,
+      component: ComicCreateModal,
+      props: { username },
+      hasModalCard: true,
+      events: {
+        comicCreated: onCreated,
+      },
     },
   );
 }
@@ -85,6 +100,7 @@ function openSignUp(vm, onSignUpSucceed) {
 
 export default {
   openBoardCreate,
+  openComicCreate,
   openBoardEdit,
   openAdd2Board,
   openPinEdit,
