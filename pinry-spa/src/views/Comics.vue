@@ -74,6 +74,15 @@
             </div>
             <div class="comic-info">
               <h2>{{ comic.title }}</h2>
+              <div class="comic-tags" v-if="comic.tags && comic.tags.length > 0">
+                <router-link
+                  v-for="tag in comic.tags"
+                  :key="tag"
+                  :to="{ name: 'tag', params: { tag } }"
+                  @click.stop>
+                  {{ tag }}
+                </router-link>
+              </div>
               <div class="comic-author">
                 <img :src="avatarUrl(comic)" alt="">
                 <router-link :to="{ name: 'user', params: { user: comic.submitter.username } }">
@@ -132,9 +141,9 @@ function sourceText(url) {
   return (url || '').trim();
 }
 
-function comicPageLimit() {
+function comicPageLimit(largeCards = false) {
   if (typeof window === 'undefined') {
-    return 4;
+    return largeCards ? 3 : 4;
   }
   const viewportWidth = window.innerWidth
     || document.documentElement.clientWidth
@@ -143,15 +152,15 @@ function comicPageLimit() {
     return 1;
   }
   if (viewportWidth <= 860) {
-    return 2;
+    return largeCards ? 1 : 2;
   }
   if (viewportWidth <= 1180) {
-    return 3;
+    return largeCards ? 2 : 3;
   }
   if (viewportWidth <= 1563) {
-    return 4;
+    return largeCards ? 3 : 4;
   }
-  return 6;
+  return largeCards ? 5 : 6;
 }
 
 export default {
@@ -168,6 +177,10 @@ export default {
     showCreate: {
       type: Boolean,
       default: true,
+    },
+    largeCards: {
+      type: Boolean,
+      default: false,
     },
     tagFilter: {
       type: String,
@@ -187,7 +200,7 @@ export default {
       comics: [],
       currentMenuId: null,
       currentPage: 0,
-      pageLimit: comicPageLimit(),
+      pageLimit: comicPageLimit(this.largeCards),
       resizeTimer: null,
       status: {
         count: null,
@@ -245,7 +258,7 @@ export default {
       }
       const { thumbnail } = comic.cover.image;
       return {
-        aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
+        '--comic-cover-image': `url("${thumbnail.image}")`,
       };
     },
     isOwner(comic) {
@@ -342,7 +355,7 @@ export default {
         window.clearTimeout(this.resizeTimer);
       }
       this.resizeTimer = window.setTimeout(() => {
-        const nextLimit = comicPageLimit();
+        const nextLimit = comicPageLimit(this.largeCards);
         if (nextLimit === this.pageLimit) {
           return;
         }
@@ -556,16 +569,41 @@ export default {
   transform: translateY(-6px) scale(0.96);
 }
 .comic-cover {
+  position: relative;
+  isolation: isolate;
+  aspect-ratio: 4 / 3;
   min-height: 150px;
   overflow: hidden;
   border-radius: 8px 8px 0 0;
-  background: #f5f7fa;
+  background: #f7f3ff;
+}
+.comic-cover::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -18px;
+  background-image: var(--comic-cover-image);
+  background-position: center;
+  background-size: cover;
+  filter: blur(18px) saturate(1.18);
+  opacity: 0.42;
+  transform: scale(1.06);
+}
+.comic-cover::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.36);
 }
 .comic-cover img {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  padding: 7px;
+  object-fit: contain;
 }
 .comic-info {
   padding: 0.85rem;
@@ -579,6 +617,27 @@ export default {
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.comic-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+  max-height: 3.25rem;
+  margin-top: 0.48rem;
+  overflow: hidden;
+}
+.comic-tags a {
+  max-width: 100%;
+  padding: 0.15rem 0.42rem;
+  border-radius: 999px;
+  color: #6d4bc1;
+  background: #f2edff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .comic-author {
   display: flex;

@@ -49,6 +49,7 @@
             <Comics
               v-if="showComics"
               embedded
+              large-cards
               :show-create="false"
               :tag-filter="resultTag"
               :title="$t('comicsLink')">
@@ -224,6 +225,22 @@ export default {
 }
 .search-card .field {
   margin-bottom: 0;
+}
+.search-results {
+  --search-result-card-width: 270px;
+  --search-result-grid-gutter: 18px;
+}
+.search-results /deep/ #pins-container,
+.search-results /deep/ #boards-container {
+  --pin-card-width: var(--search-result-card-width);
+  --pin-grid-gutter: var(--search-result-grid-gutter);
+}
+.search-results /deep/ .pin-footer .description {
+  font-size: 16px;
+}
+.search-results /deep/ .pin-footer .details,
+.search-results /deep/ .board-footer {
+  font-size: 15px;
 }
 .result-heading {
   margin: 1rem 0 0;
