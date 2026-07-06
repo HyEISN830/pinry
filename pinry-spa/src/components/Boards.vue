@@ -105,8 +105,7 @@ function getResponsiveGridSignature() {
 }
 
 function isDocumentScrollable() {
-  const doc = document.documentElement;
-  const body = document.body;
+  const { body, documentElement: doc } = document;
   const scrollHeight = Math.max(
     doc.scrollHeight,
     body ? body.scrollHeight : 0,
@@ -134,7 +133,7 @@ function createBoardItem(board) {
   } else {
     boardItem.preview_image_url = defaultPreviewImage;
   }
-  const thumbnail = previewImage.image.thumbnail;
+  const { thumbnail } = previewImage.image;
   boardItem.style = {
     aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
   };

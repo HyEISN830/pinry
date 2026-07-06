@@ -169,8 +169,7 @@ function getResponsiveGridSignature() {
 }
 
 function isDocumentScrollable() {
-  const doc = document.documentElement;
-  const body = document.body;
+  const { body, documentElement: doc } = document;
   const scrollHeight = Math.max(
     doc.scrollHeight,
     body ? body.scrollHeight : 0,
