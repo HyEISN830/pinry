@@ -230,16 +230,16 @@ export default {
   --search-result-card-width: 270px;
   --search-result-grid-gutter: 18px;
 }
-.search-results /deep/ #pins-container,
-.search-results /deep/ #boards-container {
+.search-results ::v-deep(#pins-container),
+.search-results ::v-deep(#boards-container) {
   --pin-card-width: var(--search-result-card-width);
   --pin-grid-gutter: var(--search-result-grid-gutter);
 }
-.search-results /deep/ .pin-footer .description {
+.search-results ::v-deep(.pin-footer .description) {
   font-size: 16px;
 }
-.search-results /deep/ .pin-footer .details,
-.search-results /deep/ .board-footer {
+.search-results ::v-deep(.pin-footer .details),
+.search-results ::v-deep(.board-footer) {
   font-size: 15px;
 }
 .result-heading {
