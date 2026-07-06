@@ -81,7 +81,7 @@ const Comic = {
     const url = `${API_PREFIX}comics/`;
     return axios.post(url, data);
   },
-  fetchList(offset = 0, limit = 18, tagFilter = null) {
+  fetchList(offset = 0, limit = 18, tagFilter = null, userFilter = null) {
     const url = `${API_PREFIX}comics/`;
     const params = {
       offset,
@@ -90,6 +90,9 @@ const Comic = {
     };
     if (tagFilter) {
       params.tags__name = tagFilter;
+    }
+    if (userFilter) {
+      params.submitter__username = userFilter;
     }
     return axios.get(
       url,

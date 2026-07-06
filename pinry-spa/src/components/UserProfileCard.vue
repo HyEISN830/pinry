@@ -47,6 +47,16 @@
                     <span>{{ $t("boardsUserProfileCardLink") }}</span>
                   </a>
                 </li>
+                <li :class="trueFalse2Class(inComics)">
+                  <a @click="go2UserComics">
+                    <b-icon
+                      type="is-dark"
+                      icon="book-open-page-variant"
+                      custom-size="mdi-24px">
+                    </b-icon>
+                    <span>{{ $t("comicsLink") }}</span>
+                  </a>
+                </li>
                 <li :class="trueFalse2Class(inProfile)">
                   <a @click="go2UserProfile">
                     <b-icon
@@ -81,6 +91,10 @@ export default {
       type: Boolean,
       default: false,
     },
+    inComics: {
+      type: Boolean,
+      default: false,
+    },
     inProfile: {
       type: Boolean,
       default: false,
@@ -103,6 +117,11 @@ export default {
     go2UserBoard() {
       this.$router.push(
         { name: 'boards4user', params: { username: this.username } },
+      );
+    },
+    go2UserComics() {
+      this.$router.push(
+        { name: 'comics4user', params: { username: this.username } },
       );
     },
     go2UserProfile() {
@@ -175,10 +194,52 @@ export default {
 .tabs {
   margin-bottom: 0;
 }
+.tabs ul {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  border-bottom: 0;
+}
+.tabs li {
+  min-width: 0;
+}
 .tabs a {
+  display: flex;
+  justify-content: center;
   border-radius: 6px;
   font-weight: 600;
+  white-space: normal;
+}
+.tabs a span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 @import '../components/utils/grid-layout';
 @include screen-grid-layout("#user-home-container");
+@media screen and (max-width: 542px) {
+  #user-home-container {
+    max-width: calc(100vw - 24px);
+  }
+  .card-content {
+    padding: 0.85rem;
+  }
+  .media {
+    align-items: center;
+  }
+  .media-left {
+    margin-right: 0.75rem;
+  }
+  .tabs ul {
+    gap: 0.35rem;
+  }
+  .tabs a {
+    display: grid;
+    gap: 0.15rem;
+    min-height: 58px;
+    padding: 0.45rem 0.25rem;
+    font-size: 0.78rem;
+    line-height: 1.1;
+    text-align: center;
+  }
+}
 </style>

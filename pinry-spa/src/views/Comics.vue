@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="comics-page">
     <PHeader v-if="!embedded"></PHeader>
     <section class="section comics-section">
@@ -12,24 +12,6 @@
           </div>
           <div class="toolbar-actions">
             <button
-              class="button is-light comic-page-button"
-              type="button"
-              :disabled="status.loading || currentPage === 0"
-              :aria-label="$t('previousPageButton')"
-              :title="$t('previousPageButton')"
-              @click="previousPage">
-              ‹
-            </button>
-            <button
-              class="button is-light comic-page-button"
-              type="button"
-              :disabled="status.loading || !status.hasNext"
-              :aria-label="$t('nextPageButton')"
-              :title="$t('nextPageButton')"
-              @click="nextPage">
-              ›
-            </button>
-            <button
               v-if="user.loggedIn && !embedded && showCreate"
               class="button is-primary"
               type="button"
@@ -39,16 +21,32 @@
           </div>
         </div>
         <div
-          class="comic-grid"
-          :style="gridStyle">
-          <article
-            class="comic-card"
-            v-for="comic in comics"
-            :key="comic.id"
-            @mouseenter="showMenu(comic)"
-            @mouseleave="hideMenu"
-            @touchstart="handleCardTouch(comic)"
-            @click="openComic(comic, $event)">
+          class="comic-row-shell"
+          :class="{
+            'can-page-left': currentPage > 0,
+            'can-page-right': status.hasNext
+          }">
+          <button
+            v-if="currentPage > 0"
+            class="button is-light comic-page-button is-left"
+            type="button"
+            :disabled="status.loading"
+            :aria-label="$t('previousPageButton')"
+            :title="$t('previousPageButton')"
+            @click="previousPage">
+            &lsaquo;
+          </button>
+          <div
+            class="comic-grid"
+            :style="gridStyle">
+            <article
+              class="comic-card"
+              v-for="comic in comics"
+              :key="comic.id"
+              @mouseenter="showMenu(comic)"
+              @mouseleave="hideMenu"
+              @touchstart="handleCardTouch(comic)"
+              @click="openComic(comic, $event)">
             <transition name="comic-menu">
               <div
                 class="comic-card-menu"
@@ -97,7 +95,18 @@
                 {{ $t("missingSourceNotice") }}
               </div>
             </div>
-          </article>
+            </article>
+          </div>
+          <button
+            v-if="status.hasNext"
+            class="button is-light comic-page-button is-right"
+            type="button"
+            :disabled="status.loading"
+            :aria-label="$t('nextPageButton')"
+            :title="$t('nextPageButton')"
+            @click="nextPage">
+            &rsaquo;
+          </button>
         </div>
         <loadingSpinner :show="status.loading"></loadingSpinner>
       </div>
@@ -168,6 +177,10 @@ export default {
       type: String,
       default: null,
     },
+    userFilter: {
+      type: String,
+      default: null,
+    },
   },
   data() {
     return {
@@ -201,6 +214,9 @@ export default {
   },
   watch: {
     tagFilter() {
+      this.resetPages();
+    },
+    userFilter() {
       this.resetPages();
     },
   },
@@ -298,6 +314,7 @@ export default {
         page * this.pageLimit,
         this.pageLimit,
         this.tagFilter,
+        this.userFilter,
       ).then(
         (resp) => {
           const { count, results, next } = resp.data;
@@ -411,12 +428,52 @@ export default {
   align-items: center;
   gap: 0.5rem;
 }
+.comic-row-shell {
+  position: relative;
+}
+.comic-row-shell::before,
+.comic-row-shell::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  bottom: -16px;
+  width: 76px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+}
+.comic-row-shell::before {
+  left: 0;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0));
+}
+.comic-row-shell::after {
+  right: 0;
+  background: linear-gradient(to left, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0));
+}
+.comic-row-shell.can-page-left::before,
+.comic-row-shell.can-page-right::after {
+  opacity: 1;
+}
 .comic-page-button {
+  position: absolute;
+  z-index: 6;
+  top: 50%;
   width: 2.35rem;
   min-width: 2.35rem;
+  height: 3.1rem;
   padding: 0;
+  border-radius: 999px;
   font-size: 1.45rem;
   line-height: 1;
+  transform: translateY(-50%);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+}
+.comic-page-button.is-left {
+  left: 0.45rem;
+}
+.comic-page-button.is-right {
+  right: 0.45rem;
 }
 .comic-grid {
   display: grid;

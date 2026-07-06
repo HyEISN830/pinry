@@ -62,6 +62,11 @@
                   {{ $t("pinsLink") }}
                 </router-link>
                 <router-link
+                  :to="{ name: 'comics4user', params: {username: user.meta.username} }"
+                  class="navbar-item">
+                  {{ $t("comicsLink") }}
+                </router-link>
+                <router-link
                   :to="{ name: 'profile4user', params: {username: user.meta.username} }"
                   class="navbar-item">
                   {{ $t("profileLink") }}

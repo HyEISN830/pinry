@@ -45,7 +45,13 @@
         <div class="content">
           <p>{{ $t("tokenUserProfileCardContent") }}</p>
           <pre>{{ token }}</pre>
-          {{ $t("pleaseReadTokenUserProfileCardContent") }}<a target="_blank" href="https://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication">{{ $t("drfApiDocumentationLink") }}</a>{{ $t("forMoreDetailsParagraph") }}
+          {{ $t("pleaseReadTokenUserProfileCardContent") }}
+          <a
+            target="_blank"
+            :href="tokenHelpUrl">
+            {{ $t("drfApiDocumentationLink") }}
+          </a>
+          {{ $t("forMoreDetailsParagraph") }}
           <br>
         </div>
       </div>
@@ -70,6 +76,9 @@ export default {
     };
   },
   computed: {
+    tokenHelpUrl() {
+      return 'https://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication';
+    },
     token() {
       return this.user.token;
     },
@@ -150,11 +159,36 @@ export default {
   font-weight: 600;
 }
 pre {
+  overflow: auto;
   border-radius: 8px;
   background: #f8fafc;
   color: #22313f;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 @import '../utils/grid-layout';
 @include screen-grid-layout(".profile-container");
+@media screen and (max-width: 542px) {
+  .profile-container {
+    max-width: calc(100vw - 24px);
+  }
+  .card-content {
+    padding: 0.85rem;
+  }
+  .media {
+    display: block;
+  }
+  .media-left {
+    margin-right: 0;
+    margin-bottom: 0.85rem;
+  }
+  .image.is-96x96 {
+    width: 72px;
+    height: 72px;
+  }
+  .button {
+    width: 100%;
+  }
+}
 </style>

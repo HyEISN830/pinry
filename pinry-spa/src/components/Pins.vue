@@ -710,6 +710,7 @@ $avatar-height: 30px;
   background-color: white;
   border-top: 1px solid #eef1f5;
   border-radius: 0 0 8px 8px;
+  text-align: left;
   .description {
     @include description-font;
     padding: 10px 12px;

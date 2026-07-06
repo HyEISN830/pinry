@@ -28,6 +28,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+@import '../components/utils/grid-layout';
+
 .home-pin-heading {
   padding-top: 0.5rem;
   padding-bottom: 0;
@@ -38,4 +40,5 @@ export default {
   font-size: 1.6rem;
   font-weight: 800;
 }
+@include screen-grid-layout(".home-pin-heading .container");
 </style>

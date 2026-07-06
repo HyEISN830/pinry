@@ -161,18 +161,24 @@
     <div class="comic-full-reader" v-if="fullReaderOpen">
       <div class="full-reader-bar">
         <strong>{{ comic.title }}</strong>
-        <button
-          class="button is-light"
-          type="button"
-          @click="fullReaderOpen = false">
-          {{ $t("closeButton") }}
-        </button>
+        <div class="full-reader-actions">
+          <span class="full-reader-page-count">
+            {{ currentFullPageOrder }} / {{ comic.total_pages }}
+          </span>
+          <button
+            class="button is-light"
+            type="button"
+            @click="closeFullReader">
+            {{ $t("closeButton") }}
+          </button>
+        </div>
       </div>
       <div class="full-reader-pages">
         <figure
           class="full-reader-page"
           v-for="page in comic.pages"
-          :key="`full-${page.id}`">
+          :key="`full-${page.id}`"
+          :data-page-order="page.order">
           <img
             :src="pageUrl(page)"
             :alt="`${comic.title} ${page.order}`"
@@ -240,7 +246,9 @@ export default {
         tags: [],
       },
       filteredTagOptions: [],
+      fullPageObserver: null,
       fullReaderOpen: false,
+      currentFullPageOrder: 1,
       insertMode: 'after',
       insertPageId: null,
       loadedPages: {},
@@ -295,6 +303,9 @@ export default {
     this.fetchUser();
     this.fetchTagList();
     this.fetchComic();
+  },
+  beforeDestroy() {
+    this.disconnectFullPageObserver();
   },
   methods: {
     fetchUser() {
@@ -430,7 +441,58 @@ export default {
     },
     openFullReader() {
       this.fullReaderOpen = true;
+      this.currentFullPageOrder = 1;
+      this.$nextTick(this.observeFullReaderPages);
       this.loadAllPages();
+    },
+    closeFullReader() {
+      this.fullReaderOpen = false;
+      this.disconnectFullPageObserver();
+    },
+    disconnectFullPageObserver() {
+      if (this.fullPageObserver) {
+        this.fullPageObserver.disconnect();
+        this.fullPageObserver = null;
+      }
+    },
+    observeFullReaderPages() {
+      this.disconnectFullPageObserver();
+      if (!window.IntersectionObserver) {
+        return;
+      }
+      this.fullPageObserver = new IntersectionObserver(
+        (entries) => {
+          let bestEntry = null;
+          entries.forEach(
+            (entry) => {
+              if (!entry.isIntersecting) {
+                return;
+              }
+              if (
+                !bestEntry
+                || entry.intersectionRatio > bestEntry.intersectionRatio
+              ) {
+                bestEntry = entry;
+              }
+            },
+          );
+          if (bestEntry) {
+            this.currentFullPageOrder = parseInt(
+              bestEntry.target.dataset.pageOrder,
+              10,
+            );
+          }
+        },
+        {
+          root: null,
+          threshold: [0.2, 0.45, 0.7],
+        },
+      );
+      this.$el.querySelectorAll('.full-reader-page').forEach(
+        (element) => {
+          this.fullPageObserver.observe(element);
+        },
+      );
     },
     pageProgressText(page) {
       if (this.pageProgress[page.id] === null) {
@@ -800,6 +862,21 @@ export default {
   white-space: nowrap;
   font-size: 1rem;
 }
+.full-reader-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.65rem;
+}
+.full-reader-page-count {
+  padding: 0.32rem 0.62rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
 .full-reader-pages {
   display: grid;
   gap: clamp(1.15rem, 2.8vw, 2.2rem);
@@ -838,6 +915,13 @@ export default {
   }
   .full-reader-bar {
     padding: 0.75rem;
+  }
+  .full-reader-actions {
+    gap: 0.4rem;
+  }
+  .full-reader-page-count {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
   }
   .full-reader-pages {
     gap: 0.8rem;
