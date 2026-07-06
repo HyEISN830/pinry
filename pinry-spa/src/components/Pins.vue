@@ -49,7 +49,11 @@
                   </div>
                 </div>
                 <div class="pin-footer">
-                  <div class="description" v-show="item.description" v-html="niceLinks(item.description)"></div>
+                  <div
+                    class="description"
+                    v-show="item.description"
+                    v-html="niceLinks(item.description)">
+                  </div>
                   <div class="board-list" v-if="item.boards.length > 0">
                     <span class="dim">{{ $t("boardsLink") }}:&nbsp;</span>
                     <template v-for="board in item.boards">
@@ -132,22 +136,46 @@ function sourceText(url) {
   return (url || '').trim();
 }
 
-function getResponsiveGridColumns() {
+function getResponsiveCardWidth(viewportWidth) {
+  if (viewportWidth >= 2328) {
+    return 320;
+  }
+  if (viewportWidth >= 2073) {
+    return 300;
+  }
+  if (viewportWidth >= 1563) {
+    return 270;
+  }
+  return 240;
+}
+
+function getResponsiveGridSignature() {
   if (typeof window === 'undefined') {
-    return 1;
+    return '240-1';
   }
   const viewportWidth = window.innerWidth
     || document.documentElement.clientWidth
     || 0;
-  const itemWidth = 240;
-  const gutterWidth = 15;
+  const itemWidth = getResponsiveCardWidth(viewportWidth);
+  const gutterWidth = viewportWidth >= 1563 ? 18 : 15;
   const sidePadding = 48;
-  return Math.max(
+  const columns = Math.max(
     1,
     Math.floor(
       (viewportWidth - sidePadding + gutterWidth) / (itemWidth + gutterWidth),
     ),
   );
+  return `${itemWidth}-${columns}`;
+}
+
+function isDocumentScrollable() {
+  const doc = document.documentElement;
+  const body = document.body;
+  const scrollHeight = Math.max(
+    doc.scrollHeight,
+    body ? body.scrollHeight : 0,
+  );
+  return scrollHeight > window.innerHeight + 120;
 }
 
 function createImageItem(pin) {
@@ -168,8 +196,7 @@ function createImageItem(pin) {
   image.referer = pin.referer;
   image.orgianl_width = pin.image.width;
   image.style = {
-    width: `${pin.image.thumbnail.width}px`,
-    height: `${pin.image.thumbnail.height}px`,
+    aspectRatio: `${pin.image.thumbnail.width} / ${pin.image.thumbnail.height}`,
   };
   image.imageVisible = false;
   image.class = {
@@ -182,7 +209,8 @@ function initialData() {
   return {
     blocks: [],
     blocksMap: {},
-    gridColumns: getResponsiveGridColumns(),
+    gridSignature: getResponsiveGridSignature(),
+    fillViewportTimer: null,
     masonryKey: 0,
     resizeTimer: null,
     suppressNextPreviewId: null,
@@ -322,6 +350,7 @@ export default {
         { 'image-loaded': true },
       );
       this.blocksMap[itemId].style.height = 'auto';
+      this.scheduleViewportFillCheck();
     },
     refreshMasonryLayout() {
       this.masonryKey += 1;
@@ -337,13 +366,30 @@ export default {
         window.clearTimeout(this.resizeTimer);
       }
       this.resizeTimer = window.setTimeout(() => {
-        const columns = getResponsiveGridColumns();
-        if (columns === this.gridColumns) {
+        const signature = getResponsiveGridSignature();
+        if (signature === this.gridSignature) {
           return;
         }
-        this.gridColumns = columns;
+        this.gridSignature = signature;
         this.refreshMasonryLayout();
+        this.scheduleViewportFillCheck();
       }, 120);
+    },
+    scheduleViewportFillCheck() {
+      if (this.fillViewportTimer) {
+        window.clearTimeout(this.fillViewportTimer);
+      }
+      this.fillViewportTimer = window.setTimeout(() => {
+        this.fillViewportTimer = null;
+        if (
+          this.status.loading
+          || !this.status.hasNext
+          || isDocumentScrollable()
+        ) {
+          return;
+        }
+        this.fetchMore();
+      }, 180);
     },
     registerScrollEvent() {
       const self = this;
@@ -474,7 +520,10 @@ export default {
           this.status.offset = newBlocks.length;
           this.status.hasNext = !(next === null);
           this.status.loading = false;
-          this.$nextTick(() => this.observeLazyImages());
+          this.$nextTick(() => {
+            this.observeLazyImages();
+            this.scheduleViewportFillCheck();
+          });
         },
         () => { this.status.loading = false; },
       );
@@ -498,6 +547,9 @@ export default {
     if (this.resizeTimer) {
       window.clearTimeout(this.resizeTimer);
     }
+    if (this.fillViewportTimer) {
+      window.clearTimeout(this.fillViewportTimer);
+    }
     if (this.suppressPreviewTimer) {
       window.clearTimeout(this.suppressPreviewTimer);
     }
@@ -511,12 +563,12 @@ export default {
 @import 'utils/pin';
 
 .grid-sizer,
-.grid-item { width: $pin-preview-width; }
+.grid-item { width: var(--pin-card-width, #{$pin-preview-width}); }
 .grid-item {
   margin-bottom: 18px;
 }
 .gutter-sizer {
-  width: 15px;
+  width: var(--pin-grid-gutter, 15px);
 }
 
 /* pin-image transition */
@@ -561,7 +613,8 @@ $avatar-height: 30px;
   .pin-preview-image {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     cursor: zoom-in;
   }
   > img {
@@ -606,7 +659,7 @@ $avatar-height: 30px;
 .lazy-image-placeholder {
   width: 100%;
   height: 100%;
-  min-height: 120px;
+  min-height: 140px;
   background: linear-gradient(90deg, #f2f4f7 0%, #e6eaf0 45%, #f2f4f7 100%);
   background-size: 220% 100%;
   animation: placeholderPulse 1.4s ease-in-out infinite;
@@ -664,7 +717,7 @@ $avatar-height: 30px;
     border-bottom: 1px solid #eef1f5;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.45;
     color: #263238;
   }
@@ -673,7 +726,7 @@ $avatar-height: 30px;
     padding: 9px 12px;
     border-bottom: 1px solid #eef1f5;
     background-color: #f7fbff;
-    font-size: 13px;
+    font-size: 14px;
   }
   .board-link {
     display: inline-block;
@@ -684,10 +737,10 @@ $avatar-height: 30px;
   .details {
     @include secondary-font;
     padding: 12px;
-    font-size: 13px;
+    font-size: 14px;
     > .pin-info {
-      line-height: 18px;
-      width: 220px;
+      line-height: 19px;
+      width: calc(var(--pin-card-width, #{$pin-preview-width}) - 50px);
       padding-left: $avatar-width + 5px;
     }
     .pin-info a {
@@ -705,7 +758,7 @@ $avatar-height: 30px;
     border-radius: 6px;
     background: #fffaf0;
     color: #8a6d1d;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.35;
   }
 }

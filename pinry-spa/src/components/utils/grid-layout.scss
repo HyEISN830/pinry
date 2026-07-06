@@ -13,6 +13,8 @@
 */
 @mixin screen-grid-layout($selector) {
   #{$selector} {
+    --pin-card-width: 240px;
+    --pin-grid-gutter: 15px;
     width: 100%;
     max-width: 240px;
     margin-right: auto;
@@ -45,32 +47,36 @@
   }
   @media screen and (min-width: 1563px) {
     #{$selector} {
-      max-width: 1515px;
+      --pin-card-width: 270px;
+      --pin-grid-gutter: 18px;
+      max-width: 1710px;
     }
   }
   @media screen and (min-width: 1818px) {
     #{$selector} {
-      max-width: 1770px;
+      max-width: 1710px;
     }
   }
   @media screen and (min-width: 2073px) {
     #{$selector} {
-      max-width: 2025px;
+      --pin-card-width: 300px;
+      max-width: 2190px;
     }
   }
   @media screen and (min-width: 2328px) {
     #{$selector} {
-      max-width: 2280px;
+      --pin-card-width: 320px;
+      max-width: 2330px;
     }
   }
   @media screen and (min-width: 2583px) {
     #{$selector} {
-      max-width: 2535px;
+      max-width: 2330px;
     }
   }
   @media screen and (min-width: 2838px) {
     #{$selector} {
-      max-width: 2790px;
+      max-width: 2665px;
     }
   }
 }

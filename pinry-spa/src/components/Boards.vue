@@ -72,22 +72,46 @@ import placeholder from '../assets/pinry-placeholder.jpg';
 import BoardEditorUI from './editors/BoardEditUI.vue';
 import bus from './utils/bus';
 
-function getResponsiveGridColumns() {
+function getResponsiveCardWidth(viewportWidth) {
+  if (viewportWidth >= 2328) {
+    return 320;
+  }
+  if (viewportWidth >= 2073) {
+    return 300;
+  }
+  if (viewportWidth >= 1563) {
+    return 270;
+  }
+  return 240;
+}
+
+function getResponsiveGridSignature() {
   if (typeof window === 'undefined') {
-    return 1;
+    return '240-1';
   }
   const viewportWidth = window.innerWidth
     || document.documentElement.clientWidth
     || 0;
-  const itemWidth = 240;
-  const gutterWidth = 15;
+  const itemWidth = getResponsiveCardWidth(viewportWidth);
+  const gutterWidth = viewportWidth >= 1563 ? 18 : 15;
   const sidePadding = 48;
-  return Math.max(
+  const columns = Math.max(
     1,
     Math.floor(
       (viewportWidth - sidePadding + gutterWidth) / (itemWidth + gutterWidth),
     ),
   );
+  return `${itemWidth}-${columns}`;
+}
+
+function isDocumentScrollable() {
+  const doc = document.documentElement;
+  const body = document.body;
+  const scrollHeight = Math.max(
+    doc.scrollHeight,
+    body ? body.scrollHeight : 0,
+  );
+  return scrollHeight > window.innerHeight + 120;
 }
 
 function createBoardItem(board) {
@@ -110,9 +134,9 @@ function createBoardItem(board) {
   } else {
     boardItem.preview_image_url = defaultPreviewImage;
   }
+  const thumbnail = previewImage.image.thumbnail;
   boardItem.style = {
-    width: `${previewImage.image.thumbnail.width}px`,
-    height: `${previewImage.image.thumbnail.height}px`,
+    aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
   };
   boardItem.imageVisible = false;
   boardItem.class = {};
@@ -125,7 +149,8 @@ function initialData() {
     currentEditBoard: null,
     blocks: [],
     blocksMap: {},
-    gridColumns: getResponsiveGridColumns(),
+    gridSignature: getResponsiveGridSignature(),
+    fillViewportTimer: null,
     masonryKey: 0,
     resizeTimer: null,
     status: {
@@ -252,6 +277,7 @@ export default {
         { 'image-loaded': true },
       );
       this.blocksMap[itemId].style.height = 'auto';
+      this.scheduleViewportFillCheck();
     },
     refreshMasonryLayout() {
       this.masonryKey += 1;
@@ -267,13 +293,30 @@ export default {
         window.clearTimeout(this.resizeTimer);
       }
       this.resizeTimer = window.setTimeout(() => {
-        const columns = getResponsiveGridColumns();
-        if (columns === this.gridColumns) {
+        const signature = getResponsiveGridSignature();
+        if (signature === this.gridSignature) {
           return;
         }
-        this.gridColumns = columns;
+        this.gridSignature = signature;
         this.refreshMasonryLayout();
+        this.scheduleViewportFillCheck();
       }, 120);
+    },
+    scheduleViewportFillCheck() {
+      if (this.fillViewportTimer) {
+        window.clearTimeout(this.fillViewportTimer);
+      }
+      this.fillViewportTimer = window.setTimeout(() => {
+        this.fillViewportTimer = null;
+        if (
+          this.status.loading
+          || !this.status.hasNext
+          || isDocumentScrollable()
+        ) {
+          return;
+        }
+        this.fetchMore();
+      }, 180);
     },
     registerScrollEvent() {
       const self = this;
@@ -340,7 +383,10 @@ export default {
           this.status.offset = newBlocks.length;
           this.status.hasNext = !(next === null);
           this.status.loading = false;
-          this.$nextTick(() => this.observeLazyImages());
+          this.$nextTick(() => {
+            this.observeLazyImages();
+            this.scheduleViewportFillCheck();
+          });
         },
         () => { this.status.loading = false; },
       );
@@ -360,6 +406,9 @@ export default {
     if (this.resizeTimer) {
       window.clearTimeout(this.resizeTimer);
     }
+    if (this.fillViewportTimer) {
+      window.clearTimeout(this.fillViewportTimer);
+    }
     window.removeEventListener('resize', this.handleResize);
   },
 };
@@ -370,12 +419,12 @@ export default {
 @import 'utils/pin';
 
 .grid-sizer,
-.grid-item { width: $pin-preview-width; }
+.grid-item { width: var(--pin-card-width, #{$pin-preview-width}); }
 .grid-item {
   margin-bottom: 22px;
 }
 .gutter-sizer {
-  width: 15px;
+  width: var(--pin-grid-gutter, 15px);
 }
 
 .grid {
@@ -439,8 +488,8 @@ $avatar-height: 30px;
   .card-image img {
     display: block;
     width: 100%;
-    height: auto;
-    min-width: $pin-preview-width;
+    height: 100%;
+    object-fit: cover;
     background-color: white;
     @include loader('../assets/loader.gif');
   }
@@ -452,7 +501,7 @@ $avatar-height: 30px;
 .lazy-image-placeholder {
   width: 100%;
   height: 100%;
-  min-height: 150px;
+  min-height: 170px;
   background: linear-gradient(90deg, #f2f4f7 0%, #e6eaf0 45%, #f2f4f7 100%);
   background-size: 220% 100%;
   animation: placeholderPulse 1.4s ease-in-out infinite;
@@ -468,12 +517,12 @@ $avatar-height: 30px;
     padding: 0 12px 12px;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 13px;
+    font-size: 14px;
   }
   .board-info {
     padding: 12px 12px 6px;
     color: #22313f;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.3;
   }
   .num-pins {
