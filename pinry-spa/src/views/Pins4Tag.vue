@@ -13,6 +13,11 @@
       :title="$t('comicsLink')"
       v-on:comics-meta-loaded="onComicsMetaLoaded">
     </Comics>
+    <section class="section tag-pin-heading">
+      <div class="container">
+        <h1>{{ $t("pinsLink") }}</h1>
+      </div>
+    </section>
     <Pins
       :pin-filters="filters"
       v-on:pins-meta-loaded="onPinsMetaLoaded">
@@ -80,4 +85,17 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+@import '../components/utils/grid-layout';
+
+.tag-pin-heading {
+  padding-top: 0.5rem;
+  padding-bottom: 0;
+}
+.tag-pin-heading h1 {
+  margin: 0;
+  color: #22313f;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+@include screen-grid-layout(".tag-pin-heading .container");
 </style>

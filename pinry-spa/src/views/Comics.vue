@@ -571,8 +571,8 @@ export default {
 .comic-cover {
   position: relative;
   isolation: isolate;
-  aspect-ratio: 4 / 3;
-  min-height: 150px;
+  aspect-ratio: 2 / 3;
+  min-height: 220px;
   overflow: hidden;
   border-radius: 8px 8px 0 0;
   background: #f7f3ff;
@@ -594,7 +594,7 @@ export default {
   position: absolute;
   z-index: 0;
   inset: 0;
-  background: rgba(255, 255, 255, 0.36);
+  background: rgba(255, 255, 255, 0.18);
 }
 .comic-cover img {
   position: relative;
@@ -602,8 +602,7 @@ export default {
   display: block;
   width: 100%;
   height: 100%;
-  padding: 7px;
-  object-fit: contain;
+  object-fit: cover;
 }
 .comic-info {
   padding: 0.85rem;
