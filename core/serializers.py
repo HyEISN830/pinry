@@ -47,6 +47,7 @@ def filter_private_comic(request, query):
         'pages',
         'pages__image',
         'pages__image__thumbnail_set',
+        'tags',
     )
 
 
@@ -242,6 +243,7 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
             'private',
             'published',
             'submitter',
+            'tags',
             'total_pages',
             'cover',
             'pages',
@@ -252,6 +254,11 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
         read_only_fields = ('submitter', 'published')
 
     submitter = UserSerializer(read_only=True)
+    tags = TagSerializer(
+        many=True,
+        source="tag_list",
+        required=False,
+    )
     total_pages = serializers.SerializerMethodField(read_only=True)
     cover = serializers.SerializerMethodField(read_only=True)
     pages = ComicPageSerializer(many=True, read_only=True)
@@ -335,10 +342,13 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
 
     def create(self, validated_data):
         pages_to_add = validated_data.pop('pages_to_add', [])
+        tags = validated_data.pop('tag_list', [])
         validated_data.pop('pages_to_remove', None)
         validated_data.pop('pages_to_reorder', None)
         validated_data['submitter'] = self.context['request'].user
         comic = super(ComicSerializer, self).create(validated_data)
+        if tags:
+            comic.tags.set(*tags)
         for page_data in pages_to_add:
             self._add_page(
                 comic,
@@ -352,7 +362,10 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
         pages_to_add = validated_data.pop('pages_to_add', [])
         pages_to_remove = validated_data.pop('pages_to_remove', [])
         pages_to_reorder = validated_data.pop('pages_to_reorder', [])
+        tags = validated_data.pop('tag_list', None)
         instance = super(ComicSerializer, self).update(instance, validated_data)
+        if tags is not None:
+            instance.tags.set(*tags)
         if pages_to_remove:
             self._remove_pages(instance, pages_to_remove)
         if pages_to_reorder:

@@ -26,6 +26,19 @@
             :placeholder="$t('pinCreateModalImageSourcePlaceholder')">
           </b-input>
         </b-field>
+        <b-field :label="$t('tagsLabel')">
+          <b-taginput
+            ref="tagInput"
+            v-model="form.tags"
+            :data="filteredTagOptions"
+            autocomplete
+            allow-new
+            field="name"
+            :placeholder="$t('pinCreateModalImageTagsPlaceholder')"
+            @typing="getFilteredTags">
+            <template slot="empty">{{ $t("noResultsFound") }}</template>
+          </b-taginput>
+        </b-field>
         <b-field :label="$t('privacyOptionLabel')">
           <b-checkbox v-model="form.private">
             {{ $t("isPrivateCheckbox") }}
@@ -72,6 +85,26 @@
 import API from '../api';
 import Loading from '../utils/Loading';
 
+function splitTags(tagText) {
+  return tagText.split(/[,\uFF0C]/)
+    .map(tag => tag.trim())
+    .filter(tag => tag.length > 0);
+}
+
+function uniqueTags(tags) {
+  const seen = {};
+  const normalized = [];
+  tags.forEach(
+    (tag) => {
+      if (!seen[tag]) {
+        seen[tag] = true;
+        normalized.push(tag);
+      }
+    },
+  );
+  return normalized;
+}
+
 export default {
   name: 'ComicCreateModal',
   props: {
@@ -87,10 +120,16 @@ export default {
         title: '',
         description: '',
         referer: '',
+        tags: [],
         private: false,
       },
+      filteredTagOptions: [],
       saving: false,
+      tagOptions: [],
     };
+  },
+  created() {
+    this.fetchTagList();
   },
   computed: {
     canSave() {
@@ -100,6 +139,58 @@ export default {
     },
   },
   methods: {
+    fetchTagList() {
+      API.Tag.fetchList().then(
+        (resp) => {
+          this.tagOptions = resp.data;
+        },
+      );
+    },
+    setTagInputText(text) {
+      this.$nextTick(
+        () => {
+          if (this.$refs.tagInput) {
+            this.$refs.tagInput.newTag = text;
+          }
+        },
+      );
+    },
+    normalizeTags() {
+      const tags = [];
+      this.form.tags.forEach(
+        (tag) => {
+          splitTags(tag).forEach(
+            item => tags.push(item),
+          );
+        },
+      );
+      this.form.tags = uniqueTags(tags);
+    },
+    absorbTypedTags(text) {
+      if (!/[,\uFF0C]/.test(text)) {
+        return text;
+      }
+      const parts = text.split(/[,\uFF0C]/);
+      const remainingText = parts.pop();
+      const tags = splitTags(parts.join(','));
+      this.form.tags = uniqueTags(
+        this.form.tags.concat(tags),
+      );
+      this.setTagInputText(remainingText);
+      return remainingText;
+    },
+    getFilteredTags(text) {
+      const filterText = this.absorbTypedTags(text);
+      const filteredTagOptions = [];
+      this.tagOptions.forEach(
+        (option) => {
+          if (option.name.toString().toLowerCase().indexOf(filterText.toLowerCase()) >= 0) {
+            filteredTagOptions.push(option.name);
+          }
+        },
+      );
+      this.filteredTagOptions = filteredTagOptions;
+    },
     onFilesSelected(event) {
       this.files = Array.from(event.target.files || []);
     },
@@ -117,6 +208,7 @@ export default {
         this.saving = false;
         loading.close();
       };
+      this.normalizeTags();
       this.uploadFiles().then(
         (responses) => {
           const pages = responses.map(
@@ -129,6 +221,7 @@ export default {
             title: this.form.title.trim(),
             description: this.form.description,
             referer: this.form.referer,
+            tags: this.form.tags,
             private: this.form.private,
             pages_to_add: pages,
           });

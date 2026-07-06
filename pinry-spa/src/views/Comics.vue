@@ -4,16 +4,43 @@
     <section class="section comics-section">
       <div class="container comics-container">
         <div class="comics-toolbar">
-          <h1>{{ $t("comicsLink") }}</h1>
-          <button
-            v-if="user.loggedIn && !embedded"
-            class="button is-primary"
-            type="button"
-            @click="createComic">
-            {{ $t("NewComicTitle") }}
-          </button>
+          <div>
+            <h1>{{ displayTitle }}</h1>
+            <p v-if="status.count !== null">
+              {{ status.count }} {{ $t("collectionArtworksLabel") }}
+            </p>
+          </div>
+          <div class="toolbar-actions">
+            <button
+              class="button is-light comic-page-button"
+              type="button"
+              :disabled="status.loading || currentPage === 0"
+              :aria-label="$t('previousPageButton')"
+              :title="$t('previousPageButton')"
+              @click="previousPage">
+              ‹
+            </button>
+            <button
+              class="button is-light comic-page-button"
+              type="button"
+              :disabled="status.loading || !status.hasNext"
+              :aria-label="$t('nextPageButton')"
+              :title="$t('nextPageButton')"
+              @click="nextPage">
+              ›
+            </button>
+            <button
+              v-if="user.loggedIn && !embedded && showCreate"
+              class="button is-primary"
+              type="button"
+              @click="createComic">
+              {{ $t("NewComicTitle") }}
+            </button>
+          </div>
         </div>
-        <div class="comic-grid">
+        <div
+          class="comic-grid"
+          :style="gridStyle">
           <article
             class="comic-card"
             v-for="comic in comics"
@@ -49,7 +76,13 @@
             </div>
             <div class="comic-info">
               <h2>{{ comic.title }}</h2>
-              <p>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</p>
+              <div class="comic-author">
+                <img :src="avatarUrl(comic)" alt="">
+                <router-link :to="{ name: 'user', params: { user: comic.submitter.username } }">
+                  {{ comic.submitter.username }}
+                </router-link>
+                <span>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</span>
+              </div>
               <div class="comic-source" v-if="hasSource(comic.referer)">
                 <a
                   v-if="isWebUrl(comic.referer)"
@@ -66,8 +99,7 @@
             </div>
           </article>
         </div>
-        <loadingSpinner v-if="!embedded" :show="status.loading"></loadingSpinner>
-        <noMore v-if="!embedded" :show="!status.hasNext"></noMore>
+        <loadingSpinner :show="status.loading"></loadingSpinner>
       </div>
     </section>
   </div>
@@ -77,9 +109,7 @@
 import API from '../components/api';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
-import noMore from '../components/noMore.vue';
 import modals from '../components/modals';
-import scroll from '../components/utils/scroll';
 
 function isWebUrl(url) {
   return /^https?:\/\//i.test((url || '').trim());
@@ -93,27 +123,63 @@ function sourceText(url) {
   return (url || '').trim();
 }
 
+function comicPageLimit() {
+  if (typeof window === 'undefined') {
+    return 4;
+  }
+  const viewportWidth = window.innerWidth
+    || document.documentElement.clientWidth
+    || 0;
+  if (viewportWidth <= 542) {
+    return 1;
+  }
+  if (viewportWidth <= 860) {
+    return 2;
+  }
+  if (viewportWidth <= 1180) {
+    return 3;
+  }
+  if (viewportWidth <= 1563) {
+    return 4;
+  }
+  return 6;
+}
+
 export default {
   name: 'Comics',
   components: {
     PHeader,
     loadingSpinner,
-    noMore,
   },
   props: {
     embedded: {
       type: Boolean,
       default: false,
     },
+    showCreate: {
+      type: Boolean,
+      default: true,
+    },
+    tagFilter: {
+      type: String,
+      default: null,
+    },
+    title: {
+      type: String,
+      default: null,
+    },
   },
   data() {
     return {
       comics: [],
       currentMenuId: null,
+      currentPage: 0,
+      pageLimit: comicPageLimit(),
+      resizeTimer: null,
       status: {
-        hasNext: true,
+        count: null,
+        hasNext: false,
         loading: false,
-        offset: 0,
       },
       suppressNextOpenId: null,
       suppressOpenTimer: null,
@@ -123,19 +189,40 @@ export default {
       },
     };
   },
+  computed: {
+    displayTitle() {
+      return this.title || this.$t('comicsLink');
+    },
+    gridStyle() {
+      return {
+        '--comic-page-limit': this.pageLimit,
+      };
+    },
+  },
+  watch: {
+    tagFilter() {
+      this.resetPages();
+    },
+  },
   created() {
     this.fetchUser();
-    this.fetchMore(true);
-    if (!this.embedded) {
-      this.registerScrollEvent();
-    }
+    this.fetchPage(0);
+    window.addEventListener('resize', this.handleResize);
   },
   beforeDestroy() {
     if (this.suppressOpenTimer) {
       window.clearTimeout(this.suppressOpenTimer);
     }
+    if (this.resizeTimer) {
+      window.clearTimeout(this.resizeTimer);
+    }
+    window.removeEventListener('resize', this.handleResize);
   },
   methods: {
+    avatarUrl(comic) {
+      return (comic.submitter.avatar && comic.submitter.avatar.small)
+        || `//gravatar.com/avatar/${comic.submitter.gravatar}?s=28`;
+    },
     coverStyle(comic) {
       if (!comic.cover) {
         return {};
@@ -202,39 +289,66 @@ export default {
         },
       );
     },
-    fetchMore(created) {
-      if (!created && (this.status.loading || !this.status.hasNext)) {
+    fetchPage(page) {
+      if (this.status.loading || page < 0) {
         return;
       }
       this.status.loading = true;
-      const limit = this.embedded ? 6 : 18;
-      API.Comic.fetchList(this.status.offset, limit).then(
+      API.Comic.fetchList(
+        page * this.pageLimit,
+        this.pageLimit,
+        this.tagFilter,
+      ).then(
         (resp) => {
-          const { results, next } = resp.data;
-          this.comics = this.comics.concat(results);
-          this.status.offset = this.comics.length;
-          this.status.hasNext = next !== null && !this.embedded;
+          const { count, results, next } = resp.data;
+          this.comics = results;
+          this.currentPage = page;
+          this.status.count = count;
+          this.status.hasNext = next !== null;
           this.status.loading = false;
+          this.$emit('comics-meta-loaded', { count });
         },
         () => {
           this.status.loading = false;
         },
       );
     },
-    registerScrollEvent() {
-      scroll.bindScroll2Bottom(
-        () => this.fetchMore(),
-      );
+    resetPages() {
+      this.comics = [];
+      this.currentPage = 0;
+      this.status.count = null;
+      this.status.hasNext = false;
+      this.fetchPage(0);
+    },
+    handleResize() {
+      if (this.resizeTimer) {
+        window.clearTimeout(this.resizeTimer);
+      }
+      this.resizeTimer = window.setTimeout(() => {
+        const nextLimit = comicPageLimit();
+        if (nextLimit === this.pageLimit) {
+          return;
+        }
+        this.pageLimit = nextLimit;
+        this.resetPages();
+      }, 120);
+    },
+    nextPage() {
+      if (this.status.hasNext) {
+        this.fetchPage(this.currentPage + 1);
+      }
+    },
+    previousPage() {
+      if (this.currentPage > 0) {
+        this.fetchPage(this.currentPage - 1);
+      }
     },
     createComic() {
       modals.openComicCreate(
         this,
         this.user.meta.username,
         () => {
-          this.comics = [];
-          this.status.offset = 0;
-          this.status.hasNext = true;
-          this.fetchMore(true);
+          this.resetPages();
         },
       );
     },
@@ -247,6 +361,9 @@ export default {
             () => {
               this.comics = this.comics.filter(item => item.id !== comic.id);
               this.currentMenuId = null;
+              if (this.comics.length === 0 && this.currentPage > 0) {
+                this.fetchPage(this.currentPage - 1);
+              }
             },
           );
         },
@@ -268,6 +385,9 @@ export default {
 .comics-container {
   margin: 0 auto;
 }
+.comics-section {
+  padding-bottom: 1.25rem;
+}
 .comics-toolbar {
   display: flex;
   align-items: center;
@@ -281,15 +401,33 @@ export default {
   font-size: 1.6rem;
   font-weight: 800;
 }
+.comics-toolbar p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.comic-page-button {
+  width: 2.35rem;
+  min-width: 2.35rem;
+  padding: 0;
+  font-size: 1.45rem;
+  line-height: 1;
+}
 .comic-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--pin-card-width, 240px), 1fr));
+  grid-template-columns: repeat(var(--comic-page-limit), minmax(0, 1fr));
   gap: var(--pin-grid-gutter, 15px);
 }
 .comic-card {
   position: relative;
   isolation: isolate;
   overflow: visible;
+  min-width: 0;
   color: inherit;
   cursor: pointer;
   border: 1px solid rgba(126, 87, 194, 0.42);
@@ -361,7 +499,7 @@ export default {
   transform: translateY(-6px) scale(0.96);
 }
 .comic-cover {
-  min-height: 170px;
+  min-height: 150px;
   overflow: hidden;
   border-radius: 8px 8px 0 0;
   background: #f5f7fa;
@@ -377,16 +515,47 @@ export default {
   border-top: 1px solid #efe9ff;
 }
 .comic-info h2 {
+  overflow: hidden;
   margin: 0;
   color: #22313f;
   font-size: 16px;
   font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.comic-info p,
-.comic-source {
-  margin: 0.35rem 0 0;
+.comic-author {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin-top: 0.45rem;
   color: #64748b;
-  font-size: 14px;
+  font-size: 13px;
+}
+.comic-author img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.comic-author a {
+  overflow: hidden;
+  min-width: 0;
+  color: #334155;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.comic-author span {
+  flex: 0 0 auto;
+}
+.comic-source {
+  overflow: hidden;
+  margin: 0.45rem 0 0;
+  color: #64748b;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .comic-source a,
 .comic-source span {
@@ -400,9 +569,11 @@ export default {
   .comics-toolbar {
     display: block;
   }
-  .comics-toolbar .button {
-    width: 100%;
-    margin-top: 1rem;
+  .toolbar-actions {
+    margin-top: 0.8rem;
+  }
+  .toolbar-actions .button.is-primary {
+    flex: 1 1 auto;
   }
 }
 @include screen-grid-layout(".comics-container");

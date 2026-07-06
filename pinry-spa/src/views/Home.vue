@@ -1,7 +1,12 @@
 <template>
   <div class="home">
     <PHeader></PHeader>
-    <Comics embedded></Comics>
+    <Comics embedded :title="$t('comicsLink')"></Comics>
+    <section class="section home-pin-heading">
+      <div class="container">
+        <h1>{{ $t("pinsLink") }}</h1>
+      </div>
+    </section>
     <Pins></Pins>
   </div>
 </template>
@@ -23,4 +28,14 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.home-pin-heading {
+  padding-top: 0.5rem;
+  padding-bottom: 0;
+}
+.home-pin-heading h1 {
+  margin: 0;
+  color: #22313f;
+  font-size: 1.6rem;
+  font-weight: 800;
+}
 </style>

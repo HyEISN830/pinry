@@ -81,11 +81,19 @@ const Comic = {
     const url = `${API_PREFIX}comics/`;
     return axios.post(url, data);
   },
-  fetchList(offset = 0, limit = 18) {
+  fetchList(offset = 0, limit = 18, tagFilter = null) {
     const url = `${API_PREFIX}comics/`;
+    const params = {
+      offset,
+      limit,
+      ordering: '-id',
+    };
+    if (tagFilter) {
+      params.tags__name = tagFilter;
+    }
     return axios.get(
       url,
-      { params: { offset, limit, ordering: '-id' } },
+      { params },
     );
   },
   get(comicId) {

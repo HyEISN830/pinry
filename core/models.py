@@ -104,6 +104,10 @@ class Comic(models.Model):
     referer = models.CharField(null=True, blank=True, max_length=2048)
     private = models.BooleanField(default=False, blank=False)
     published = models.DateTimeField(auto_now_add=True)
+    tags = TaggableManager(blank=True)
+
+    def tag_list(self):
+        return self.tags.all()
 
 
 class ComicPage(models.Model):

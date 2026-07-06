@@ -19,6 +19,14 @@
             <div class="reader-source is-warning" v-else>
               {{ $t("missingSourceNotice") }}
             </div>
+            <div class="reader-tags" v-if="comic.tags.length > 0">
+              <router-link
+                v-for="tag in comic.tags"
+                :key="tag"
+                :to="{ name: 'tag', params: { tag } }">
+                {{ tag }}
+              </router-link>
+            </div>
           </div>
           <div class="reader-actions">
             <button
@@ -44,6 +52,19 @@
               maxlength="2048"
               :placeholder="$t('pinCreateModalImageSourcePlaceholder')">
             </b-input>
+          </b-field>
+          <b-field :label="$t('tagsLabel')">
+            <b-taginput
+              ref="tagInput"
+              v-model="editForm.tags"
+              :data="filteredTagOptions"
+              autocomplete
+              allow-new
+              field="name"
+              :placeholder="$t('pinCreateModalImageTagsPlaceholder')"
+              @typing="getFilteredTags">
+              <template slot="empty">{{ $t("noResultsFound") }}</template>
+            </b-taginput>
           </b-field>
           <button
             class="button is-light editor-save-button"
@@ -87,7 +108,7 @@
         <div class="reader-pages" v-if="comic">
           <figure
             class="reader-page"
-            v-for="page in comic.pages"
+            v-for="page in visibleReaderPages"
             :key="page.id">
             <div class="page-tools" v-if="isOwner && editing">
               <button
@@ -122,6 +143,17 @@
             </div>
             <figcaption v-if="page.caption">{{ page.caption }}</figcaption>
           </figure>
+        </div>
+        <div
+          class="read-teaser"
+          v-if="shouldShowReadTeaser"
+          @click="openFullReader">
+          <img
+            :src="secondPage.image.thumbnail.image"
+            :alt="`${comic.title} ${secondPage.order}`">
+          <button class="button is-primary" type="button">
+            {{ $t("readFullComicButton") }}
+          </button>
         </div>
         <loadingSpinner :show="loading"></loadingSpinner>
       </div>
@@ -170,6 +202,26 @@ import {
   getCachedImage,
 } from '../components/utils/originalImageCache';
 
+function splitTags(tagText) {
+  return tagText.split(/[,\uFF0C]/)
+    .map(tag => tag.trim())
+    .filter(tag => tag.length > 0);
+}
+
+function uniqueTags(tags) {
+  const seen = {};
+  const normalized = [];
+  tags.forEach(
+    (tag) => {
+      if (!seen[tag]) {
+        seen[tag] = true;
+        normalized.push(tag);
+      }
+    },
+  );
+  return normalized;
+}
+
 export default {
   name: 'ComicReader',
   components: {
@@ -185,7 +237,9 @@ export default {
       detailSaving: false,
       editForm: {
         referer: '',
+        tags: [],
       },
+      filteredTagOptions: [],
       fullReaderOpen: false,
       insertMode: 'after',
       insertPageId: null,
@@ -194,6 +248,7 @@ export default {
       loadingAll: false,
       pageLoading: {},
       pageProgress: {},
+      tagOptions: [],
       user: {
         loggedIn: false,
         meta: {},
@@ -201,14 +256,44 @@ export default {
     };
   },
   computed: {
+    firstPage() {
+      if (!this.comic || this.comic.pages.length === 0) {
+        return null;
+      }
+      const [page] = this.comic.pages;
+      return page;
+    },
     isOwner() {
       return this.user.loggedIn
         && this.comic
         && this.comic.submitter.username === this.user.meta.username;
     },
+    secondPage() {
+      if (!this.comic || this.comic.pages.length < 2) {
+        return null;
+      }
+      const [, page] = this.comic.pages;
+      return page;
+    },
+    shouldShowReadTeaser() {
+      return !this.editing
+        && this.firstPage
+        && this.secondPage
+        && !!this.loadedPages[this.firstPage.id];
+    },
+    visibleReaderPages() {
+      if (!this.comic) {
+        return [];
+      }
+      if (this.editing) {
+        return this.comic.pages;
+      }
+      return this.firstPage ? [this.firstPage] : [];
+    },
   },
   created() {
     this.fetchUser();
+    this.fetchTagList();
     this.fetchComic();
   },
   methods: {
@@ -231,6 +316,7 @@ export default {
           this.comic = resp.data;
           this.loading = false;
           this.editForm.referer = this.comic.referer || '';
+          this.editForm.tags = this.comic.tags || [];
           if (this.comic.pages.length > 0) {
             if (this.insertPageId === null) {
               this.insertPageId = this.comic.pages[0].id;
@@ -352,18 +438,75 @@ export default {
       }
       return `${this.pageProgress[page.id]}%`;
     },
+    fetchTagList() {
+      API.Tag.fetchList().then(
+        (resp) => {
+          this.tagOptions = resp.data;
+        },
+      );
+    },
+    setTagInputText(text) {
+      this.$nextTick(
+        () => {
+          if (this.$refs.tagInput) {
+            this.$refs.tagInput.newTag = text;
+          }
+        },
+      );
+    },
+    normalizeTags() {
+      const tags = [];
+      this.editForm.tags.forEach(
+        (tag) => {
+          splitTags(tag).forEach(
+            item => tags.push(item),
+          );
+        },
+      );
+      this.editForm.tags = uniqueTags(tags);
+    },
+    absorbTypedTags(text) {
+      if (!/[,\uFF0C]/.test(text)) {
+        return text;
+      }
+      const parts = text.split(/[,\uFF0C]/);
+      const remainingText = parts.pop();
+      const tags = splitTags(parts.join(','));
+      this.editForm.tags = uniqueTags(
+        this.editForm.tags.concat(tags),
+      );
+      this.setTagInputText(remainingText);
+      return remainingText;
+    },
+    getFilteredTags(text) {
+      const filterText = this.absorbTypedTags(text);
+      const filteredTagOptions = [];
+      this.tagOptions.forEach(
+        (option) => {
+          if (option.name.toString().toLowerCase().indexOf(filterText.toLowerCase()) >= 0) {
+            filteredTagOptions.push(option.name);
+          }
+        },
+      );
+      this.filteredTagOptions = filteredTagOptions;
+    },
     saveComicDetails() {
       if (this.detailSaving) {
         return;
       }
       this.detailSaving = true;
+      this.normalizeTags();
       API.Comic.saveChanges(
         this.comic.id,
-        { referer: this.editForm.referer },
+        {
+          referer: this.editForm.referer,
+          tags: this.editForm.tags,
+        },
       ).then(
         (resp) => {
           this.comic = resp.data;
           this.editForm.referer = this.comic.referer || '';
+          this.editForm.tags = this.comic.tags || [];
           this.detailSaving = false;
         },
         () => {
@@ -507,6 +650,20 @@ export default {
   color: #8a6d1d;
   background: #fff8dc;
 }
+.reader-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+.reader-tags a {
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  color: #4f46e5;
+  background: #eef2ff;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
 .comic-editor {
   margin-bottom: 1rem;
   padding: 1rem;
@@ -551,6 +708,46 @@ export default {
   color: #64748b;
   background: #fff;
   text-align: left;
+}
+.read-teaser {
+  position: relative;
+  height: clamp(120px, 18vw, 210px);
+  margin-top: 1rem;
+  overflow: hidden;
+  border: 1px solid rgba(126, 87, 194, 0.26);
+  border-radius: 8px;
+  cursor: pointer;
+  background: #111827;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.read-teaser::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(17, 24, 39, 0.08),
+    rgba(17, 24, 39, 0.74)
+  );
+}
+.read-teaser img {
+  display: block;
+  width: 100%;
+  height: 300%;
+  object-fit: cover;
+  object-position: top center;
+  filter: blur(3px);
+  transform: scale(1.02);
+}
+.read-teaser .button {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  left: 50%;
+  min-width: 9rem;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.24);
 }
 .page-progress {
   position: absolute;

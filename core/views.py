@@ -110,8 +110,8 @@ class BoardViewSet(viewsets.ModelViewSet):
 class ComicViewSet(viewsets.ModelViewSet):
     serializer_class = api.ComicSerializer
     filter_backends = (DjangoFilterBackend, OrderingFilter, SearchFilter)
-    search_fields = ("title", "description")
-    filter_fields = ("submitter__username", )
+    search_fields = ("title", "description", "tags__name")
+    filter_fields = ("submitter__username", "tags__name")
     ordering_fields = ('-id', )
     ordering = ('-id', )
     permission_classes = [IsOwnerOrReadOnly("submitter"), OwnerOnlyIfPrivate("submitter")]
