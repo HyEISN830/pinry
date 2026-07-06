@@ -51,7 +51,7 @@
   "imageLoadingText": "正在加载图片...",
   "imageLoadFailedText": "图片加载失败。",
   "pinnedByInfo": "创建者",
-  "sourceLink": "来源",
+  "sourceLink": "跳转来源",
   "missingSourceNotice": "无来源，谨慎使用",
   "userProfileCardContent": "也许是另一个 Piny 用户",
   "avatarUserProfileCardTitle": "头像",

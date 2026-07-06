@@ -76,12 +76,20 @@
               <h2>{{ comic.title }}</h2>
               <div class="comic-tags" v-if="comic.tags && comic.tags.length > 0">
                 <router-link
-                  v-for="tag in comic.tags"
+                  v-for="tag in visibleTags(comic)"
                   :key="tag"
                   :to="{ name: 'tag', params: { tag } }"
                   @click.stop>
                   {{ tag }}
                 </router-link>
+                <button
+                  v-if="hiddenTagCount(comic) > 0"
+                  class="comic-tag-more"
+                  type="button"
+                  :title="comic.title"
+                  @click.stop="openComic(comic, $event)">
+                  ...
+                </button>
               </div>
               <div class="comic-author">
                 <img :src="avatarUrl(comic)" alt="">
@@ -140,6 +148,8 @@ function hasSource(url) {
 function sourceText(url) {
   return (url || '').trim();
 }
+
+const VISIBLE_COMIC_TAGS = 4;
 
 function comicPageLimit(largeCards = false) {
   if (typeof window === 'undefined') {
@@ -372,6 +382,12 @@ export default {
       if (this.currentPage > 0) {
         this.fetchPage(this.currentPage - 1);
       }
+    },
+    hiddenTagCount(comic) {
+      return Math.max(0, (comic.tags || []).length - VISIBLE_COMIC_TAGS);
+    },
+    visibleTags(comic) {
+      return (comic.tags || []).slice(0, VISIBLE_COMIC_TAGS);
     },
     createComic() {
       modals.openComicCreate(
@@ -625,9 +641,11 @@ export default {
   margin-top: 0.48rem;
   overflow: hidden;
 }
-.comic-tags a {
+.comic-tags a,
+.comic-tag-more {
   max-width: 100%;
   padding: 0.15rem 0.42rem;
+  border: 0;
   border-radius: 999px;
   color: #6d4bc1;
   background: #f2edff;
@@ -637,6 +655,15 @@ export default {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
+}
+.comic-tag-more {
+  color: #64748b;
+  background: #eef1f5;
+  cursor: pointer;
+}
+.comic-tag-more:hover {
+  color: #334155;
+  background: #e2e8f0;
 }
 .comic-author {
   display: flex;

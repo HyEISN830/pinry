@@ -81,8 +81,9 @@
                           &nbsp;in&nbsp;
                           <template v-for="tag in item.tags">
                             <span v-bind:key="tag" class="pin-tag">
-                              <router-link :to="{ name: 'tag', params: {tag: tag} }"
-                                           params="{tag: tag}">{{ tag }}</router-link>
+                              <router-link :to="{ name: 'tag', params: { tag } }">
+                                {{ tag }}
+                              </router-link>
                             </span>
                           </template>
                         </template>
@@ -628,7 +629,25 @@ $avatar-height: 30px;
     border-radius: 3px;
   }
   .pin-tag {
-    margin-right: 0.2rem;
+    display: inline-flex;
+    margin: 0.12rem 0.18rem 0.12rem 0;
+    a {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      padding: 0.12rem 0.42rem;
+      border-radius: 999px;
+      color: #1f6feb;
+      background: #eaf3ff;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.35;
+      transition: background .16s ease, color .16s ease;
+    }
+    a:hover {
+      color: #0f4fb8;
+      background: #d9eaff;
+    }
   }
 }
 .pin-masonry.is-visible .pin-card,
