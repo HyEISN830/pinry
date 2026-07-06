@@ -238,6 +238,7 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
             'id',
             'title',
             'description',
+            'referer',
             'private',
             'published',
             'submitter',

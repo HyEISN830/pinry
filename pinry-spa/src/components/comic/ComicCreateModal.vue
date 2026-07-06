@@ -19,6 +19,13 @@
             maxlength="1024">
           </b-input>
         </b-field>
+        <b-field :label="$t('imageSourceLabel')">
+          <b-input
+            v-model="form.referer"
+            maxlength="2048"
+            :placeholder="$t('pinCreateModalImageSourcePlaceholder')">
+          </b-input>
+        </b-field>
         <b-field :label="$t('privacyOptionLabel')">
           <b-checkbox v-model="form.private">
             {{ $t("isPrivateCheckbox") }}
@@ -79,6 +86,7 @@ export default {
       form: {
         title: '',
         description: '',
+        referer: '',
         private: false,
       },
       saving: false,
@@ -120,6 +128,7 @@ export default {
           return API.Comic.create({
             title: this.form.title.trim(),
             description: this.form.description,
+            referer: this.form.referer,
             private: this.form.private,
             pages_to_add: pages,
           });

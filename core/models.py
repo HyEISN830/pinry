@@ -101,6 +101,7 @@ class Comic(models.Model):
     submitter = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=128, blank=False, null=False)
     description = models.TextField(blank=True, null=True)
+    referer = models.CharField(null=True, blank=True, max_length=2048)
     private = models.BooleanField(default=False, blank=False)
     published = models.DateTimeField(auto_now_add=True)
 
@@ -145,6 +146,20 @@ class Pin(models.Model):
 @receiver(models.signals.post_delete, sender=Pin)
 def delete_pin_images(sender, instance, **kwargs):
     try:
-        instance.image.delete()
+        image = instance.image
+        if image.pin.exists() or image.comic_pages.exists():
+            return
+        image.delete()
+    except Image.DoesNotExist:
+        pass
+
+
+@receiver(models.signals.post_delete, sender=ComicPage)
+def delete_unused_comic_page_images(sender, instance, **kwargs):
+    try:
+        image = instance.image
+        if image.pin.exists() or image.comic_pages.exists():
+            return
+        image.delete()
     except Image.DoesNotExist:
         pass
