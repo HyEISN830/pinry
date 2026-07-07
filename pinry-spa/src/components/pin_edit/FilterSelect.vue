@@ -17,6 +17,12 @@
         class="button is-primary">
         {{ $t("filterSelectCreateNewBoardButton") }}
       </button>
+      <button
+        @click="clearSelection"
+        class="button is-light clear-button"
+        type="button">
+        {{ $t("clearBoardSelectionButton") }}
+      </button>
     </b-field>
     <b-field>
       <b-select
@@ -68,6 +74,12 @@ export default {
         return [];
       },
     },
+    selectedValues: {
+      type: Array,
+      default() {
+        return [];
+      },
+    },
   },
   data() {
     const model = ModelForm.fromFields(fields);
@@ -95,6 +107,9 @@ export default {
     },
     select(board) {
       this.selectedOptions = [board.value];
+    },
+    clearSelection() {
+      this.selectedOptions = [];
     },
     createNewBoard() {
       const self = this;
@@ -126,6 +141,15 @@ export default {
     },
     allOptions() {
       this.availableOptions = this.allOptions;
+      if (this.selectedOptions.length > 0) {
+        this.syncNameFromSelection();
+      }
+    },
+    selectedValues: {
+      handler(newVal) {
+        this.selectedOptions = newVal.slice();
+      },
+      immediate: true,
     },
     selectedOptions() {
       this.helper.resetAllFields();
@@ -144,8 +168,12 @@ export default {
   background: #f8fafc;
 }
 .button {
+  margin-right: 0.45rem;
   border-radius: 6px;
   font-weight: 600;
+}
+.clear-button {
+  margin-top: 0.45rem;
 }
 .select-list {
   width: 100%;

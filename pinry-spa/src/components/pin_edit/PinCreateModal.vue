@@ -93,6 +93,13 @@
                 v-on:selected="onSelectBoard"
               ></FilterSelect>
             </div>
+            <div class="column" v-if="isEdit">
+              <FilterSelect
+                :allOptions="boardOptions"
+                :selected-values="boardIds"
+                v-on:selected="onSelectBoard"
+              ></FilterSelect>
+            </div>
           </div>
         </section>
         <footer class="modal-card-foot">
@@ -196,6 +203,7 @@ export default {
       },
       boardIds: [],
       boardOptions: [],
+      originalBoardIds: [],
       tagOptions: [],
       editorMeta: {
         title: 'NewPinTitle',
@@ -216,6 +224,10 @@ export default {
       this.pinModel.form.description.value = this.existedPin.description;
       this.pinModel.form.tags.value = this.existedPin.tags;
       this.pinModel.form.private.value = this.existedPin.private;
+      this.originalBoardIds = (this.existedPin.boards || []).map(
+        board => board.id,
+      );
+      this.boardIds = this.originalBoardIds.slice();
     } else {
       this.pinModel.form.private.value = false;
     }
@@ -299,12 +311,34 @@ export default {
           this.boardOptions = boardOptions;
         },
         () => {
-          console.log('Error occurs while fetch board full list');
+          this.boardOptions = [];
         },
       );
     },
     onSelectBoard(boardIds) {
       this.boardIds = boardIds;
+    },
+    syncPinBoards(pinId) {
+      const currentBoardIds = this.boardIds.map(boardId => Number(boardId));
+      const originalBoardIds = this.originalBoardIds.map(boardId => Number(boardId));
+      const boardIdsToAdd = currentBoardIds.filter(
+        boardId => originalBoardIds.indexOf(boardId) === -1,
+      );
+      const boardIdsToRemove = originalBoardIds.filter(
+        boardId => currentBoardIds.indexOf(boardId) === -1,
+      );
+      const promises = [];
+      boardIdsToAdd.forEach(
+        (boardId) => {
+          promises.push(API.Board.addToBoard(boardId, [pinId]));
+        },
+      );
+      boardIdsToRemove.forEach(
+        (boardId) => {
+          promises.push(API.Board.removeFromBoard(boardId, [pinId]));
+        },
+      );
+      return Promise.all(promises);
     },
     onUploadProcessing() {
       this.disableUrlField = true;
@@ -314,6 +348,7 @@ export default {
     },
     savePin() {
       const self = this;
+      const loading = Loading.open(this);
       this.normalizeTags();
       const data = this.pinModel.asDataByFields(
         ['referer', 'description', 'tags', 'private'],
@@ -321,9 +356,27 @@ export default {
       const promise = API.Pin.updateById(this.existedPin.id, data);
       promise.then(
         (resp) => {
-          bus.bus.$emit(bus.events.refreshPin);
-          self.$emit('pinUpdated', resp);
-          self.$parent.close();
+          self.syncPinBoards(this.existedPin.id).then(
+            () => {
+              bus.bus.$emit(bus.events.refreshPin);
+              bus.bus.$emit(bus.events.refreshBoards);
+              self.$emit('pinUpdated', resp);
+              loading.close();
+              self.$parent.close();
+            },
+            () => {
+              loading.close();
+              this.$buefy.toast.open(
+                {
+                  message: this.$t('pinBoardUpdateFailed'),
+                  type: 'is-danger',
+                },
+              );
+            },
+          );
+        },
+        () => {
+          loading.close();
         },
       );
     },
@@ -369,8 +422,7 @@ export default {
             done();
           }
         },
-      ).catch((error) => {
-        console.log('Cannot create pin:', error);
+      ).catch(() => {
         loading.close();
       });
     },
