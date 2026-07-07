@@ -29,7 +29,7 @@ function setUpAxiosCsrfConfig() {
       return config;
     },
     (error) => {
-      Promise.reject(error);
+      return Promise.reject(error);
     },
   );
 }

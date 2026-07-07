@@ -124,6 +124,8 @@ LOGIN_URL = '/login/'
 
 LOGIN_REDIRECT_URL = '/'
 
+SESSION_COOKIE_AGE = 12 * 60 * 60
+
 MESSAGE_TAGS = {
     messages.WARNING: 'alert alert-warning',
     messages.ERROR: 'alert alert-danger',

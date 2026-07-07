@@ -6,6 +6,7 @@ import localeUtils from './components/utils/i18n';
 import App from './App.vue';
 import router from './router';
 import setUpAxiosCsrfConfig from './components/utils/csrf';
+import setUpAxiosFeedback from './components/utils/apiFeedback';
 // import './registerServiceWorker';
 
 
@@ -14,6 +15,7 @@ Vue.use(Buefy);
 Vue.use(VueMasonryPlugin);
 Vue.use(VueI18n);
 setUpAxiosCsrfConfig();
+setUpAxiosFeedback();
 
 const i18n = new VueI18n({
   locale: localStorage.getItem('localeCode') || navigator.language.split('-')[0],

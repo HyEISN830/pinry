@@ -48,6 +48,7 @@
   "deleteButton": "删除",
   "previousPageButton": "上一页",
   "nextPageButton": "下一页",
+  "backToTopButton": "回到顶部",
   "imageLoadingText": "正在加载图片...",
   "imageLoadFailedText": "图片加载失败。",
   "pinnedByInfo": "创建者",
