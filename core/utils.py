@@ -15,3 +15,18 @@ def upload_path(instance, filename, **kwargs):
         'base': base,
         'ext': ext,
     }
+
+
+def motion_photo_upload_path(instance, filename, **kwargs):
+    hasher = hashlib.md5()
+    for chunk in instance.video.chunks():
+        hasher.update(chunk)
+    hash = hasher.hexdigest()
+    base, ext = os.path.splitext(filename)
+    return 'motion/%(first)s/%(second)s/%(hash)s/%(base)s%(ext)s' % {
+        'first': hash[0],
+        'second': hash[1],
+        'hash': hash,
+        'base': base,
+        'ext': ext or '.mp4',
+    }

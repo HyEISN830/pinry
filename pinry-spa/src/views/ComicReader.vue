@@ -182,7 +182,8 @@
           <img
             :src="pageUrl(page)"
             :alt="`${comic.title} ${page.order}`"
-            :class="{ 'is-original': loadedPages[page.id] }">
+            :class="{ 'is-original': loadedPages[page.id] }"
+            @load="scheduleFullPageMeasure">
           <div class="page-progress" v-if="pageLoading[page.id]">
             <span>{{ pageProgressText(page) }}</span>
             <progress
@@ -248,6 +249,8 @@ export default {
       },
       filteredTagOptions: [],
       fullPageObserver: null,
+      fullPageMeasureFrame: null,
+      fullReaderScrollElement: null,
       fullReaderOpen: false,
       currentFullPageOrder: 1,
       insertMode: 'after',
@@ -447,7 +450,13 @@ export default {
     openFullReader() {
       this.fullReaderOpen = true;
       this.currentFullPageOrder = 1;
-      this.$nextTick(this.observeFullReaderPages);
+      this.$nextTick(
+        () => {
+          this.observeFullReaderPages();
+          this.bindFullReaderScroll();
+          this.scheduleFullPageMeasure();
+        },
+      );
       this.loadAllPages();
     },
     closeFullReader() {
@@ -459,6 +468,31 @@ export default {
         this.fullPageObserver.disconnect();
         this.fullPageObserver = null;
       }
+      if (this.fullReaderScrollElement) {
+        this.fullReaderScrollElement.removeEventListener(
+          'scroll',
+          this.scheduleFullPageMeasure,
+        );
+        this.fullReaderScrollElement = null;
+      }
+      window.removeEventListener('resize', this.scheduleFullPageMeasure);
+      if (this.fullPageMeasureFrame) {
+        window.cancelAnimationFrame(this.fullPageMeasureFrame);
+        this.fullPageMeasureFrame = null;
+      }
+    },
+    bindFullReaderScroll() {
+      const element = this.$el.querySelector('.comic-full-reader');
+      if (!element) {
+        return;
+      }
+      this.fullReaderScrollElement = element;
+      element.addEventListener(
+        'scroll',
+        this.scheduleFullPageMeasure,
+        { passive: true },
+      );
+      window.addEventListener('resize', this.scheduleFullPageMeasure);
     },
     observeFullReaderPages() {
       this.disconnectFullPageObserver();
@@ -466,31 +500,12 @@ export default {
         return;
       }
       this.fullPageObserver = new IntersectionObserver(
-        (entries) => {
-          let bestEntry = null;
-          entries.forEach(
-            (entry) => {
-              if (!entry.isIntersecting) {
-                return;
-              }
-              if (
-                !bestEntry
-                || entry.intersectionRatio > bestEntry.intersectionRatio
-              ) {
-                bestEntry = entry;
-              }
-            },
-          );
-          if (bestEntry) {
-            this.currentFullPageOrder = parseInt(
-              bestEntry.target.dataset.pageOrder,
-              10,
-            );
-          }
+        () => {
+          this.scheduleFullPageMeasure();
         },
         {
           root: null,
-          threshold: [0.2, 0.45, 0.7],
+          threshold: [0, 0.25, 0.5, 0.75, 1],
         },
       );
       this.$el.querySelectorAll('.full-reader-page').forEach(
@@ -498,6 +513,54 @@ export default {
           this.fullPageObserver.observe(element);
         },
       );
+    },
+    scheduleFullPageMeasure() {
+      if (!this.fullReaderOpen || this.fullPageMeasureFrame) {
+        return;
+      }
+      this.fullPageMeasureFrame = window.requestAnimationFrame(
+        () => {
+          this.fullPageMeasureFrame = null;
+          this.updateCurrentFullPage();
+        },
+      );
+    },
+    updateCurrentFullPage() {
+      const pages = Array.from(
+        this.$el.querySelectorAll('.full-reader-page'),
+      );
+      if (pages.length === 0) {
+        return;
+      }
+      const viewportHeight = window.innerHeight
+        || document.documentElement.clientHeight
+        || 0;
+      const viewportCenter = viewportHeight / 2;
+      let bestPage = null;
+      pages.forEach(
+        (page) => {
+          const rect = page.getBoundingClientRect();
+          const visibleHeight = Math.max(
+            0,
+            Math.min(rect.bottom, viewportHeight) - Math.max(rect.top, 0),
+          );
+          if (visibleHeight <= 0) {
+            return;
+          }
+          const pageCenter = rect.top + rect.height / 2;
+          const centerPenalty = Math.abs(pageCenter - viewportCenter) * 0.05;
+          const score = visibleHeight - centerPenalty;
+          if (!bestPage || score > bestPage.score) {
+            bestPage = {
+              order: parseInt(page.dataset.pageOrder, 10),
+              score,
+            };
+          }
+        },
+      );
+      if (bestPage && bestPage.order !== this.currentFullPageOrder) {
+        this.currentFullPageOrder = bestPage.order;
+      }
     },
     pageProgressText(page) {
       if (this.pageProgress[page.id] === null) {

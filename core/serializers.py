@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from taggit.models import Tag
 
-from core.models import Image, Board, Comic, ComicPage
+from core.models import Image, Board, Comic, ComicPage, MotionPhoto
 from core.models import Pin
 from django_images.models import Thumbnail
 from users.serializers import UserSerializer
@@ -20,6 +20,7 @@ def filter_private_pin(request, query):
     visible_boards = filter_private_board(request, Board.objects.all())
     return query.select_related(
         'image',
+        'image__motion_asset',
         'submitter',
         'submitter__pinry_profile',
     ).prefetch_related(
@@ -46,6 +47,7 @@ def filter_private_comic(request, query):
     ).prefetch_related(
         'pages',
         'pages__image',
+        'pages__image__motion_asset',
         'pages__image__thumbnail_set',
         'tags',
     )
@@ -61,6 +63,16 @@ class ThumbnailSerializer(serializers.HyperlinkedModelSerializer):
         )
 
 
+class MotionPhotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MotionPhoto
+        fields = (
+            "video",
+            "video_length",
+            "source",
+        )
+
+
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Image
@@ -72,6 +84,7 @@ class ImageSerializer(serializers.ModelSerializer):
             "standard",
             "thumbnail",
             "animated_thumbnail",
+            "motion_photo",
             "square",
         )
         extra_kwargs = {
@@ -82,6 +95,7 @@ class ImageSerializer(serializers.ModelSerializer):
     standard = ThumbnailSerializer(read_only=True)
     thumbnail = ThumbnailSerializer(read_only=True)
     animated_thumbnail = serializers.SerializerMethodField()
+    motion_photo = serializers.SerializerMethodField()
     square = ThumbnailSerializer(read_only=True)
 
     def create(self, validated_data):
@@ -95,6 +109,12 @@ class ImageSerializer(serializers.ModelSerializer):
         if thumbnail is None:
             return None
         return ThumbnailSerializer(thumbnail, context=self.context).data
+
+    def get_motion_photo(self, obj):
+        motion_photo = obj.get_motion_photo()
+        if motion_photo is None:
+            return None
+        return MotionPhotoSerializer(motion_photo, context=self.context).data
 
 
 class TagSerializer(serializers.SlugRelatedField):
@@ -187,6 +207,7 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
                 raise ValidationError({"url": "invalid image content"})
         else:
             image = validated_data.pop("image_by_id")
+            image.create_motion_photo()
         tags = validated_data.pop('tag_list', [])
         pin = Pin.objects.create(submitter=submitter, image=image, **validated_data)
         if tags:

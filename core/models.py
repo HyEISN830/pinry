@@ -5,10 +5,13 @@ import requests
 from io import BytesIO
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import models
 from django.dispatch import receiver
 
+from core.motion_photo import extract_motion_photo_payload
+from core.utils import motion_photo_upload_path
 from django_images.models import Image as BaseImage, Thumbnail
 from django_images import utils as image_utils
 from taggit.managers import TaggableManager
@@ -54,6 +57,7 @@ class ImageManager(models.Manager):
         image = self.create(image=obj)
         Thumbnail.objects.get_or_create_at_sizes(image, settings.IMAGE_SIZES.keys())
         image.get_animated_thumbnail()
+        image.create_motion_photo()
         return image
 
 
@@ -93,6 +97,10 @@ class Image(BaseImage):
 
     def is_gif(self):
         return self.image.name.lower().endswith('.gif')
+
+    def is_jpeg(self):
+        lower_name = self.image.name.lower()
+        return lower_name.endswith('.jpg') or lower_name.endswith('.jpeg')
 
     def animated_thumbnail_size(self):
         return getattr(
@@ -139,6 +147,56 @@ class Image(BaseImage):
             defaults={'image': thumb_file},
         )
         return thumbnail
+
+    def get_motion_photo(self):
+        try:
+            return self.motion_asset
+        except MotionPhoto.DoesNotExist:
+            return None
+
+    def create_motion_photo(self):
+        motion_photo = self.get_motion_photo()
+        if motion_photo is not None:
+            return motion_photo
+        if not self.is_jpeg():
+            return None
+        payload = extract_motion_photo_payload(self.image)
+        if payload is None:
+            return None
+        motion_photo = MotionPhoto(
+            image=self,
+            video_length=payload.video_length,
+            source=payload.source,
+        )
+        filename = '{}-motion.mp4'.format(os.path.splitext(
+            os.path.basename(self.image.name),
+        )[0])
+        motion_photo.video.save(
+            filename,
+            ContentFile(payload.video),
+            save=False,
+        )
+        motion_photo.save()
+        return motion_photo
+
+
+class MotionPhoto(models.Model):
+    image = models.OneToOneField(
+        BaseImage,
+        related_name='motion_asset',
+        on_delete=models.CASCADE,
+    )
+    video = models.FileField(upload_to=motion_photo_upload_path, max_length=255)
+    video_length = models.PositiveIntegerField(default=0)
+    source = models.CharField(max_length=64, blank=True)
+    published = models.DateTimeField(auto_now_add=True)
+
+
+@receiver(models.signals.post_delete, sender=MotionPhoto)
+def delete_motion_photo_file(sender, instance, **kwargs):
+    if getattr(settings, 'IMAGE_AUTO_DELETE', True):
+        if instance.video.storage.exists(instance.video.name):
+            instance.video.delete(save=False)
 
 
 class Board(models.Model):

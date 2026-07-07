@@ -10,6 +10,19 @@
                 alt="Image"
                 @error="onPreviewImageError"
                 :class="{ 'is-loading-preview': imageLoading }">
+              <video
+                v-if="hasMotionPhoto"
+                ref="motionVideo"
+                class="motion-preview-video"
+                :class="{ 'is-active': motionVideoActive }"
+                :src="pinItem.motion_photo.video"
+                muted
+                playsinline
+                preload="metadata"
+                @play="motionVideoActive = true"
+                @ended="onMotionVideoEnded"
+                @error="motionVideoFailed = true">
+              </video>
               <div v-if="imageLoading || imageLoadFailed" class="preview-loading">
                 <p v-if="imageLoadFailed">{{ $t("imageLoadFailedText") }}</p>
                 <p v-else>{{ $t("imageLoadingText") }}</p>
@@ -140,6 +153,9 @@ export default {
       partialPreviewFailed: false,
       previewImageUrl: null,
       previewImageUrlFromCache: false,
+      motionReplayTimer: null,
+      motionVideoActive: false,
+      motionVideoFailed: false,
     };
   },
   computed: {
@@ -166,6 +182,13 @@ export default {
         backgroundImage: `url(${this.pinItem.url})`,
       };
     },
+    hasMotionPhoto() {
+      return !!(
+        this.pinItem.motion_photo
+        && this.pinItem.motion_photo.video
+        && !this.motionVideoFailed
+      );
+    },
   },
   created() {
     this.loadOriginalImage();
@@ -179,6 +202,9 @@ export default {
     }
     if (this.previewImageUrl && !this.previewImageUrlFromCache) {
       URL.revokeObjectURL(this.previewImageUrl);
+    }
+    if (this.motionReplayTimer) {
+      window.clearTimeout(this.motionReplayTimer);
     }
   },
   methods: {
@@ -222,6 +248,7 @@ export default {
         this.previewImageUrl = cached.objectUrl;
         this.previewImageUrlFromCache = true;
         this.imageLoading = false;
+        this.$nextTick(this.playMotionVideo);
         return;
       }
       if (window.AbortController) {
@@ -259,12 +286,45 @@ export default {
             this.previewImageUrl = URL.createObjectURL(blob);
           }
           this.imageLoading = false;
+          this.$nextTick(this.playMotionVideo);
         },
       ).catch(
         () => {
           this.imageLoadFailed = true;
           this.imageLoading = false;
         },
+      );
+    },
+    playMotionVideo() {
+      if (!this.hasMotionPhoto || this.imageLoading) {
+        return;
+      }
+      const video = this.$refs.motionVideo;
+      if (!video) {
+        return;
+      }
+      if (this.motionReplayTimer) {
+        window.clearTimeout(this.motionReplayTimer);
+        this.motionReplayTimer = null;
+      }
+      video.currentTime = 0;
+      const promise = video.play();
+      if (promise && promise.catch) {
+        promise.catch(
+          () => {
+            this.motionVideoFailed = true;
+          },
+        );
+      }
+    },
+    onMotionVideoEnded() {
+      this.motionVideoActive = false;
+      if (!this.hasMotionPhoto) {
+        return;
+      }
+      this.motionReplayTimer = window.setTimeout(
+        this.playMotionVideo,
+        2000,
       );
     },
     downloadImage() {
@@ -412,6 +472,20 @@ export default {
 .preview-frame img.is-loading-preview {
   filter: blur(1.5px);
   opacity: 0.78;
+}
+.motion-preview-video {
+  position: absolute;
+  z-index: 2;
+  inset: 10px;
+  width: calc(100% - 20px);
+  height: calc(100% - 20px);
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.motion-preview-video.is-active {
+  opacity: 1;
 }
 /* preview size should always less then screen */
 .card-image img {

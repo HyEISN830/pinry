@@ -46,6 +46,13 @@
                        :alt="item.description"
                        class="pin-preview-image">
                     <div v-else class="lazy-image-placeholder"></div>
+                    <div
+                      v-if="item.motion_photo"
+                      class="motion-photo-badge"
+                      :title="$t('motionPhotoLabel')"
+                      :aria-label="$t('motionPhotoLabel')">
+                      <b-icon icon="play-circle" size="is-small"></b-icon>
+                    </div>
                   </div>
                 </div>
                 <div class="pin-footer">
@@ -138,6 +145,16 @@ function sourceText(url) {
   return (url || '').trim();
 }
 
+function escapeMediaUrl(url) {
+  if (!url) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(url)) {
+    return pinHandler.escapeUrl(url);
+  }
+  return url;
+}
+
 function getResponsiveCardWidth(viewportWidth) {
   if (viewportWidth >= 2328) {
     return 320;
@@ -195,6 +212,13 @@ function createImageItem(pin) {
     || `//gravatar.com/avatar/${pin.submitter.gravatar}?s=30`;
   image.large_image_url = pinHandler.escapeUrl(pin.image.image);
   image.original_image_url = pin.url;
+  image.motion_photo = pin.image.motion_photo
+    ? Object.assign(
+      {},
+      pin.image.motion_photo,
+      { video: escapeMediaUrl(pin.image.motion_photo.video) },
+    )
+    : null;
   image.referer = pin.referer;
   image.orgianl_width = pin.image.width;
   image.style = {
@@ -203,6 +227,7 @@ function createImageItem(pin) {
   image.imageVisible = false;
   image.class = {
     'has-board': image.boards.length > 0,
+    'has-motion-photo': image.motion_photo !== null,
   };
   return image;
 }
@@ -618,6 +643,23 @@ $avatar-height: 30px;
     height: 100%;
     object-fit: cover;
     cursor: zoom-in;
+  }
+  .motion-photo-badge {
+    position: absolute;
+    z-index: 4;
+    top: 9px;
+    left: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    border-radius: 999px;
+    background: rgba(12, 18, 28, 0.58);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
   }
   > img {
     min-width: $pin-preview-width;
