@@ -49,7 +49,7 @@
     #{$selector} {
       --pin-card-width: 270px;
       --pin-grid-gutter: 18px;
-      max-width: 1710px;
+      max-width: 1422px;
     }
   }
   @media screen and (min-width: 1818px) {
@@ -60,23 +60,23 @@
   @media screen and (min-width: 2073px) {
     #{$selector} {
       --pin-card-width: 300px;
-      max-width: 2190px;
+      max-width: 1890px;
     }
   }
   @media screen and (min-width: 2328px) {
     #{$selector} {
       --pin-card-width: 320px;
-      max-width: 2330px;
+      max-width: 2010px;
     }
   }
   @media screen and (min-width: 2583px) {
     #{$selector} {
-      max-width: 2330px;
+      max-width: 2348px;
     }
   }
   @media screen and (min-width: 2838px) {
     #{$selector} {
-      max-width: 2665px;
+      max-width: 2686px;
     }
   }
 }
