@@ -75,20 +75,21 @@ export default {
       );
     },
     fetchAffectedPinIds(offset = 0, affectedPinIds = []) {
-      return API.fetchPins(offset, null, null, this.board.id).then(
-        (resp) => {
-          const nextPinIds = affectedPinIds.concat(
-            resp.data.results.map(pin => pin.id),
-          );
-          if (!resp.data.next) {
-            return nextPinIds;
-          }
-          return this.fetchAffectedPinIds(
-            offset + resp.data.results.length,
-            nextPinIds,
-          );
-        },
-      );
+      return API.fetchPins(offset, null, null, this.board.id)
+        .then(
+          (resp) => {
+            const nextPinIds = affectedPinIds.concat(
+              resp.data.results.map(pin => pin.id),
+            );
+            if (!resp.data.next) {
+              return nextPinIds;
+            }
+            return this.fetchAffectedPinIds(
+              offset + resp.data.results.length,
+              nextPinIds,
+            );
+          },
+        );
     },
     removePinsInBatches(pinIds, batchIndex = 0) {
       const totalBatches = Math.ceil(pinIds.length / REMOVE_BATCH_SIZE);
@@ -104,34 +105,39 @@ export default {
         Math.round((batchIndex / totalBatches) * 82),
       );
       this.deleteStatusText = this.$t('boardDeleteProgressRemoving');
-      return API.Board.removeFromBoard(this.board.id, batch).then(
-        () => this.removePinsInBatches(pinIds, batchIndex + 1),
-      );
+      return API.Board.removeFromBoard(this.board.id, batch)
+        .then(
+          () => this.removePinsInBatches(pinIds, batchIndex + 1),
+        );
     },
     deleteBoardWithProgress() {
       this.deleting = true;
       this.deleteProgress = 5;
       this.deleteStatusText = this.$t('boardDeleteProgressPreparing');
-      this.fetchAffectedPinIds().then(
-        pinIds => this.removePinsInBatches(pinIds),
-      ).then(
-        () => API.Board.delete(this.board.id),
-      ).then(
-        () => {
-          this.deleteProgress = 100;
-          this.deleteStatusText = this.$t('boardDeleteSucceeded');
-          this.$buefy.toast.open(this.$t('boardDeleteSucceeded'));
-          this.$emit('board-delete-succeed', this.board.id);
-        },
-      ).catch(
-        () => {
-          this.deleting = false;
-          this.deleteProgress = 0;
-          this.$buefy.toast.open(
-            { type: 'is-danger', message: this.$t('boardDeleteFailed') },
-          );
-        },
-      );
+      this.fetchAffectedPinIds()
+        .then(
+          pinIds => this.removePinsInBatches(pinIds),
+        )
+        .then(
+          () => API.Board.delete(this.board.id),
+        )
+        .then(
+          () => {
+            this.deleteProgress = 100;
+            this.deleteStatusText = this.$t('boardDeleteSucceeded');
+            this.$buefy.toast.open(this.$t('boardDeleteSucceeded'));
+            this.$emit('board-delete-succeed', this.board.id);
+          },
+        )
+        .catch(
+          () => {
+            this.deleting = false;
+            this.deleteProgress = 0;
+            this.$buefy.toast.open(
+              { type: 'is-danger', message: this.$t('boardDeleteFailed') },
+            );
+          },
+        );
     },
     deleteBoard() {
       if (this.deleting) {
