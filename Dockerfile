@@ -27,6 +27,7 @@ COPY pyproject.toml poetry.lock /app/
 
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --no-root --only main \
+    && pip install --no-cache-dir "django-extensions==3.1.5" \
     && rm -rf /root/.cache/pypoetry /root/.cache/pip
 
 COPY . /app
