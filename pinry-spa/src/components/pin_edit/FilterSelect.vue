@@ -12,17 +12,20 @@
       </b-input>
     </b-field>
     <b-field>
-      <button
-        @click="createNewBoard"
-        class="button is-primary">
-        {{ $t("filterSelectCreateNewBoardButton") }}
-      </button>
-      <button
-        @click="clearSelection"
-        class="button is-light clear-button"
-        type="button">
-        {{ $t("clearBoardSelectionButton") }}
-      </button>
+      <div class="filter-select-actions">
+        <button
+          @click="createNewBoard"
+          class="button is-primary"
+          type="button">
+          {{ $t("filterSelectCreateNewBoardButton") }}
+        </button>
+        <button
+          @click="clearSelection"
+          class="button is-light"
+          type="button">
+          {{ $t("clearBoardSelectionButton") }}
+        </button>
+      </div>
     </b-field>
     <b-field>
       <b-select
@@ -64,6 +67,14 @@ function getAvailableOptions(vm, filter) {
   return availableOptions;
 }
 
+function arraysEqual(left, right) {
+  if (left.length !== right.length) {
+    return false;
+  }
+  return left.every(
+    (value, index) => value === right[index],
+  );
+}
 
 export default {
   name: 'FilterSelect',
@@ -90,6 +101,7 @@ export default {
       availableOptions: [],
       createdOptions: [],
       syncingSelectionName: false,
+      syncingSelectedValues: false,
     };
   },
   methods: {
@@ -106,9 +118,15 @@ export default {
       this.availableOptions = this.createdOptions.concat(this.allOptions);
     },
     select(board) {
+      if (arraysEqual(this.selectedOptions, [board.value])) {
+        return;
+      }
       this.selectedOptions = [board.value];
     },
     clearSelection() {
+      if (this.selectedOptions.length === 0) {
+        return;
+      }
       this.selectedOptions = [];
     },
     createNewBoard() {
@@ -147,14 +165,23 @@ export default {
     },
     selectedValues: {
       handler(newVal) {
-        this.selectedOptions = newVal.slice();
+        const nextValues = newVal.slice();
+        if (arraysEqual(nextValues, this.selectedOptions)) {
+          return;
+        }
+        this.syncingSelectedValues = true;
+        this.selectedOptions = nextValues;
       },
       immediate: true,
     },
     selectedOptions() {
       this.helper.resetAllFields();
       this.syncNameFromSelection();
-      this.$emit('selected', this.selectedOptions);
+      if (this.syncingSelectedValues) {
+        this.syncingSelectedValues = false;
+        return;
+      }
+      this.$emit('selected', this.selectedOptions.slice());
     },
   },
 };
@@ -167,13 +194,15 @@ export default {
   border-radius: 8px;
   background: #f8fafc;
 }
+.filter-select-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
 .button {
-  margin-right: 0.45rem;
   border-radius: 6px;
   font-weight: 600;
-}
-.clear-button {
-  margin-top: 0.45rem;
 }
 .select-list {
   width: 100%;
