@@ -117,8 +117,13 @@ export default {
       createdOptions: [],
       searchPopupOpen: false,
       searchText: '',
-      syncingSelectedValues: false,
     };
+  },
+  mounted() {
+    document.addEventListener('click', this.onDocumentClick);
+  },
+  beforeDestroy() {
+    document.removeEventListener('click', this.onDocumentClick);
   },
   methods: {
     getSelectedBoards() {
@@ -137,6 +142,26 @@ export default {
       const options = getAvailableOptions(this, filter);
       this.availableOptions = options;
     },
+    setSelectedOptions(values, shouldEmit) {
+      const nextValues = values.slice();
+      if (!arraysEqual(nextValues, this.selectedOptions)) {
+        this.selectedOptions = nextValues;
+      }
+      this.helper.resetAllFields();
+      this.syncNameFromSelection();
+      if (shouldEmit) {
+        this.$emit('selected', nextValues.slice());
+      }
+    },
+    closeSearchPopup() {
+      this.searchPopupOpen = false;
+    },
+    onDocumentClick(event) {
+      if (!this.searchPopupOpen || this.$el.contains(event.target)) {
+        return;
+      }
+      this.closeSearchPopup();
+    },
     toggleSearchPopup() {
       this.searchPopupOpen = !this.searchPopupOpen;
       if (this.searchPopupOpen) {
@@ -145,22 +170,15 @@ export default {
       }
     },
     select(board) {
-      if (arraysEqual(this.selectedOptions, [board.value])) {
-        this.syncNameFromSelection();
-        this.searchPopupOpen = false;
-        return;
-      }
-      this.selectedOptions = [board.value];
-      this.searchPopupOpen = false;
+      this.setSelectedOptions([board.value], true);
+      this.closeSearchPopup();
       this.searchText = '';
     },
     clearSelection() {
-      if (this.selectedOptions.length === 0) {
-        this.form.name.value = '';
-        return;
-      }
-      this.selectedOptions = [];
+      this.setSelectedOptions([], true);
+      this.form.name.value = '';
       this.searchText = '';
+      this.closeSearchPopup();
     },
     createNewBoard() {
       const self = this;
@@ -199,19 +217,9 @@ export default {
         if (arraysEqual(nextValues, this.selectedOptions)) {
           return;
         }
-        this.syncingSelectedValues = true;
-        this.selectedOptions = nextValues;
+        this.setSelectedOptions(nextValues, false);
       },
       immediate: true,
-    },
-    selectedOptions() {
-      this.helper.resetAllFields();
-      this.syncNameFromSelection();
-      if (this.syncingSelectedValues) {
-        this.syncingSelectedValues = false;
-        return;
-      }
-      this.$emit('selected', this.selectedOptions.slice());
     },
   },
 };
