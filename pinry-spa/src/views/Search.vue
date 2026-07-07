@@ -56,9 +56,13 @@
             </Comics>
             <section class="result-section" v-if="showPins">
               <h2>{{ $t("pinsLink") }}</h2>
+              <p v-if="pinsCount !== null">
+                {{ pinsCount }} {{ $t("collectionArtworksLabel") }}
+              </p>
               <Pins
                 :key="`pins-${resultTag}`"
-                :pin-filters="pinFilters">
+                :pin-filters="pinFilters"
+                v-on:pins-meta-loaded="onPinsMetaLoaded">
               </Pins>
             </section>
             <section class="result-section" v-if="showBoards">
@@ -99,6 +103,7 @@ export default {
     return {
       activeType: 'all',
       hasSearched: false,
+      pinsCount: null,
       resultTag: '',
       tagOptions: [],
       tagText: '',
@@ -168,7 +173,11 @@ export default {
       }
       this.resultTag = this.normalizedTag;
       this.tagText = this.resultTag;
+      this.pinsCount = null;
       this.hasSearched = true;
+    },
+    onPinsMetaLoaded(meta) {
+      this.pinsCount = meta.count;
     },
     selectTag(option) {
       if (!option) {
@@ -260,6 +269,12 @@ export default {
   color: #22313f;
   font-size: 1.35rem;
   font-weight: 800;
+}
+.result-section > p {
+  margin: 0.35rem 0 -0.15rem;
+  padding: 0 0.75rem;
+  color: #64748b;
+  font-size: 0.95rem;
 }
 @media screen and (max-width: 760px) {
   .search-container {

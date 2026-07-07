@@ -5,9 +5,12 @@
     <section class="section home-pin-heading">
       <div class="container">
         <h1>{{ $t("pinsLink") }}</h1>
+        <p v-if="pinCount !== null">
+          {{ pinCount }} {{ $t("collectionArtworksLabel") }}
+        </p>
       </div>
     </section>
-    <Pins></Pins>
+    <Pins v-on:pins-meta-loaded="onPinsMetaLoaded"></Pins>
   </div>
 </template>
 
@@ -22,6 +25,16 @@ export default {
     Comics,
     PHeader,
     Pins,
+  },
+  data() {
+    return {
+      pinCount: null,
+    };
+  },
+  methods: {
+    onPinsMetaLoaded(meta) {
+      this.pinCount = meta.count;
+    },
   },
 };
 </script>
@@ -39,6 +52,11 @@ export default {
   color: #22313f;
   font-size: 1.6rem;
   font-weight: 800;
+}
+.home-pin-heading p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
 }
 @include screen-grid-layout(".home-pin-heading .container");
 </style>

@@ -16,6 +16,9 @@
     <section class="section tag-pin-heading">
       <div class="container">
         <h1>{{ $t("pinsLink") }}</h1>
+        <p v-if="collection.pinsCount !== null">
+          {{ collection.pinsCount }} {{ $t("collectionArtworksLabel") }}
+        </p>
       </div>
     </section>
     <Pins
@@ -96,6 +99,11 @@ export default {
   color: #22313f;
   font-size: 1.6rem;
   font-weight: 800;
+}
+.tag-pin-heading p {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
 }
 @include screen-grid-layout(".tag-pin-heading .container");
 </style>
