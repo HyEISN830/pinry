@@ -182,8 +182,9 @@ export default {
     },
     createNewBoard() {
       const self = this;
-      const boardName = this.form.name.value.trim();
+      const boardName = (this.form.name.value || '').trim();
       if (!boardName) {
+        this.form.name.value = '';
         return;
       }
       const promise = API.Board.create(boardName);
@@ -194,6 +195,12 @@ export default {
           self.createdOptions.unshift(board);
           self.syncAvailableOptions();
           self.select(board);
+          self.$buefy.toast.open(
+            {
+              message: self.$t('boardCreateSucceeded'),
+              type: 'is-success',
+            },
+          );
         },
         (resp) => {
           self.helper.markFieldsAsDanger(resp ? resp.data : {});
