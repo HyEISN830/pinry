@@ -14,6 +14,12 @@
     <b-field>
       <div class="filter-select-actions">
         <button
+          @click="toggleSearchPopup"
+          class="button is-info"
+          type="button">
+          {{ $t("searchBoardButton") }}
+        </button>
+        <button
           @click="createNewBoard"
           class="button is-primary"
           type="button">
@@ -27,20 +33,28 @@
         </button>
       </div>
     </b-field>
-    <b-field>
-      <b-select
-        class="select-list"
-        multiple
+    <div class="board-search-popup" v-if="searchPopupOpen">
+      <b-input
+        v-model="searchText"
+        icon="magnify"
         expanded
-        native-size="8"
-        v-model="selectedOptions">
-        <template v-for="option in availableOptions">
-          <option
-            v-bind:key="option.value"
-            :value="option.value">{{ option.name }}</option>
-        </template>
-      </b-select>
-    </b-field>
+        v-bind:placeholder="$t('searchBoardPlaceholder')"
+        maxlength="128">
+      </b-input>
+      <div class="board-search-list">
+        <button
+          v-for="option in availableOptions"
+          :key="option.value"
+          class="board-search-option"
+          type="button"
+          @click="select(option)">
+          {{ option.name }}
+        </button>
+        <div class="board-search-empty" v-if="availableOptions.length === 0">
+          {{ $t("pinCreateModalEmptySlot") }}
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -57,11 +71,12 @@ function getBoardFromResp(boardObject) {
 
 function getAvailableOptions(vm, filter) {
   let availableOptions;
+  const options = vm.createdOptions.concat(vm.allOptions);
   if (!filter) {
-    availableOptions = vm.allOptions;
+    availableOptions = options;
   } else {
     availableOptions = AutoComplete.getFilteredOptions(
-      vm.allOptions, vm.form.name.value,
+      options, filter,
     );
   }
   return availableOptions;
@@ -100,35 +115,65 @@ export default {
       helper: model,
       availableOptions: [],
       createdOptions: [],
+      searchPopupOpen: false,
+      searchText: '',
       syncingSelectedValues: false,
     };
   },
   methods: {
+    getSelectedBoards() {
+      const options = this.createdOptions.concat(this.allOptions);
+      return options.filter(
+        option => this.selectedOptions.some(
+          value => String(value) === String(option.value),
+        ),
+      );
+    },
+    syncNameFromSelection() {
+      const boards = this.getSelectedBoards();
+      this.form.name.value = boards.map(board => board.name).join(', ');
+    },
     syncAvailableOptions(filter) {
       const options = getAvailableOptions(this, filter);
-      this.availableOptions = this.createdOptions.concat(options);
+      this.availableOptions = options;
+    },
+    toggleSearchPopup() {
+      this.searchPopupOpen = !this.searchPopupOpen;
+      if (this.searchPopupOpen) {
+        this.searchText = '';
+        this.syncAvailableOptions();
+      }
     },
     select(board) {
       if (arraysEqual(this.selectedOptions, [board.value])) {
+        this.syncNameFromSelection();
+        this.searchPopupOpen = false;
         return;
       }
       this.selectedOptions = [board.value];
+      this.searchPopupOpen = false;
+      this.searchText = '';
     },
     clearSelection() {
       if (this.selectedOptions.length === 0) {
+        this.form.name.value = '';
         return;
       }
       this.selectedOptions = [];
+      this.searchText = '';
     },
     createNewBoard() {
       const self = this;
-      const promise = API.Board.create(this.form.name.value);
+      const boardName = this.form.name.value.trim();
+      if (!boardName) {
+        return;
+      }
+      const promise = API.Board.create(boardName);
       promise.then(
         (data) => {
           self.$emit('boardCreated', data);
           const board = getBoardFromResp(data);
           self.createdOptions.unshift(board);
-          self.form.name.value = '';
           self.syncAvailableOptions();
           self.select(board);
         },
@@ -139,12 +184,14 @@ export default {
     },
   },
   watch: {
-    // eslint-disable-next-line func-names
-    'form.name.value': function (newVal) {
+    searchText(newVal) {
       this.syncAvailableOptions(newVal);
     },
     allOptions() {
-      this.syncAvailableOptions(this.form.name.value);
+      this.syncAvailableOptions(this.searchText);
+      if (this.selectedOptions.length > 0) {
+        this.syncNameFromSelection();
+      }
     },
     selectedValues: {
       handler(newVal) {
@@ -159,6 +206,7 @@ export default {
     },
     selectedOptions() {
       this.helper.resetAllFields();
+      this.syncNameFromSelection();
       if (this.syncingSelectedValues) {
         this.syncingSelectedValues = false;
         return;
@@ -171,6 +219,7 @@ export default {
 
 <style lang="scss" scoped>
 .filter-select {
+  position: relative;
   padding: 0.75rem;
   border: 1px solid #edf1f6;
   border-radius: 8px;
@@ -186,13 +235,46 @@ export default {
   border-radius: 6px;
   font-weight: 600;
 }
-.select-list {
-  width: 100%;
-}
-.select-list ::v-deep select {
-  border-color: #d8e0eb;
+.board-search-popup {
+  position: absolute;
+  z-index: 30;
+  left: 0.75rem;
+  right: 0.75rem;
+  margin-top: 0.15rem;
+  padding: 0.75rem;
+  border: 1px solid #dbe4ef;
   border-radius: 8px;
   background: #fff;
+  box-shadow: 0 18px 40px rgba(16, 24, 40, 0.18);
+}
+.board-search-popup ::v-deep .input {
+  border-color: #d8e0eb;
+  border-radius: 8px;
+  font-size: 14px;
+}
+.board-search-list {
+  max-height: 220px;
+  margin-top: 0.55rem;
+  overflow-y: auto;
+}
+.board-search-option {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #22313f;
+  text-align: left;
+  cursor: pointer;
+}
+.board-search-option:hover {
+  background: #eef5ff;
+  color: #1f6feb;
+}
+.board-search-empty {
+  padding: 0.7rem 0.4rem;
+  color: #8a94a6;
   font-size: 14px;
 }
 </style>

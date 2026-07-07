@@ -82,6 +82,7 @@
     "Add2BoardModalCardButton": "Add Pin to Board",
     "FileUploadDescription": "Drop your files here or click to upload",
     "filterSelectCreateNewBoardButton": "Create New Board",
+    "searchBoardButton": "Search boards",
     "clearBoardSelectionButton": "Clear boards",
     "pinBoardUpdateFailed": "Failed to update boards",
     "pinCreateModalEmptySlot": "There are no items",

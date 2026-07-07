@@ -82,6 +82,7 @@
     "Add2BoardModalCardButton": "Ajouter une fiche au tableau",
     "FileUploadDescription": "Place ton fichier ici ou clique sur Télécharger",
     "filterSelectCreateNewBoardButton": "Créer un nouveau tableau",
+    "searchBoardButton": "Rechercher",
     "clearBoardSelectionButton": "Vider les tableaux",
     "pinBoardUpdateFailed": "Impossible de mettre à jour les tableaux",
     "pinCreateModalEmptySlot": "Rien n'a été trouvé",

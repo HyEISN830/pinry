@@ -82,6 +82,7 @@
   "Add2BoardModalCardButton": "添加到画板",
   "FileUploadDescription": "拖拽图片或者点击上传",
   "filterSelectCreateNewBoardButton": "创建新画板",
+  "searchBoardButton": "搜索画板",
   "clearBoardSelectionButton": "清空画板",
   "pinBoardUpdateFailed": "更新画板失败",
   "pinCreateModalEmptySlot": "没有内容",
