@@ -72,7 +72,7 @@ function arraysEqual(left, right) {
     return false;
   }
   return left.every(
-    (value, index) => value === right[index],
+    (value, index) => String(value) === String(right[index]),
   );
 }
 
@@ -100,22 +100,13 @@ export default {
       helper: model,
       availableOptions: [],
       createdOptions: [],
-      syncingSelectionName: false,
       syncingSelectedValues: false,
     };
   },
   methods: {
-    getSelectedBoards() {
-      const options = this.createdOptions.concat(this.allOptions);
-      return options.filter(
-        option => this.selectedOptions.indexOf(option.value) !== -1,
-      );
-    },
-    syncNameFromSelection() {
-      const boards = this.getSelectedBoards();
-      this.syncingSelectionName = true;
-      this.form.name.value = boards.map(board => board.name).join(', ');
-      this.availableOptions = this.createdOptions.concat(this.allOptions);
+    syncAvailableOptions(filter) {
+      const options = getAvailableOptions(this, filter);
+      this.availableOptions = this.createdOptions.concat(options);
     },
     select(board) {
       if (arraysEqual(this.selectedOptions, [board.value])) {
@@ -137,12 +128,12 @@ export default {
           self.$emit('boardCreated', data);
           const board = getBoardFromResp(data);
           self.createdOptions.unshift(board);
-          const options = getAvailableOptions(this);
-          this.availableOptions = this.createdOptions.concat(options);
+          self.form.name.value = '';
+          self.syncAvailableOptions();
           self.select(board);
         },
         (resp) => {
-          self.helper.markFieldsAsDanger(resp.data);
+          self.helper.markFieldsAsDanger(resp ? resp.data : {});
         },
       );
     },
@@ -150,18 +141,10 @@ export default {
   watch: {
     // eslint-disable-next-line func-names
     'form.name.value': function (newVal) {
-      if (this.syncingSelectionName) {
-        this.syncingSelectionName = false;
-        return;
-      }
-      const options = getAvailableOptions(this, newVal);
-      this.availableOptions = this.createdOptions.concat(options);
+      this.syncAvailableOptions(newVal);
     },
     allOptions() {
-      this.availableOptions = this.allOptions;
-      if (this.selectedOptions.length > 0) {
-        this.syncNameFromSelection();
-      }
+      this.syncAvailableOptions(this.form.name.value);
     },
     selectedValues: {
       handler(newVal) {
@@ -176,7 +159,6 @@ export default {
     },
     selectedOptions() {
       this.helper.resetAllFields();
-      this.syncNameFromSelection();
       if (this.syncingSelectedValues) {
         this.syncingSelectedValues = false;
         return;

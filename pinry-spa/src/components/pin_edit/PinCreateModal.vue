@@ -162,6 +162,22 @@ function uniqueTags(tags) {
   return normalized;
 }
 
+function normalizeBoardIds(boardIds) {
+  const seen = {};
+  const normalized = [];
+  boardIds.forEach(
+    (boardId) => {
+      const normalizedId = Number(boardId);
+      if (!normalizedId || seen[normalizedId]) {
+        return;
+      }
+      seen[normalizedId] = true;
+      normalized.push(normalizedId);
+    },
+  );
+  return normalized;
+}
+
 const fields = ['url', 'referer', 'description', 'tags', 'private'];
 
 export default {
@@ -224,8 +240,10 @@ export default {
       this.pinModel.form.description.value = this.existedPin.description;
       this.pinModel.form.tags.value = this.existedPin.tags;
       this.pinModel.form.private.value = this.existedPin.private;
-      this.originalBoardIds = (this.existedPin.boards || []).map(
-        board => board.id,
+      this.originalBoardIds = normalizeBoardIds(
+        (this.existedPin.boards || []).map(
+          board => board.id,
+        ),
       );
       this.boardIds = this.originalBoardIds.slice();
     } else {
@@ -316,29 +334,38 @@ export default {
       );
     },
     onSelectBoard(boardIds) {
-      this.boardIds = boardIds;
+      this.boardIds = normalizeBoardIds(boardIds);
     },
     syncPinBoards(pinId) {
-      const currentBoardIds = this.boardIds.map(boardId => Number(boardId));
-      const originalBoardIds = this.originalBoardIds.map(boardId => Number(boardId));
+      const currentBoardIds = normalizeBoardIds(this.boardIds);
+      const originalBoardIds = normalizeBoardIds(this.originalBoardIds);
       const boardIdsToAdd = currentBoardIds.filter(
         boardId => originalBoardIds.indexOf(boardId) === -1,
       );
       const boardIdsToRemove = originalBoardIds.filter(
         boardId => currentBoardIds.indexOf(boardId) === -1,
       );
-      const promises = [];
+      let promise = Promise.resolve();
       boardIdsToAdd.forEach(
         (boardId) => {
-          promises.push(API.Board.addToBoard(boardId, [pinId]));
+          promise = promise.then(
+            () => API.Board.addToBoard(boardId, [pinId]),
+          );
         },
       );
       boardIdsToRemove.forEach(
         (boardId) => {
-          promises.push(API.Board.removeFromBoard(boardId, [pinId]));
+          promise = promise.then(
+            () => API.Board.removeFromBoard(boardId, [pinId]),
+          );
         },
       );
-      return Promise.all(promises);
+      return promise.then(
+        () => {
+          this.originalBoardIds = currentBoardIds.slice();
+          this.boardIds = currentBoardIds.slice();
+        },
+      );
     },
     onUploadProcessing() {
       this.disableUrlField = true;
