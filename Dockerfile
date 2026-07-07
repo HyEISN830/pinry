@@ -31,7 +31,8 @@ RUN poetry config virtualenvs.create false \
 
 COPY . /app
 
-COPY --from=frontend-build /app/pinry-spa/dist /app/pinry-spa/dist
+COPY --from=frontend-build /app/pinry/static/spa /app/pinry/static/spa
+COPY --from=frontend-build /app/pinry/templates/index.html /app/pinry/templates/index.html
 
 EXPOSE 80
 
