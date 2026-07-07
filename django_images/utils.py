@@ -1,7 +1,8 @@
 from contextlib import contextmanager
 from io import BytesIO
 import PIL
-from PIL import Image
+from PIL import Image, ImageSequence
+import math
 
 
 @contextmanager
@@ -120,3 +121,47 @@ def write_image_in_memory(img):
         else:
             raise
     return buf
+
+
+def write_animated_gif_thumbnail_in_memory(image, size, max_frames=24,
+                                           crop=False, upscale=False):
+    with open_django_file(image) as img:
+        im = Image.open(img)
+        if im.format != 'GIF' or not getattr(im, 'is_animated', False):
+            return None
+        total_frames = getattr(im, 'n_frames', 1)
+        if total_frames <= 1:
+            return None
+        frame_step = max(1, int(math.ceil(float(total_frames) / max_frames)))
+        selected_indexes = set(range(0, total_frames, frame_step))
+        frames = []
+        durations = []
+        for index, frame in enumerate(ImageSequence.Iterator(im)):
+            duration = frame.info.get('duration', im.info.get('duration', 100))
+            if index in selected_indexes:
+                resized = scale_and_crop_single(
+                    frame.convert('RGBA'),
+                    size,
+                    crop=crop,
+                    upscale=upscale,
+                )
+                frames.append(
+                    resized.convert('P', palette=Image.ADAPTIVE)
+                )
+                durations.append(duration)
+            elif durations:
+                durations[-1] += duration
+        if not frames:
+            return None
+        buf = BytesIO()
+        frames[0].save(
+            buf,
+            format='GIF',
+            save_all=True,
+            append_images=frames[1:],
+            optimize=True,
+            duration=durations,
+            loop=im.info.get('loop', 0),
+            disposal=2,
+        )
+        return buf

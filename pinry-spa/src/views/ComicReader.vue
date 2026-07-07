@@ -149,7 +149,7 @@
           v-if="shouldShowReadTeaser"
           @click="openFullReader">
           <img
-            :src="secondPage.image.thumbnail.image"
+            :src="thumbnailUrl(secondPage.image)"
             :alt="`${comic.title} ${secondPage.order}`">
           <button class="button is-primary" type="button">
             {{ $t("readFullComicButton") }}
@@ -207,6 +207,7 @@ import {
   cacheImage,
   getCachedImage,
 } from '../components/utils/originalImageCache';
+import imageVariant from '../components/utils/imageVariant';
 
 function splitTags(tagText) {
   return tagText.split(/[,\uFF0C]/)
@@ -344,7 +345,11 @@ export default {
       if (this.loadedPages[page.id]) {
         return this.loadedPages[page.id];
       }
-      return page.image.thumbnail.image;
+      return this.thumbnailUrl(page.image);
+    },
+    thumbnailUrl(image) {
+      const thumbnail = imageVariant.getCardThumbnail(image);
+      return thumbnail.image;
     },
     loadPageOriginal(page) {
       const cached = getCachedImage(page.image.id);

@@ -1,3 +1,4 @@
+import os
 import PIL.Image
 import requests
 
@@ -9,6 +10,7 @@ from django.db import models
 from django.dispatch import receiver
 
 from django_images.models import Image as BaseImage, Thumbnail
+from django_images import utils as image_utils
 from taggit.managers import TaggableManager
 
 from users.models import User
@@ -51,6 +53,7 @@ class ImageManager(models.Manager):
         # try to create thumbnails one by one later
         image = self.create(image=obj)
         Thumbnail.objects.get_or_create_at_sizes(image, settings.IMAGE_SIZES.keys())
+        image.get_animated_thumbnail()
         return image
 
 
@@ -61,6 +64,7 @@ class Image(BaseImage):
         standard = "standard"
         thumbnail = "thumbnail"
         square = "square"
+        animated_thumbnail = "animated_thumbnail"
 
     class Meta:
         proxy = True
@@ -82,6 +86,59 @@ class Image(BaseImage):
         return Thumbnail.objects.get(
             original=self, size=self.Sizes.square
         )
+
+    @property
+    def animated_thumbnail(self):
+        return self.get_animated_thumbnail()
+
+    def is_gif(self):
+        return self.image.name.lower().endswith('.gif')
+
+    def animated_thumbnail_size(self):
+        return getattr(
+            settings,
+            'ANIMATED_GIF_THUMBNAIL_SIZE',
+            self.Sizes.animated_thumbnail,
+        )
+
+    def get_animated_thumbnail(self):
+        if not self.is_gif():
+            return None
+        try:
+            return Thumbnail.objects.get(
+                original=self, size=self.animated_thumbnail_size()
+            )
+        except Thumbnail.DoesNotExist:
+            return self.create_animated_thumbnail()
+
+    def create_animated_thumbnail(self):
+        options = getattr(settings, 'ANIMATED_GIF_THUMBNAIL_OPTIONS', {})
+        buf = image_utils.write_animated_gif_thumbnail_in_memory(
+            self.image,
+            options.get('size', [240, 0]),
+            max_frames=options.get('max_frames', 24),
+            crop=options.get('crop', False),
+            upscale=options.get('upscale', False),
+        )
+        if buf is None:
+            return None
+        original_file = os.path.basename(self.image.name)
+        base, ext = os.path.splitext(original_file)
+        if ext.lower() != '.gif':
+            original_file = '{}.gif'.format(base)
+        thumb_file = InMemoryUploadedFile(
+            buf,
+            "image",
+            original_file,
+            "image/gif",
+            buf.tell(),
+            None,
+        )
+        thumbnail, _ = self.thumbnail_set.get_or_create(
+            size=self.animated_thumbnail_size(),
+            defaults={'image': thumb_file},
+        )
+        return thumbnail
 
 
 class Board(models.Model):

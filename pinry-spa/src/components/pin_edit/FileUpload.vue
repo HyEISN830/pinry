@@ -31,6 +31,7 @@
 <script>
 import API from '../api';
 import utils from '../utils/PinHandler';
+import imageVariant from '../utils/imageVariant';
 
 export default {
   name: 'FileUpload',
@@ -70,7 +71,8 @@ export default {
         return this.previewImageURL;
       }
       if (this.uploadedImage !== null) {
-        return utils.escapeUrl(this.uploadedImage.thumbnail.image);
+        const thumbnail = imageVariant.getCardThumbnail(this.uploadedImage);
+        return utils.escapeUrl(thumbnail.image);
       }
       return null;
     },

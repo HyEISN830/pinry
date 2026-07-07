@@ -124,6 +124,7 @@ import scroll from './utils/scroll';
 import bus from './utils/bus';
 import EditorUI from './editors/PinEditorUI.vue';
 import niceLinks from './utils/niceLinks';
+import imageVariant from './utils/imageVariant';
 
 function isWebUrl(url) {
   return /^https?:\/\//i.test((url || '').trim());
@@ -180,7 +181,8 @@ function isDocumentScrollable() {
 
 function createImageItem(pin) {
   const image = {};
-  image.url = pinHandler.escapeUrl(pin.image.thumbnail.image);
+  const thumbnail = imageVariant.getCardThumbnail(pin.image);
+  image.url = pinHandler.escapeUrl(thumbnail.image);
   image.id = pin.id;
   image.image_id = pin.image.id;
   image.owner_id = pin.submitter.id;
@@ -196,7 +198,7 @@ function createImageItem(pin) {
   image.referer = pin.referer;
   image.orgianl_width = pin.image.width;
   image.style = {
-    aspectRatio: `${pin.image.thumbnail.width} / ${pin.image.thumbnail.height}`,
+    aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
   };
   image.imageVisible = false;
   image.class = {

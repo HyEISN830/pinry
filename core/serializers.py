@@ -71,6 +71,7 @@ class ImageSerializer(serializers.ModelSerializer):
             "height",
             "standard",
             "thumbnail",
+            "animated_thumbnail",
             "square",
         )
         extra_kwargs = {
@@ -80,12 +81,20 @@ class ImageSerializer(serializers.ModelSerializer):
 
     standard = ThumbnailSerializer(read_only=True)
     thumbnail = ThumbnailSerializer(read_only=True)
+    animated_thumbnail = serializers.SerializerMethodField()
     square = ThumbnailSerializer(read_only=True)
 
     def create(self, validated_data):
         image = super(ImageSerializer, self).create(validated_data)
         Thumbnail.objects.get_or_create_at_sizes(image, settings.IMAGE_SIZES.keys())
+        image.get_animated_thumbnail()
         return image
+
+    def get_animated_thumbnail(self, obj):
+        thumbnail = obj.get_animated_thumbnail()
+        if thumbnail is None:
+            return None
+        return ThumbnailSerializer(thumbnail, context=self.context).data
 
 
 class TagSerializer(serializers.SlugRelatedField):

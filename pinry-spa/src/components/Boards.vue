@@ -71,6 +71,7 @@ import scroll from './utils/scroll';
 import placeholder from '../assets/pinry-placeholder.jpg';
 import BoardEditorUI from './editors/BoardEditUI.vue';
 import bus from './utils/bus';
+import imageVariant from './utils/imageVariant';
 
 function getResponsiveCardWidth(viewportWidth) {
   if (viewportWidth >= 2328) {
@@ -126,14 +127,14 @@ function createBoardItem(board) {
   boardItem.name = board.name;
   boardItem.private = board.private;
   boardItem.total_pins = board.total_pins;
-  if (previewImage.image.thumbnail.image !== null) {
+  const thumbnail = imageVariant.getCardThumbnail(previewImage.image);
+  if (thumbnail && thumbnail.image !== null) {
     boardItem.preview_image_url = pinHandler.escapeUrl(
-      previewImage.image.thumbnail.image,
+      thumbnail.image,
     );
   } else {
     boardItem.preview_image_url = defaultPreviewImage;
   }
-  const { thumbnail } = previewImage.image;
   boardItem.style = {
     aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
   };

@@ -69,7 +69,7 @@
               :style="coverStyle(comic)">
               <img
                 v-if="comic.cover"
-                :src="comic.cover.image.thumbnail.image"
+                :src="coverImageUrl(comic)"
                 :alt="comic.title">
             </div>
             <div class="comic-info">
@@ -136,6 +136,7 @@ import API from '../components/api';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import modals from '../components/modals';
+import imageVariant from '../components/utils/imageVariant';
 
 function isWebUrl(url) {
   return /^https?:\/\//i.test((url || '').trim());
@@ -266,10 +267,14 @@ export default {
       if (!comic.cover) {
         return {};
       }
-      const { thumbnail } = comic.cover.image;
+      const thumbnail = imageVariant.getCardThumbnail(comic.cover.image);
       return {
         '--comic-cover-image': `url("${thumbnail.image}")`,
       };
+    },
+    coverImageUrl(comic) {
+      const thumbnail = imageVariant.getCardThumbnail(comic.cover.image);
+      return thumbnail.image;
     },
     isOwner(comic) {
       return this.user.loggedIn
