@@ -7,6 +7,11 @@
           <div>
             <h1>{{ comic.title }}</h1>
             <p>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</p>
+            <div
+              class="reader-description"
+              v-if="hasDescription(comic.description)"
+              v-html="niceLinks(comic.description)">
+            </div>
             <div class="reader-source" v-if="hasSource(comic.referer)">
               <a
                 v-if="isWebUrl(comic.referer)"
@@ -46,6 +51,14 @@
           </div>
         </div>
         <div class="comic-editor" v-if="comic && isOwner && editing">
+          <b-field :label="$t('descriptionLabel')">
+            <b-input
+              type="textarea"
+              v-model="editForm.description"
+              maxlength="1024"
+              :placeholder="$t('pinCreateModalImageDescriptionPlaceholder')">
+            </b-input>
+          </b-field>
           <b-field :label="$t('imageSourceLabel')">
             <b-input
               v-model="editForm.referer"
@@ -209,6 +222,7 @@ import {
   getCachedImage,
 } from '../components/utils/originalImageCache';
 import imageVariant from '../components/utils/imageVariant';
+import niceLinks from '../components/utils/niceLinks';
 
 function splitTags(tagText) {
   return tagText.split(/[,\uFF0C]/)
@@ -244,6 +258,7 @@ export default {
       editorSaving: false,
       detailSaving: false,
       editForm: {
+        description: '',
         referer: '',
         tags: [],
       },
@@ -330,6 +345,7 @@ export default {
         (resp) => {
           this.comic = resp.data;
           this.loading = false;
+          this.editForm.description = this.comic.description || '';
           this.editForm.referer = this.comic.referer || '';
           this.editForm.tags = this.comic.tags || [];
           if (this.comic.pages.length > 0) {
@@ -629,12 +645,14 @@ export default {
       API.Comic.saveChanges(
         this.comic.id,
         {
+          description: this.editForm.description,
           referer: this.editForm.referer,
           tags: this.editForm.tags,
         },
       ).then(
         (resp) => {
           this.comic = resp.data;
+          this.editForm.description = this.comic.description || '';
           this.editForm.referer = this.comic.referer || '';
           this.editForm.tags = this.comic.tags || [];
           this.detailSaving = false;
@@ -647,12 +665,16 @@ export default {
     hasSource(url) {
       return !!(url || '').trim();
     },
+    hasDescription(description) {
+      return !!(description || '').trim();
+    },
     isWebUrl(url) {
       return /^https?:\/\//i.test((url || '').trim());
     },
     sourceText(url) {
       return (url || '').trim();
     },
+    niceLinks,
     onEditorFilesSelected(event) {
       this.editorFiles = Array.from(event.target.files || []);
     },
@@ -761,6 +783,18 @@ export default {
 .reader-head p {
   margin: 0.35rem 0 0;
   color: #64748b;
+}
+.reader-description {
+  max-width: 760px;
+  margin-top: 0.65rem;
+  color: #475569;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+.reader-description ::v-deep a {
+  color: #1f6feb;
+  font-weight: 700;
 }
 .reader-source {
   display: inline-flex;
