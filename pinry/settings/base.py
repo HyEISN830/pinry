@@ -145,10 +145,10 @@ IMAGE_SIZES = {
 
 IMAGE_PREVIEW_THROTTLE_BYTES_PER_SECOND = 1024 * 1024
 
-ANIMATED_GIF_THUMBNAIL_SIZE = 'animated_thumbnail'
+ANIMATED_GIF_THUMBNAIL_SIZE = 'animated_thumbnail_fast'
 ANIMATED_GIF_THUMBNAIL_OPTIONS = {
-    'size': [240, 0],
-    'max_frames': 24,
+    'size': [180, 0],
+    'max_frames': 48,
 }
 
 AVATAR_MAX_UPLOAD_SIZE = 2 * 1024 * 1024
