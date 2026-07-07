@@ -1,36 +1,37 @@
+FROM node:18-bookworm-slim AS frontend-build
+
+WORKDIR /app/pinry-spa
+
+RUN npm install -g pnpm
+
+COPY pinry-spa/package.json pinry-spa/pnpm-lock.yaml ./
+
+RUN pnpm install --frozen-lockfile
+
+COPY pinry-spa ./
+
+RUN pnpm build
+
+
 FROM python:3.7-bullseye
 
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install Node.js and pnpm
-RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o /tmp/n \
-    && bash /tmp/n 18 \
-    && npm -g install pnpm \
-    && rm -f /tmp/n
-
-# Install Poetry
+# Install Poetry and Python runtime dependencies. Keep this before COPY . so
+# Docker can reuse dependency layers when only application code changes.
 RUN pip install --no-cache-dir "poetry==1.5.1"
 
-# Python dependency cache
 COPY pyproject.toml poetry.lock /app/
 
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --no-root
+    && poetry install --no-interaction --no-ansi --no-root --only main \
+    && rm -rf /root/.cache/pypoetry /root/.cache/pip
 
-# Frontend dependency cache
-COPY pinry-spa/package.json /app/pinry-spa/package.json
-
-RUN cd /app/pinry-spa \
-    && pnpm install --no-frozen-lockfile
-
-# Copy full source
 COPY . /app
 
-# Build Vue SPA
-RUN cd /app/pinry-spa \
-    && pnpm build
+COPY --from=frontend-build /app/pinry-spa/dist /app/pinry-spa/dist
 
 EXPOSE 80
 
