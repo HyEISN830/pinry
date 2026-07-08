@@ -139,5 +139,15 @@
   "imageSourceLabel": "图片来源",
   "tagsLabel": "标签",
   "descriptionLabel": "描述",
-  "selectBoardLabel": "选择画板"
+  "selectBoardLabel": "选择画板",
+  "themeSettingsLabel": "主题",
+  "lightThemeLabel": "浅色主题",
+  "darkThemeLabel": "深色主题",
+  "languageLabel": "语言",
+  "menuLabel": "菜单",
+  "likeButton": "点赞",
+  "unlikeButton": "取消点赞",
+  "likesLabel": "点赞",
+  "loadMoreResults": "显示更多结果",
+  "searchPlaceholder": "搜索 Comic、Pin、画板或标签"
 }

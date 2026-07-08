@@ -111,6 +111,19 @@
               <div class="comic-source is-warning" v-else>
                 {{ $t("missingSourceNotice") }}
               </div>
+              <button
+                class="comic-like"
+                type="button"
+                :class="{ 'is-liked': comic.viewer_liked }"
+                :disabled="comic.likeBusy"
+                :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                @click.stop="toggleComicLike(comic)">
+                <b-icon
+                  :icon="comic.viewer_liked ? 'heart' : 'heart-outline'"
+                  size="is-small">
+                </b-icon>
+                <span>{{ formatLikeCount(comic.likes_count) }}</span>
+              </button>
             </div>
             </article>
           </div>
@@ -137,6 +150,7 @@ import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import modals from '../components/modals';
 import imageVariant from '../components/utils/imageVariant';
+import format from '../components/utils/format';
 
 function isWebUrl(url) {
   return /^https?:\/\//i.test((url || '').trim());
@@ -402,6 +416,9 @@ export default {
         this.fetchPage(this.currentPage - 1);
       }
     },
+    formatLikeCount(count) {
+      return format.formatCount(count);
+    },
     hiddenTagCount(comic) {
       return Math.max(0, (comic.tags || []).length - VISIBLE_COMIC_TAGS);
     },
@@ -440,6 +457,22 @@ export default {
       return true;
     },
     sourceText,
+    toggleComicLike(comic) {
+      if (comic.likeBusy) {
+        return;
+      }
+      this.$set(comic, 'likeBusy', true);
+      API.Comic.toggleLike(comic.id).then(
+        (resp) => {
+          this.$set(comic, 'viewer_liked', resp.data.viewer_liked);
+          this.$set(comic, 'likes_count', resp.data.likes_count);
+          this.$set(comic, 'likeBusy', false);
+        },
+        () => {
+          this.$set(comic, 'likeBusy', false);
+        },
+      );
+    },
   },
 };
 </script>
@@ -729,6 +762,37 @@ export default {
 }
 .comic-source.is-warning {
   color: #8a6d1d;
+}
+.comic-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 30px;
+  margin-top: 0.52rem;
+  padding: 0 0.58rem;
+  border: 1px solid var(--line-soft, #e0e6ef);
+  border-radius: 999px;
+  color: var(--text-muted, #64748b);
+  background: var(--surface-2, #f8fafc);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  transition: transform .16s ease, color .16s ease, background .16s ease, border-color .16s ease;
+}
+.comic-like:hover {
+  transform: translateY(-1px);
+  color: var(--accent-strong, #7e57c2);
+  border-color: var(--accent, #7e57c2);
+  background: var(--accent-soft, rgba(126, 87, 194, 0.14));
+}
+.comic-like.is-liked {
+  color: var(--accent-strong, #7e57c2);
+  border-color: var(--accent, #7e57c2);
+  background: var(--accent-soft, rgba(126, 87, 194, 0.14));
+}
+.comic-like:disabled {
+  opacity: 0.72;
+  cursor: wait;
 }
 @media screen and (max-width: 542px) {
   .comics-toolbar {

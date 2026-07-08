@@ -5,6 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from taggit.models import Tag
 
+from core.likes import like_actor_keys
 from core.models import Image, Board, Comic, ComicPage, MotionPhoto
 from core.models import Pin
 from django_images.models import Thumbnail
@@ -164,6 +165,8 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
             "image_by_id",
             "tags",
             "boards",
+            "likes_count",
+            "viewer_liked",
         )
 
     submitter = UserSerializer(read_only=True)
@@ -179,6 +182,8 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
         required=False,
     )
     boards = serializers.SerializerMethodField(read_only=True)
+    likes_count = serializers.SerializerMethodField(read_only=True)
+    viewer_liked = serializers.SerializerMethodField(read_only=True)
 
     def get_boards(self, instance):
         boards = getattr(instance, 'visible_boards', None)
@@ -186,6 +191,20 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
             request = self.context['request']
             boards = filter_private_board(request, instance.pins.all())
         return PinBoardSerializer(boards, many=True, context=self.context).data
+
+    def get_likes_count(self, instance):
+        return getattr(instance, 'likes_count', instance.likes.count())
+
+    def get_viewer_liked(self, instance):
+        liked = getattr(instance, 'viewer_liked', None)
+        if liked is not None:
+            return liked
+        request = self.context.get('request')
+        if request is None:
+            return False
+        return instance.likes.filter(
+            actor_key__in=like_actor_keys(request),
+        ).exists()
 
     def create(self, validated_data):
         if 'url' not in validated_data and\
@@ -280,6 +299,8 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
             'pages_to_add',
             'pages_to_remove',
             'pages_to_reorder',
+            'likes_count',
+            'viewer_liked',
         )
         read_only_fields = ('submitter', 'published')
 
@@ -308,6 +329,8 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
         write_only=True,
         required=False,
     )
+    likes_count = serializers.SerializerMethodField(read_only=True)
+    viewer_liked = serializers.SerializerMethodField(read_only=True)
 
     def get_total_pages(self, instance):
         return instance.pages.count()
@@ -317,6 +340,20 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
         if page is None:
             return None
         return ComicPageSerializer(page, context=self.context).data
+
+    def get_likes_count(self, instance):
+        return getattr(instance, 'likes_count', instance.likes.count())
+
+    def get_viewer_liked(self, instance):
+        liked = getattr(instance, 'viewer_liked', None)
+        if liked is not None:
+            return liked
+        request = self.context.get('request')
+        if request is None:
+            return False
+        return instance.likes.filter(
+            actor_key__in=like_actor_keys(request),
+        ).exists()
 
     @staticmethod
     def _normalize_orders(comic, ordered_pages=None):

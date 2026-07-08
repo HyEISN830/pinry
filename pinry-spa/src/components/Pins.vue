@@ -114,6 +114,19 @@
                   <div class="source-warning" v-if="!hasSource(item.referer)">
                     {{ $t("missingSourceNotice") }}
                   </div>
+                  <button
+                    class="like-button"
+                    type="button"
+                    :class="{ 'is-liked': item.viewer_liked }"
+                    :disabled="item.likeBusy"
+                    :title="item.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                    @click.stop="togglePinLike(item)">
+                    <b-icon
+                      :icon="item.viewer_liked ? 'heart' : 'heart-outline'"
+                      size="is-small">
+                    </b-icon>
+                    <span>{{ formatLikeCount(item.likes_count) }}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -137,6 +150,7 @@ import bus from './utils/bus';
 import EditorUI from './editors/PinEditorUI.vue';
 import niceLinks from './utils/niceLinks';
 import imageVariant from './utils/imageVariant';
+import format from './utils/format';
 
 function isWebUrl(url) {
   return /^https?:\/\//i.test((url || '').trim());
@@ -225,6 +239,9 @@ function createImageItem(pin) {
     )
     : null;
   image.referer = pin.referer;
+  image.likes_count = pin.likes_count || 0;
+  image.viewer_liked = !!pin.viewer_liked;
+  image.likeBusy = false;
   image.orgianl_width = pin.image.width;
   image.style = {
     aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
@@ -291,6 +308,9 @@ export default {
     },
   },
   methods: {
+    formatLikeCount(count) {
+      return format.formatCount(count);
+    },
     isPinOwner(pin) {
       if (!this.editorMeta.user.loggedIn) {
         return false;
@@ -564,6 +584,22 @@ export default {
     hasSource,
     isWebUrl,
     sourceText,
+    togglePinLike(item) {
+      if (item.likeBusy) {
+        return;
+      }
+      this.$set(item, 'likeBusy', true);
+      API.Pin.toggleLike(item.id).then(
+        (resp) => {
+          this.$set(item, 'viewer_liked', resp.data.viewer_liked);
+          this.$set(item, 'likes_count', resp.data.likes_count);
+          this.$set(item, 'likeBusy', false);
+        },
+        () => {
+          this.$set(item, 'likeBusy', false);
+        },
+      );
+    },
   },
   created() {
     this.lazyObserver = null;
@@ -816,25 +852,25 @@ $avatar-height: 30px;
 .pin-footer {
   position: relative;
   overflow-wrap: break-word;
-  background-color: white;
-  border-top: 1px solid #eef1f5;
+  background-color: var(--surface-1, white);
+  border-top: 1px solid var(--line-soft, #eef1f5);
   border-radius: 0 0 8px 8px;
   text-align: left;
   .description {
     @include description-font;
     padding: 10px 12px;
-    border-bottom: 1px solid #eef1f5;
+    border-bottom: 1px solid var(--line-soft, #eef1f5);
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 15px;
     line-height: 1.45;
-    color: #263238;
+    color: var(--text-strong, #263238);
   }
   .board-list {
     @include secondary-font;
     padding: 9px 12px;
-    border-bottom: 1px solid #eef1f5;
-    background-color: #f7fbff;
+    border-bottom: 1px solid var(--line-soft, #eef1f5);
+    background-color: var(--surface-2, #f7fbff);
     font-size: 14px;
   }
   .board-link {
@@ -869,6 +905,37 @@ $avatar-height: 30px;
     color: #8a6d1d;
     font-size: 13px;
     line-height: 1.35;
+  }
+  .like-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-height: 30px;
+    margin: 0 12px 12px 47px;
+    padding: 0 0.58rem;
+    border: 1px solid var(--line-soft, #dbe3ee);
+    border-radius: 999px;
+    color: var(--text-muted, #64748b);
+    background: var(--surface-2, #f8fafc);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 800;
+    transition: transform .16s ease, color .16s ease, background .16s ease, border-color .16s ease;
+  }
+  .like-button:hover {
+    transform: translateY(-1px);
+    color: var(--accent-strong, #d94691);
+    border-color: var(--accent, #ef7cba);
+    background: var(--accent-soft, rgba(239, 124, 186, 0.16));
+  }
+  .like-button.is-liked {
+    color: var(--accent-strong, #d94691);
+    border-color: var(--accent, #ef7cba);
+    background: var(--accent-soft, rgba(239, 124, 186, 0.16));
+  }
+  .like-button:disabled {
+    opacity: 0.72;
+    cursor: wait;
   }
 }
 

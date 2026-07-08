@@ -395,14 +395,22 @@ export default {
   line-height: 16px;
 }
 .card {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  max-height: calc(100vh - 36px);
   overflow: hidden;
   border-radius: 8px;
   background-color: rgba(12, 16, 24, 0.94);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  .card-image {
+    min-height: 0;
+  }
   .content {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
   .card-content {
+    max-height: min(34vh, 260px);
+    overflow: auto;
     .author {
       @include title-font-color-in-dark;
     }
@@ -448,7 +456,7 @@ export default {
 }
 .preview-frame {
   position: relative;
-  min-height: 280px;
+  min-height: min(72vh, 760px);
   overflow: hidden;
   background-position: center;
   background-repeat: no-repeat;
@@ -493,6 +501,17 @@ export default {
   margin-left: auto;
   margin-right: auto;
   width: auto;
-  max-height: 78vh;
+  max-height: calc(100vh - 190px);
+}
+@media screen and (max-width: 542px) {
+  .card {
+    max-height: calc(100vh - 18px);
+  }
+  .preview-frame {
+    min-height: 62vh;
+  }
+  .card-image img {
+    max-height: calc(100vh - 240px);
+  }
 }
 </style>

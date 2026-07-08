@@ -139,5 +139,15 @@
     "imageSourceLabel": "Image Source",
     "tagsLabel": "Tags",
     "descriptionLabel": "Descripton",
-    "selectBoardLabel": "Select Board"
+    "selectBoardLabel": "Select Board",
+    "themeSettingsLabel": "Theme",
+    "lightThemeLabel": "Light theme",
+    "darkThemeLabel": "Dark theme",
+    "languageLabel": "Language",
+    "menuLabel": "Menu",
+    "likeButton": "Like",
+    "unlikeButton": "Unlike",
+    "likesLabel": "likes",
+    "loadMoreResults": "Show more results",
+    "searchPlaceholder": "Search comics, pins, boards, or tags"
 }

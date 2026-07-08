@@ -17,6 +17,7 @@ export default {
   data() {
     return {
       progress: 0,
+      scrollAnimationFrame: null,
       ticking: false,
       visible: false,
     };
@@ -36,6 +37,9 @@ export default {
   beforeDestroy() {
     window.removeEventListener('scroll', this.requestUpdate);
     window.removeEventListener('resize', this.requestUpdate);
+    if (this.scrollAnimationFrame) {
+      window.cancelAnimationFrame(this.scrollAnimationFrame);
+    }
   },
   methods: {
     requestUpdate() {
@@ -51,7 +55,26 @@ export default {
       );
     },
     scrollToTop() {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      const startTop = window.pageYOffset
+        || document.documentElement.scrollTop
+        || 0;
+      const duration = window.innerWidth > 760 ? 620 : 420;
+      const startedAt = Date.now();
+      if (this.scrollAnimationFrame) {
+        window.cancelAnimationFrame(this.scrollAnimationFrame);
+      }
+      const step = () => {
+        const elapsed = Date.now() - startedAt;
+        const percent = Math.min(1, elapsed / duration);
+        const eased = 1 - Math.pow(1 - percent, 3);
+        window.scrollTo(0, Math.round(startTop * (1 - eased)));
+        if (percent < 1) {
+          this.scrollAnimationFrame = window.requestAnimationFrame(step);
+          return;
+        }
+        this.scrollAnimationFrame = null;
+      };
+      this.scrollAnimationFrame = window.requestAnimationFrame(step);
     },
     updateProgress() {
       const { body, documentElement: doc } = document;

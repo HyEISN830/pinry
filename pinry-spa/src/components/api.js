@@ -111,6 +111,10 @@ const Comic = {
     const url = `${API_PREFIX}comics/${comicId}/`;
     return axios.delete(url);
   },
+  toggleLike(comicId) {
+    const url = `${API_PREFIX}comics/${comicId}/like/`;
+    return axios.post(url);
+  },
 };
 
 const Pin = {
@@ -153,6 +157,10 @@ const Pin = {
       url,
       data,
     );
+  },
+  toggleLike(pinId) {
+    const url = `${API_PREFIX}pins/${pinId}/like/`;
+    return axios.post(url);
   },
   fetchOriginalImage(imageId, signal) {
     const url = `${API_PREFIX}images/${imageId}/original/`;
@@ -351,7 +359,28 @@ const Tag = {
   },
 };
 
+const Search = {
+  aggregate(query, type = 'all', offsets = {}, limit = 8) {
+    const url = `${API_PREFIX}search/`;
+    return axios.get(
+      url,
+      {
+        params: {
+          q: query,
+          type,
+          limit,
+          pin_offset: offsets.pins || 0,
+          board_offset: offsets.boards || 0,
+          comic_offset: offsets.comics || 0,
+          tag_offset: offsets.tags || 0,
+        },
+      },
+    );
+  },
+};
+
 export default {
+  Search,
   Tag,
   Pin,
   Board,

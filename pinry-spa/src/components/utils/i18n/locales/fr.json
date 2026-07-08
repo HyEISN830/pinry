@@ -139,5 +139,15 @@
     "imageSourceLabel": "Source de l'image",
     "tagsLabel": "Tags",
     "descriptionLabel": "Description",
-    "selectBoardLabel": "Selectionner un tableau"
+    "selectBoardLabel": "Selectionner un tableau",
+    "themeSettingsLabel": "Theme",
+    "lightThemeLabel": "Theme clair",
+    "darkThemeLabel": "Theme sombre",
+    "languageLabel": "Langue",
+    "menuLabel": "Menu",
+    "likeButton": "Aimer",
+    "unlikeButton": "Retirer le like",
+    "likesLabel": "likes",
+    "loadMoreResults": "Afficher plus de resultats",
+    "searchPlaceholder": "Rechercher comics, fiches, tableaux ou tags"
 }

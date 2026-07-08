@@ -264,6 +264,44 @@ class Pin(models.Model):
         return '%s - %s' % (self.submitter, self.published)
 
 
+class PinLike(models.Model):
+    class Meta:
+        unique_together = ("pin", "actor_key")
+        index_together = ("pin", "actor_key")
+
+    pin = models.ForeignKey(Pin, related_name="likes", on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+    actor_key = models.CharField(max_length=96)
+    ip_hash = models.CharField(max_length=96, blank=True)
+    published = models.DateTimeField(auto_now_add=True)
+
+
+class ComicLike(models.Model):
+    class Meta:
+        unique_together = ("comic", "actor_key")
+        index_together = ("comic", "actor_key")
+
+    comic = models.ForeignKey(
+        Comic,
+        related_name="likes",
+        on_delete=models.CASCADE,
+    )
+    user = models.ForeignKey(
+        User,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+    actor_key = models.CharField(max_length=96)
+    ip_hash = models.CharField(max_length=96, blank=True)
+    published = models.DateTimeField(auto_now_add=True)
+
+
 @receiver(models.signals.post_delete, sender=Pin)
 def delete_pin_images(sender, instance, **kwargs):
     try:
