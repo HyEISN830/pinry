@@ -51,7 +51,12 @@
                       class="motion-photo-badge"
                       :title="$t('motionPhotoLabel')"
                       :aria-label="$t('motionPhotoLabel')">
-                      <b-icon icon="play-circle" size="is-small"></b-icon>
+                      <span class="live-photo-glyph" aria-hidden="true">
+                        <span class="live-photo-ring is-outer"></span>
+                        <span class="live-photo-ring is-middle"></span>
+                        <span class="live-photo-ring is-inner"></span>
+                        <span class="live-photo-dot"></span>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -652,14 +657,55 @@ $avatar-height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 30px;
-    height: 30px;
-    color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.42);
+    width: 32px;
+    height: 32px;
+    color: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.34);
     border-radius: 999px;
-    background: rgba(12, 18, 28, 0.58);
+    background: rgba(12, 18, 28, 0.44);
     backdrop-filter: blur(8px);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+    transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
+  }
+  .motion-photo-badge:hover {
+    transform: scale(1.06);
+    background: rgba(12, 18, 28, 0.56);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+  }
+  .live-photo-glyph {
+    position: relative;
+    display: block;
+    width: 22px;
+    height: 22px;
+  }
+  .live-photo-ring,
+  .live-photo-dot {
+    position: absolute;
+    border-radius: 999px;
+  }
+  .live-photo-ring {
+    border: 1.7px solid currentColor;
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+    opacity: 0.94;
+  }
+  .live-photo-ring.is-outer {
+    inset: 1px;
+    transform: rotate(-20deg);
+  }
+  .live-photo-ring.is-middle {
+    inset: 5px;
+    transform: rotate(42deg);
+  }
+  .live-photo-ring.is-inner {
+    inset: 8px;
+    border-width: 1.5px;
+    transform: rotate(112deg);
+  }
+  .live-photo-dot {
+    inset: 9px;
+    background: currentColor;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18);
   }
   > img {
     min-width: $pin-preview-width;
