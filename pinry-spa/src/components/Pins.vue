@@ -661,21 +661,23 @@ $avatar-height: 30px;
   isolation: isolate;
   box-sizing: border-box;
   overflow: visible;
-  background: #fff;
-  border: 1px solid #e8ebf0;
+  background:
+    radial-gradient(circle at top left, var(--theme-glow), transparent 220px),
+    var(--surface-card, #fff);
+  border: 1px solid var(--accent-border, #e8ebf0);
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   will-change: transform;
   &:hover {
     transform: translateY(-4px);
-    border-color: #d3d9e4;
-    box-shadow: 0 12px 28px rgba(16, 24, 40, 0.16);
+    border-color: var(--accent, #d94691);
+    box-shadow: var(--accent-shadow, 0 12px 28px rgba(16, 24, 40, 0.16));
   }
   .pin-image-shell {
     position: relative;
     overflow: hidden;
-    background-color: #f5f7fa;
+    background-color: var(--surface-accent, #f5f7fa);
     border-radius: 8px 8px 0 0;
   }
   .pin-preview-image {
@@ -745,7 +747,7 @@ $avatar-height: 30px;
   }
   > img {
     min-width: $pin-preview-width;
-    background-color: white;
+    background-color: var(--surface-card, white);
     border-radius: 3px 3px 0 0;
     @include loader('../assets/loader.gif');
   }
@@ -763,16 +765,16 @@ $avatar-height: 30px;
       max-width: 100%;
       padding: 0.12rem 0.42rem;
       border-radius: 999px;
-      color: #1f6feb;
-      background: #eaf3ff;
+      color: var(--accent-strong, #1f6feb);
+      background: var(--accent-soft, #eaf3ff);
       font-size: 13px;
       font-weight: 800;
       line-height: 1.35;
       transition: background .16s ease, color .16s ease;
     }
     a:hover {
-      color: #0f4fb8;
-      background: #d9eaff;
+      color: var(--accent-strong, #0f4fb8);
+      background: var(--surface-accent, #d9eaff);
     }
   }
 }
@@ -804,14 +806,21 @@ $avatar-height: 30px;
   width: 100%;
   height: 100%;
   min-height: 140px;
-  background: linear-gradient(90deg, #f2f4f7 0%, #e6eaf0 45%, #f2f4f7 100%);
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #f2f4f7) 0%,
+    var(--skeleton-highlight, #ffffff) 45%,
+    var(--skeleton-base, #f2f4f7) 100%
+  );
   background-size: 220% 100%;
   animation: placeholderPulse 1.4s ease-in-out infinite;
 }
 .pin-masonry.has-board {
   .pin-card {
-    border-color: rgba(31, 111, 235, 0.68);
-    box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.12), 0 8px 20px rgba(16, 24, 40, 0.08);
+    border-color: var(--accent, #1f6feb);
+    box-shadow:
+      0 0 0 2px var(--accent-soft, rgba(31, 111, 235, 0.12)),
+      0 8px 20px rgba(16, 24, 40, 0.08);
     &::before,
     &::after {
       content: "";
@@ -824,26 +833,28 @@ $avatar-height: 30px;
       z-index: -1;
       border-radius: 12px;
       background:
-        radial-gradient(circle, rgba(31, 111, 235, 0.3) 0 1.4px, transparent 1.6px) 0 0 / 10px 10px,
-        linear-gradient(135deg, rgba(31, 111, 235, 0.12), rgba(20, 184, 166, 0.1));
+        radial-gradient(circle, var(--accent, #1f6feb) 0 1.2px, transparent 1.5px) 0 0 / 10px 10px,
+        linear-gradient(135deg, var(--theme-glow), var(--accent-soft));
       opacity: 0.72;
     }
     &::after {
       inset: 5px;
       z-index: 2;
-      border: 1px dashed rgba(31, 111, 235, 0.28);
+      border: 1px dashed var(--accent-border, rgba(31, 111, 235, 0.28));
       border-radius: 6px;
       box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
       opacity: 0.72;
     }
     &:hover {
-      border-color: rgba(31, 111, 235, 0.82);
-      box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.18), 0 14px 30px rgba(16, 24, 40, 0.16);
+      border-color: var(--accent-strong, #1f6feb);
+      box-shadow:
+        0 0 0 2px var(--accent-soft, rgba(31, 111, 235, 0.18)),
+        var(--accent-shadow, 0 14px 30px rgba(16, 24, 40, 0.16));
       &::before {
         opacity: 0.9;
       }
       &::after {
-        border-color: rgba(31, 111, 235, 0.36);
+        border-color: var(--accent, rgba(31, 111, 235, 0.36));
         opacity: 0.86;
       }
     }
@@ -877,7 +888,7 @@ $avatar-height: 30px;
     display: inline-block;
     margin-right: 0.4rem;
     font-weight: bold;
-    color: #1f6feb;
+    color: var(--accent-strong, #1f6feb);
   }
   .details {
     @include secondary-font;
@@ -893,7 +904,7 @@ $avatar-height: 30px;
     }
   }
   .source-text {
-    color: #1f6feb;
+    color: var(--accent-strong, #1f6feb);
     font-weight: 600;
   }
   .source-warning {

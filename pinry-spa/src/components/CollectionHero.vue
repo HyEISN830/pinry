@@ -92,17 +92,19 @@ export default {
   gap: 1rem;
   margin: 2rem auto 0;
   padding: 1.15rem 1.25rem;
-  border: 1px solid #e7ebf2;
+  border: 1px solid var(--accent-border, #e7ebf2);
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.12);
+  background:
+    radial-gradient(circle at top left, var(--theme-glow), transparent 320px),
+    var(--surface-card, #fff);
+  box-shadow: var(--shadow-soft, 0 14px 34px rgba(16, 24, 40, 0.12));
 }
 .collection-mark {
   flex: 0 0 auto;
   padding: 0.45rem 0.7rem;
   border-radius: 6px;
-  background: #edf5ff;
-  color: #1f6feb;
+  background: var(--accent-soft, #edf5ff);
+  color: var(--accent-strong, #1f6feb);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
@@ -113,7 +115,7 @@ export default {
 }
 .collection-main h1 {
   margin: 0;
-  color: #22313f;
+  color: var(--text-strong, #22313f);
   font-size: 1.55rem;
   font-weight: 800;
   line-height: 1.2;
@@ -121,38 +123,38 @@ export default {
 }
 .collection-main p {
   margin: 0.35rem 0 0;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 14px;
 }
 .collection-count {
   flex: 0 0 auto;
   min-width: 84px;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #edf1f6;
+  border: 1px solid var(--line-soft, #edf1f6);
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--surface-accent, #f8fafc);
   text-align: center;
 }
 .collection-count strong {
   display: block;
-  color: #22313f;
+  color: var(--text-strong, #22313f);
   font-size: 1.25rem;
   line-height: 1.1;
 }
 .collection-count span {
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 12px;
 }
 .collection-action {
   flex: 0 0 auto;
   border-radius: 7px;
   font-weight: 700;
-  box-shadow: 0 8px 18px rgba(31, 111, 235, 0.18);
+  box-shadow: var(--accent-shadow, 0 8px 18px rgba(31, 111, 235, 0.18));
   transition: transform .16s ease, box-shadow .16s ease;
 }
 .collection-action:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(31, 111, 235, 0.24);
+  box-shadow: var(--accent-shadow, 0 12px 24px rgba(31, 111, 235, 0.24));
 }
 
 @media screen and (max-width: 542px) {

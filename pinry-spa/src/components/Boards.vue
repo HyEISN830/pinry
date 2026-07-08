@@ -459,8 +459,10 @@ $avatar-height: 30px;
   position: relative;
   isolation: isolate;
   overflow: visible;
-  background: var(--surface-1, #fff);
-  border: 1px solid var(--line-soft, #e4e8ef);
+  background:
+    radial-gradient(circle at top left, var(--theme-glow), transparent 220px),
+    var(--surface-card, #fff);
+  border: 1px solid var(--accent-border, #e4e8ef);
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
@@ -480,7 +482,7 @@ $avatar-height: 30px;
     inset: auto 12px -10px 12px;
     z-index: -1;
     height: 18px;
-    border: 1px solid rgba(31, 111, 235, 0.22);
+    border: 1px solid var(--accent-border, rgba(31, 111, 235, 0.22));
     border-radius: 0 0 8px 8px;
     background: var(--accent-soft, #eef3f8);
   }
@@ -488,21 +490,21 @@ $avatar-height: 30px;
     content: "";
     inset: auto 10px -7px 10px;
     height: 13px;
-    border: 1px solid rgba(31, 111, 235, 0.16);
+    border: 1px solid var(--accent-border, rgba(31, 111, 235, 0.16));
     border-radius: 0 0 8px 8px;
-    background: var(--surface-2, #eef3f8);
+    background: var(--surface-accent, #eef3f8);
   }
   &:hover {
     transform: translateY(-4px);
     border-color: var(--accent, #1f6feb);
-    box-shadow: 0 16px 32px rgba(16, 24, 40, 0.16);
+    box-shadow: var(--accent-shadow, 0 16px 32px rgba(16, 24, 40, 0.16));
   }
   .board-image-shell {
     position: relative;
     isolation: isolate;
     overflow: hidden;
     min-height: 170px;
-    background-color: var(--surface-2, #f5f7fa);
+    background-color: var(--surface-accent, #f5f7fa);
     border-radius: 8px 8px 0 0;
   }
   .board-image-shell::before {
@@ -552,7 +554,12 @@ $avatar-height: 30px;
   width: 100%;
   height: 100%;
   min-height: 170px;
-  background: linear-gradient(90deg, #f2f4f7 0%, #e6eaf0 45%, #f2f4f7 100%);
+  background: linear-gradient(
+    90deg,
+    var(--skeleton-base, #f2f4f7) 0%,
+    var(--skeleton-highlight, #ffffff) 45%,
+    var(--skeleton-base, #f2f4f7) 100%
+  );
   background-size: 220% 100%;
   animation: placeholderPulse 1.4s ease-in-out infinite;
 }
@@ -563,7 +570,7 @@ $avatar-height: 30px;
   gap: 0.7rem;
   position: relative;
   padding: 0.85rem;
-  background-color: var(--surface-1, white);
+  background-color: var(--surface-card, white);
   border-top: 1px solid var(--line-soft, #eef1f5);
   border-radius: 0 0 8px 8px;
   font-weight: bold;

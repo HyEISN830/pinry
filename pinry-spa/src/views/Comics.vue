@@ -495,13 +495,13 @@ export default {
 }
 .comics-toolbar h1 {
   margin: 0;
-  color: #22313f;
+  color: var(--text-strong, #22313f);
   font-size: 1.6rem;
   font-weight: 800;
 }
 .comics-toolbar p {
   margin: 0.25rem 0 0;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 0.95rem;
 }
 .toolbar-actions {
@@ -526,11 +526,11 @@ export default {
 }
 .comic-row-shell::before {
   left: 0;
-  background: linear-gradient(to right, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0));
+  background: linear-gradient(to right, var(--app-bg, #f6f7fb), transparent);
 }
 .comic-row-shell::after {
   right: 0;
-  background: linear-gradient(to left, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0));
+  background: linear-gradient(to left, var(--app-bg, #f6f7fb), transparent);
 }
 .comic-row-shell.can-page-left::before,
 .comic-row-shell.can-page-right::after {
@@ -573,10 +573,14 @@ export default {
   color: inherit;
   cursor: pointer;
   animation: comicCardAppear .44s cubic-bezier(0.16, 1, 0.3, 1) both;
-  border: 1px solid rgba(126, 87, 194, 0.42);
+  border: 1px solid var(--accent-border, rgba(126, 87, 194, 0.42));
   border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(126, 87, 194, 0.08), 0 1px 2px rgba(16, 24, 40, 0.06);
+  background:
+    radial-gradient(circle at top left, var(--theme-glow), transparent 240px),
+    var(--surface-card, #fff);
+  box-shadow:
+    0 0 0 2px var(--accent-soft, rgba(126, 87, 194, 0.08)),
+    0 1px 2px rgba(16, 24, 40, 0.06);
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .comic-card::before,
@@ -586,9 +590,9 @@ export default {
   left: 12px;
   right: 12px;
   height: 12px;
-  border: 1px solid rgba(126, 87, 194, 0.22);
+  border: 1px solid var(--accent-border, rgba(126, 87, 194, 0.22));
   border-radius: 0 0 8px 8px;
-  background: #faf7ff;
+  background: var(--accent-soft, #faf7ff);
   pointer-events: none;
 }
 .comic-card::before {
@@ -599,13 +603,15 @@ export default {
   bottom: -13px;
   left: 24px;
   right: 24px;
-  background: #f0ebff;
+  background: var(--surface-accent, #f0ebff);
   z-index: -2;
 }
 .comic-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(126, 87, 194, 0.74);
-  box-shadow: 0 0 0 2px rgba(126, 87, 194, 0.14), 0 16px 32px rgba(16, 24, 40, 0.16);
+  border-color: var(--accent, rgba(126, 87, 194, 0.74));
+  box-shadow:
+    0 0 0 2px var(--accent-soft, rgba(126, 87, 194, 0.14)),
+    var(--accent-shadow, 0 16px 32px rgba(16, 24, 40, 0.16));
 }
 .comic-ribbon {
   position: absolute;
@@ -614,8 +620,8 @@ export default {
   left: 10px;
   padding: 0.25rem 0.45rem;
   border-radius: 6px;
-  color: #fff;
-  background: rgba(126, 87, 194, 0.9);
+  color: var(--accent-text, #fff);
+  background: var(--accent-strong, #7e57c2);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -648,7 +654,7 @@ export default {
   min-height: 220px;
   overflow: hidden;
   border-radius: 8px 8px 0 0;
-  background: #f7f3ff;
+  background: var(--surface-accent, #f7f3ff);
 }
 .comic-cover::before {
   content: "";
@@ -667,7 +673,7 @@ export default {
   position: absolute;
   z-index: 0;
   inset: 0;
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--theme-glow, rgba(255, 255, 255, 0.18));
 }
 .comic-cover img {
   position: relative;
@@ -679,12 +685,12 @@ export default {
 }
 .comic-info {
   padding: 0.85rem;
-  border-top: 1px solid #efe9ff;
+  border-top: 1px solid var(--line-soft, #efe9ff);
 }
 .comic-info h2 {
   overflow: hidden;
   margin: 0;
-  color: #22313f;
+  color: var(--text-strong, #22313f);
   font-size: 16px;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -704,8 +710,8 @@ export default {
   padding: 0.15rem 0.42rem;
   border: 0;
   border-radius: 999px;
-  color: #6d4bc1;
-  background: #f2edff;
+  color: var(--accent-strong, #6d4bc1);
+  background: var(--accent-soft, #f2edff);
   font-size: 12px;
   font-weight: 800;
   line-height: 1.35;
@@ -714,13 +720,13 @@ export default {
   overflow: hidden;
 }
 .comic-tag-more {
-  color: #64748b;
-  background: #eef1f5;
+  color: var(--text-muted, #64748b);
+  background: var(--surface-2, #eef1f5);
   cursor: pointer;
 }
 .comic-tag-more:hover {
-  color: #334155;
-  background: #e2e8f0;
+  color: var(--text-strong, #334155);
+  background: var(--surface-accent, #e2e8f0);
 }
 .comic-author {
   display: flex;
@@ -728,7 +734,7 @@ export default {
   gap: 0.4rem;
   min-width: 0;
   margin-top: 0.45rem;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 13px;
 }
 .comic-author img {
@@ -740,7 +746,7 @@ export default {
 .comic-author a {
   overflow: hidden;
   min-width: 0;
-  color: #334155;
+  color: var(--text-strong, #334155);
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -751,14 +757,14 @@ export default {
 .comic-source {
   overflow: hidden;
   margin: 0.45rem 0 0;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .comic-source a,
 .comic-source span {
-  color: #7e57c2;
+  color: var(--accent-strong, #7e57c2);
   font-weight: 700;
 }
 .comic-source.is-warning {

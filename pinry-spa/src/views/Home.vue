@@ -49,13 +49,13 @@ export default {
 }
 .home-pin-heading h1 {
   margin: 0;
-  color: #22313f;
+  color: var(--text-strong, #22313f);
   font-size: 1.6rem;
   font-weight: 800;
 }
 .home-pin-heading p {
   margin: 0.25rem 0 0;
-  color: #64748b;
+  color: var(--text-muted, #64748b);
   font-size: 0.95rem;
 }
 @include screen-grid-layout(".home-pin-heading .container");
