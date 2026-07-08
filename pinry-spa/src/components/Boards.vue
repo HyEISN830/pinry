@@ -445,7 +445,7 @@ export default {
 .grid.is-visible,
 .grid.image-loaded {
   opacity: 1;
-  transition: opacity .24s ease;
+  transition: opacity .38s ease;
 }
 
 /* card */
@@ -546,7 +546,7 @@ $avatar-height: 30px;
 }
 .grid.is-visible .board-card,
 .grid.image-loaded .board-card {
-  animation: cardAppear .28s ease both;
+  animation: cardAppear .46s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .lazy-image-placeholder {
   width: 100%;
@@ -607,12 +607,12 @@ $avatar-height: 30px;
 }
 @keyframes cardAppear {
   from {
-    opacity: 0.86;
-    transform: translateY(8px);
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 

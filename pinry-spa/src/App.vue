@@ -111,9 +111,15 @@ export default {
   }
   #app {
     min-height: 100vh;
+    padding-top: var(--nav-height);
     background:
       radial-gradient(circle at top left, var(--accent-soft), transparent 320px),
       var(--app-bg);
+  }
+  @media screen and (max-width: 760px) {
+    :root {
+      --nav-height: 58px;
+    }
   }
   a {
     color: var(--accent-strong);

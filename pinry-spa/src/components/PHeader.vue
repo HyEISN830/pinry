@@ -2,7 +2,7 @@
   <header
     class="p-header"
     :class="{
-      'is-open': active,
+      'is-open': navOpen,
       'is-hidden': navHidden
     }">
     <nav class="nav-shell" role="navigation" aria-label="main navigation">
@@ -249,6 +249,8 @@ export default {
       lastScrollTop: 0,
       navHidden: false,
       pinnedDropdown: null,
+      scrollDirection: null,
+      scrollDistance: 0,
       scrollTicking: false,
       themeState: theme.readTheme(),
       user: {
@@ -256,6 +258,13 @@ export default {
         meta: {},
       },
     };
+  },
+  computed: {
+    navOpen() {
+      return this.active
+        || this.activeDropdown !== null
+        || this.pinnedDropdown !== null;
+    },
   },
   methods: {
     clearDropdownCloseTimer() {
@@ -285,6 +294,8 @@ export default {
       this.clearDropdownCloseTimer();
       this.activeDropdown = name;
       this.navHidden = false;
+      this.scrollDirection = null;
+      this.scrollDistance = 0;
     },
     scheduleDropdownClose() {
       if (this.pinnedDropdown) {
@@ -314,11 +325,15 @@ export default {
       this.pinnedDropdown = name;
       this.activeDropdown = name;
       this.navHidden = false;
+      this.scrollDirection = null;
+      this.scrollDistance = 0;
     },
     toggleMenu() {
       this.active = !this.active;
       if (this.active) {
         this.navHidden = false;
+        this.scrollDirection = null;
+        this.scrollDistance = 0;
       }
     },
     onLoginSucceed() {
@@ -387,16 +402,38 @@ export default {
       );
     },
     updateNavVisibility() {
-      const scrollTop = window.pageYOffset
+      const scrollTop = Math.max(
+        0,
+        window.pageYOffset
         || document.documentElement.scrollTop
-        || 0;
+        || 0,
+      );
       const delta = scrollTop - this.lastScrollTop;
-      if (this.active || scrollTop < 80) {
+      const distance = Math.abs(delta);
+      if (this.navOpen || scrollTop < 96) {
         this.navHidden = false;
-      } else if (delta > 8) {
+        this.scrollDirection = null;
+        this.scrollDistance = 0;
+        this.lastScrollTop = scrollTop;
+        return;
+      }
+      if (distance < 2) {
+        this.lastScrollTop = scrollTop;
+        return;
+      }
+      const direction = delta > 0 ? 'down' : 'up';
+      if (this.scrollDirection === direction) {
+        this.scrollDistance += distance;
+      } else {
+        this.scrollDirection = direction;
+        this.scrollDistance = distance;
+      }
+      if (direction === 'down' && !this.navHidden && this.scrollDistance > 44) {
         this.navHidden = true;
-      } else if (delta < -8) {
+        this.scrollDistance = 0;
+      } else if (direction === 'up' && this.navHidden && this.scrollDistance > 24) {
         this.navHidden = false;
+        this.scrollDistance = 0;
       }
       this.lastScrollTop = scrollTop;
     },
@@ -432,15 +469,24 @@ export default {
 
 <style scoped lang="scss">
 .p-header {
-  position: sticky;
-  z-index: 60;
+  position: fixed;
+  z-index: 80;
   top: 0;
+  right: 0;
+  left: 0;
   padding: 0.65rem clamp(0.8rem, 3vw, 2rem);
-  transform: translateY(0);
-  transition: transform .24s ease, padding .2s ease;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  transition:
+    transform .34s cubic-bezier(0.16, 1, 0.3, 1),
+    padding .2s ease;
+  will-change: transform;
 }
 .p-header.is-hidden {
-  transform: translateY(calc(-100% - 8px));
+  transform: translate3d(0, calc(-100% - 12px), 0);
+}
+.p-header.is-open {
+  transform: translate3d(0, 0, 0);
 }
 .nav-shell {
   display: flex;
@@ -454,6 +500,7 @@ export default {
   border-radius: 8px;
   background: var(--surface-1);
   backdrop-filter: blur(16px);
+  pointer-events: auto;
   box-shadow: var(--shadow-soft);
 }
 .brand {
@@ -684,6 +731,7 @@ export default {
     border: 1px solid var(--line-soft);
     border-radius: 8px;
     background: var(--surface-1);
+    pointer-events: auto;
     box-shadow: var(--shadow-soft);
   }
   .mobile-accent-row {

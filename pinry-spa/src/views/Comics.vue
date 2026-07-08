@@ -572,6 +572,7 @@ export default {
   min-width: 0;
   color: inherit;
   cursor: pointer;
+  animation: comicCardAppear .44s cubic-bezier(0.16, 1, 0.3, 1) both;
   border: 1px solid rgba(126, 87, 194, 0.42);
   border-radius: 8px;
   background: #fff;
@@ -793,6 +794,16 @@ export default {
 .comic-like:disabled {
   opacity: 0.72;
   cursor: wait;
+}
+@keyframes comicCardAppear {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 @media screen and (max-width: 542px) {
   .comics-toolbar {

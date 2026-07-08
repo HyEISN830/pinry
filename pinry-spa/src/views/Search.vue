@@ -541,7 +541,7 @@ export default {
 .result-card {
   overflow: hidden;
   color: inherit;
-  animation: resultAppear .24s ease both;
+  animation: resultAppear .42s cubic-bezier(0.16, 1, 0.3, 1) both;
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .result-card:hover {
@@ -659,11 +659,11 @@ export default {
 @keyframes resultAppear {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(14px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 @media screen and (max-width: 820px) {
