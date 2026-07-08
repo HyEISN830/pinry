@@ -4,7 +4,8 @@
     :class="{
       'is-open': navOpen,
       'is-hidden': navHidden
-    }">
+    }"
+    :style="navStyle">
     <nav class="nav-shell" role="navigation" aria-label="main navigation">
       <router-link
         class="brand"
@@ -237,6 +238,13 @@ import api from './api';
 import modals from './modals';
 import theme from './utils/theme';
 
+const NAV_HIDE_DISTANCE = 96;
+const NAV_SHOW_DISTANCE = 62;
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 export default {
   name: 'p-header',
   data() {
@@ -248,9 +256,8 @@ export default {
       langs: localeUtils.langCode2Name,
       lastScrollTop: 0,
       navHidden: false,
+      navProgress: 0,
       pinnedDropdown: null,
-      scrollDirection: null,
-      scrollDistance: 0,
       scrollTicking: false,
       themeState: theme.readTheme(),
       user: {
@@ -264,6 +271,18 @@ export default {
       return this.active
         || this.activeDropdown !== null
         || this.pinnedDropdown !== null;
+    },
+    navStyle() {
+      const progress = this.navOpen ? 0 : this.navProgress;
+      const opacity = 1 - progress;
+      const scale = 1 - (progress * 0.018);
+      const offsetPercent = (-108 * progress).toFixed(2);
+      const offsetPixels = Math.round(18 * progress);
+      return {
+        '--nav-opacity': opacity.toFixed(3),
+        '--nav-offset': `calc(${offsetPercent}% - ${offsetPixels}px)`,
+        '--nav-scale': scale.toFixed(4),
+      };
     },
   },
   methods: {
@@ -290,12 +309,14 @@ export default {
     isDropdownOpen(name) {
       return this.activeDropdown === name || this.pinnedDropdown === name;
     },
+    revealNav() {
+      this.navHidden = false;
+      this.navProgress = 0;
+    },
     openDropdown(name) {
       this.clearDropdownCloseTimer();
       this.activeDropdown = name;
-      this.navHidden = false;
-      this.scrollDirection = null;
-      this.scrollDistance = 0;
+      this.revealNav();
     },
     scheduleDropdownClose() {
       if (this.pinnedDropdown) {
@@ -324,16 +345,12 @@ export default {
       }
       this.pinnedDropdown = name;
       this.activeDropdown = name;
-      this.navHidden = false;
-      this.scrollDirection = null;
-      this.scrollDistance = 0;
+      this.revealNav();
     },
     toggleMenu() {
       this.active = !this.active;
       if (this.active) {
-        this.navHidden = false;
-        this.scrollDirection = null;
-        this.scrollDistance = 0;
+        this.revealNav();
       }
     },
     onLoginSucceed() {
@@ -411,9 +428,7 @@ export default {
       const delta = scrollTop - this.lastScrollTop;
       const distance = Math.abs(delta);
       if (this.navOpen || scrollTop < 96) {
-        this.navHidden = false;
-        this.scrollDirection = null;
-        this.scrollDistance = 0;
+        this.revealNav();
         this.lastScrollTop = scrollTop;
         return;
       }
@@ -421,20 +436,20 @@ export default {
         this.lastScrollTop = scrollTop;
         return;
       }
-      const direction = delta > 0 ? 'down' : 'up';
-      if (this.scrollDirection === direction) {
-        this.scrollDistance += distance;
+      if (delta > 0) {
+        this.navProgress = clamp(
+          this.navProgress + (distance / NAV_HIDE_DISTANCE),
+          0,
+          1,
+        );
       } else {
-        this.scrollDirection = direction;
-        this.scrollDistance = distance;
+        this.navProgress = clamp(
+          this.navProgress - (distance / NAV_SHOW_DISTANCE),
+          0,
+          1,
+        );
       }
-      if (direction === 'down' && !this.navHidden && this.scrollDistance > 44) {
-        this.navHidden = true;
-        this.scrollDistance = 0;
-      } else if (direction === 'up' && this.navHidden && this.scrollDistance > 24) {
-        this.navHidden = false;
-        this.scrollDistance = 0;
-      }
+      this.navHidden = this.navProgress >= 0.995;
       this.lastScrollTop = scrollTop;
     },
     initializeUser(force = false) {
@@ -501,25 +516,28 @@ export default {
   border-radius: 8px;
   background: var(--surface-1);
   backdrop-filter: blur(16px);
-  opacity: 1;
+  opacity: var(--nav-opacity, 1);
   pointer-events: auto;
   box-shadow: var(--shadow-soft);
-  transform: translate3d(0, 0, 0) scale(1);
+  transform: translate3d(0, var(--nav-offset, 0), 0) scale(var(--nav-scale, 1));
   transition:
     border-color .2s ease,
     box-shadow .28s ease,
-    opacity .34s ease,
-    transform .42s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity .12s linear,
+    transform .12s linear;
   will-change: opacity, transform;
 }
 .p-header.is-hidden .nav-shell {
-  opacity: 0;
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-  transform: translate3d(0, calc(-100% - 18px), 0) scale(0.985);
 }
 .p-header.is-open .nav-shell {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    border-color .2s ease,
+    box-shadow .28s ease,
+    opacity .28s ease,
+    transform .34s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .brand {
   display: inline-flex;
