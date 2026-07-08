@@ -358,6 +358,11 @@ export default {
 <style lang="scss" scoped>
 @import './utils/fonts.scss';
 
+.pin-preview-modal {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
 .meta-link {
   margin-left: 0.45rem;
   margin-bottom: 0.35rem;
@@ -397,12 +402,18 @@ export default {
 .card {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
+  width: fit-content;
+  max-width: calc(100vw - 36px);
   max-height: calc(100vh - 36px);
+  margin: 0 auto;
   overflow: hidden;
   border-radius: 8px;
   background-color: rgba(12, 16, 24, 0.94);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
   .card-image {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     min-height: 0;
   }
   .content {
@@ -456,25 +467,42 @@ export default {
 }
 .preview-frame {
   position: relative;
-  min-height: min(72vh, 760px);
+  display: inline-grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: calc(100vw - 36px);
+  max-height: calc(100vh - 176px);
+  margin: 0 auto;
+  padding: 20px;
   overflow: hidden;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: contain;
+  background-size: cover;
+  border-radius: 8px 8px 0 0;
 }
 .preview-frame::before {
   content: "";
   position: absolute;
-  inset: -24px;
+  inset: 0;
   z-index: 0;
   background: inherit;
   background-size: cover;
-  filter: blur(22px);
-  opacity: 0.28;
+  filter: blur(18px) saturate(1.08);
+  opacity: 0.34;
+  transform: scale(1.06);
 }
 .preview-frame img {
   position: relative;
   z-index: 1;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: calc(100vw - 76px);
+  max-height: calc(100vh - 216px);
+  margin: 0 auto;
+  padding: 0;
+  object-fit: contain;
   transition: filter .3s ease, opacity .3s ease;
 }
 .preview-frame img.is-loading-preview {
@@ -484,9 +512,9 @@ export default {
 .motion-preview-video {
   position: absolute;
   z-index: 2;
-  inset: 10px;
-  width: calc(100% - 20px);
-  height: calc(100% - 20px);
+  inset: 20px;
+  width: calc(100% - 40px);
+  height: calc(100% - 40px);
   object-fit: contain;
   opacity: 0;
   pointer-events: none;
@@ -495,23 +523,24 @@ export default {
 .motion-preview-video.is-active {
   opacity: 1;
 }
-/* preview size should always less then screen */
-.card-image img {
-  padding: 10px;
-  margin-left: auto;
-  margin-right: auto;
-  width: auto;
-  max-height: calc(100vh - 190px);
-}
 @media screen and (max-width: 542px) {
   .card {
+    max-width: calc(100vw - 18px);
     max-height: calc(100vh - 18px);
   }
   .preview-frame {
-    min-height: 62vh;
+    max-width: calc(100vw - 18px);
+    max-height: calc(100vh - 210px);
+    padding: 12px;
   }
-  .card-image img {
-    max-height: calc(100vh - 240px);
+  .preview-frame img {
+    max-width: calc(100vw - 42px);
+    max-height: calc(100vh - 234px);
+  }
+  .motion-preview-video {
+    inset: 12px;
+    width: calc(100% - 24px);
+    height: calc(100% - 24px);
   }
 }
 </style>
