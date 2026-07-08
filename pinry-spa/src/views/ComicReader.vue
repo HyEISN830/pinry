@@ -548,6 +548,24 @@ export default {
       if (pages.length === 0) {
         return;
       }
+      const scrollElement = this.fullReaderScrollElement
+        || this.$el.querySelector('.comic-full-reader');
+      const isDesktopFullReader = window.matchMedia
+        ? window.matchMedia('(min-width: 543px)').matches
+        : true;
+      if (isDesktopFullReader && scrollElement) {
+        const isScrollable = scrollElement.scrollHeight > scrollElement.clientHeight + 8;
+        const isNearBottom = scrollElement.scrollTop + scrollElement.clientHeight
+          >= scrollElement.scrollHeight - 8;
+        if (isScrollable && isNearBottom) {
+          const lastPage = pages[pages.length - 1];
+          const lastPageOrder = parseInt(lastPage.dataset.pageOrder, 10);
+          if (lastPageOrder !== this.currentFullPageOrder) {
+            this.currentFullPageOrder = lastPageOrder;
+          }
+          return;
+        }
+      }
       const viewportHeight = window.innerHeight
         || document.documentElement.clientHeight
         || 0;
