@@ -475,21 +475,14 @@ export default {
   right: 0;
   left: 0;
   padding: 0.65rem clamp(0.8rem, 3vw, 2rem);
-  opacity: 1;
   pointer-events: none;
   transform: translate3d(0, 0, 0);
-  transition:
-    opacity .28s ease,
-    transform .34s cubic-bezier(0.16, 1, 0.3, 1),
-    padding .2s ease;
-  will-change: opacity, transform;
+  transition: padding .2s ease;
 }
 .p-header.is-hidden {
-  opacity: 0;
-  transform: translate3d(0, calc(-100% - 12px), 0);
+  transform: translate3d(0, 0, 0);
 }
 .p-header.is-open {
-  opacity: 1;
   transform: translate3d(0, 0, 0);
 }
 .p-header.is-hidden .nav-shell,
@@ -508,18 +501,25 @@ export default {
   border-radius: 8px;
   background: var(--surface-1);
   backdrop-filter: blur(16px);
+  opacity: 1;
   pointer-events: auto;
   box-shadow: var(--shadow-soft);
-  transform: translateY(0);
+  transform: translate3d(0, 0, 0) scale(1);
   transition:
     border-color .2s ease,
-    box-shadow .24s ease,
-    opacity .28s ease,
-    transform .34s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow .28s ease,
+    opacity .34s ease,
+    transform .42s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 .p-header.is-hidden .nav-shell {
-  opacity: 0.96;
-  transform: translateY(-4px);
+  opacity: 0;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  transform: translate3d(0, calc(-100% - 18px), 0) scale(0.985);
+}
+.p-header.is-open .nav-shell {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
 }
 .brand {
   display: inline-flex;

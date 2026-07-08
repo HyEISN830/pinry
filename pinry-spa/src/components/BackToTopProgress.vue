@@ -18,6 +18,7 @@ export default {
   data() {
     return {
       progress: 0,
+      scrollBehaviorSnapshot: null,
       scrollAnimationFrame: null,
       ticking: false,
       visible: false,
@@ -28,7 +29,6 @@ export default {
       const progressDegrees = this.progress * 360;
       return {
         '--scroll-progress': `${progressDegrees}deg`,
-        '--scroll-progress-mid': `${this.progress * 210}deg`,
       };
     },
   },
@@ -43,8 +43,42 @@ export default {
     if (this.scrollAnimationFrame) {
       window.cancelAnimationFrame(this.scrollAnimationFrame);
     }
+    this.restoreScrollBehavior();
   },
   methods: {
+    disableSmoothScroll() {
+      if (this.scrollBehaviorSnapshot !== null) {
+        return;
+      }
+      const { body, documentElement: doc } = document;
+      this.scrollBehaviorSnapshot = {
+        body: body ? body.style.scrollBehavior : null,
+        doc: doc.style.scrollBehavior,
+      };
+      doc.style.scrollBehavior = 'auto';
+      if (body) {
+        body.style.scrollBehavior = 'auto';
+      }
+    },
+    restoreScrollBehavior() {
+      if (this.scrollBehaviorSnapshot === null) {
+        return;
+      }
+      const { body, documentElement: doc } = document;
+      doc.style.scrollBehavior = this.scrollBehaviorSnapshot.doc;
+      if (body && this.scrollBehaviorSnapshot.body !== null) {
+        body.style.scrollBehavior = this.scrollBehaviorSnapshot.body;
+      }
+      this.scrollBehaviorSnapshot = null;
+    },
+    setScrollTop(top) {
+      const { body, documentElement: doc } = document;
+      doc.scrollTop = top;
+      if (body) {
+        body.scrollTop = top;
+      }
+      window.scrollTo(0, top);
+    },
     requestUpdate() {
       if (this.ticking) {
         return;
@@ -61,27 +95,29 @@ export default {
       const startTop = window.pageYOffset
         || document.documentElement.scrollTop
         || 0;
-      const duration = window.innerWidth > 760 ? 520 : 360;
-      const startedAt = Date.now();
+      if (startTop <= 0) {
+        return;
+      }
+      const duration = Math.min(
+        900,
+        Math.max(320, startTop / 3.2),
+      );
+      const startedAt = window.performance.now();
       if (this.scrollAnimationFrame) {
         window.cancelAnimationFrame(this.scrollAnimationFrame);
       }
-      const step = () => {
-        const elapsed = Date.now() - startedAt;
+      this.disableSmoothScroll();
+      const step = (now) => {
+        const elapsed = now - startedAt;
         const percent = Math.min(1, elapsed / duration);
-        window.scrollTo({
-          top: Math.round(startTop * (1 - percent)),
-          behavior: 'auto',
-        });
+        this.setScrollTop(Math.round(startTop * (1 - percent)));
         if (percent < 1) {
           this.scrollAnimationFrame = window.requestAnimationFrame(step);
           return;
         }
-        window.scrollTo({
-          top: 0,
-          behavior: 'auto',
-        });
+        this.setScrollTop(0);
         this.scrollAnimationFrame = null;
+        this.restoreScrollBehavior();
       };
       this.scrollAnimationFrame = window.requestAnimationFrame(step);
     },
@@ -118,11 +154,10 @@ export default {
   background:
     linear-gradient(var(--surface-1, #fff), var(--surface-1, #fff)) padding-box,
     conic-gradient(
-      from -90deg,
-      var(--scroll-ring-start, #ff9fd0) 0deg,
-      var(--scroll-ring-mid, #ef7cba) var(--scroll-progress-mid),
-      var(--scroll-ring-end, #db4e9c) var(--scroll-progress),
-      var(--scroll-ring-track, #e5eaf2) var(--scroll-progress) 360deg
+      var(--accent-strong, #d94691) 0deg,
+      var(--accent-strong, #d94691) var(--scroll-progress),
+      var(--line-soft, #e5eaf2) var(--scroll-progress),
+      var(--line-soft, #e5eaf2) 360deg
     ) border-box;
   border: 3px solid transparent;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.2);
@@ -136,17 +171,10 @@ export default {
   background:
     linear-gradient(var(--surface-1, #fff), var(--surface-1, #fff)) padding-box,
     conic-gradient(
-      from -90deg,
-      var(--scroll-ring-start, #ff9fd0) 0deg,
-      var(--scroll-ring-mid, #ef7cba) 38%,
-      var(--scroll-ring-end, #db4e9c) 68%,
-      var(--scroll-ring-start, #ff9fd0) 100%
+      var(--accent-strong, #d94691) 0deg,
+      var(--accent-strong, #d94691) 360deg
     ) border-box;
 }
-/*
-  Legacy build targets render conic gradients more consistently when the
-  completed state avoids an immediate fallback track color at the seam.
-*/
 .back-to-top:hover {
   transform: translateY(-2px);
   box-shadow: 0 18px 38px rgba(15, 23, 42, 0.26);
