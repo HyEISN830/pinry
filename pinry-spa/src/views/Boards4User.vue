@@ -40,4 +40,8 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.boards-for-user {
+  min-height: 100vh;
+  background: var(--app-bg, #f6f7fb);
+}
 </style>

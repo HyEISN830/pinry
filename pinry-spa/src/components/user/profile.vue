@@ -1,48 +1,46 @@
 <template>
   <div class="profile-container">
-    <div class="card">
-      <header class="card-header">
-        <p class="card-header-title">
+    <div class="profile-setting-card">
+      <header class="setting-head">
+        <p>
           {{ $t("avatarUserProfileCardTitle") }}
         </p>
       </header>
-      <div class="card-content">
-        <div class="media">
-          <div class="media-left">
-            <figure class="image is-96x96">
-              <img class="avatar-preview" :src="avatarUrl" alt="avatar">
-            </figure>
-          </div>
-          <div class="media-content">
-            <b-field
-              :message="avatarMessage"
-              :type="avatarMessageType"
+      <div class="setting-body avatar-setting">
+        <figure class="avatar-frame">
+          <img class="avatar-preview" :src="avatarUrl" alt="avatar">
+        </figure>
+        <div class="avatar-actions">
+          <b-field
+            :message="avatarMessage"
+            :type="avatarMessageType"
+          >
+            <b-upload
+              v-model="avatarFile"
+              accept="image/*"
+              @input="uploadAvatar"
             >
-              <b-upload
-                v-model="avatarFile"
-                accept="image/*"
-                @input="uploadAvatar"
-              >
-                <a class="button is-primary" :class="{ 'is-loading': avatarUploading }">
-                  <b-icon icon="upload"></b-icon>
-                  <span>{{ $t("avatarUploadButton") }}</span>
-                </a>
-              </b-upload>
-            </b-field>
-            <p class="help">{{ $t("avatarUploadHint") }}</p>
-          </div>
+              <a
+                class="button is-primary"
+                :class="{ 'is-loading': avatarUploading }">
+                <b-icon icon="upload"></b-icon>
+                <span>{{ $t("avatarUploadButton") }}</span>
+              </a>
+            </b-upload>
+          </b-field>
+          <p class="help">{{ $t("avatarUploadHint") }}</p>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <header class="card-header">
-        <p class="card-header-title">
+    <div class="profile-setting-card">
+      <header class="setting-head">
+        <p>
           {{ $t("tokenUserProfileCardTitle") }}
         </p>
       </header>
-      <div class="card-content">
-        <div class="content">
+      <div class="setting-body">
+        <div class="token-content">
           <p>{{ $t("tokenUserProfileCardContent") }}</p>
           <pre>{{ token }}</pre>
           {{ $t("pleaseReadTokenUserProfileCardContent") }}
@@ -124,35 +122,61 @@ export default {
 
 <style scoped lang="scss">
 .profile-container {
-  margin-top: 2rem;
-  margin-left: auto;
-  margin-right: auto;
+  width: min(100%, 1260px);
+  margin: 1rem auto 0;
+  padding: 0 0.75rem 2rem;
 }
-.card {
+.profile-setting-card {
   overflow: hidden;
-  border: 1px solid #e7ebf2;
+  border: 1px solid var(--line-soft, #e7ebf2);
   border-radius: 8px;
-  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.12);
+  color: var(--text-strong, #22313f);
+  background: var(--surface-1, #fff);
+  box-shadow: var(--shadow-soft, 0 14px 34px rgba(16, 24, 40, 0.12));
 }
-.card-header {
-  border-bottom-color: #edf1f6;
-  background: #f8fafc;
-  box-shadow: none;
+.setting-head {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line-soft, #edf1f6);
+  background: var(--surface-2, #f8fafc);
 }
-.card-header-title {
-  color: #22313f;
+.setting-head p {
+  margin: 0;
+  color: var(--text-strong, #22313f);
   font-size: 1rem;
+  font-weight: 900;
 }
-.card-content {
-  background: #fff;
+.setting-body {
+  padding: 1rem;
+  background: var(--surface-1, #fff);
 }
-.card + .card {
+.profile-setting-card + .profile-setting-card {
   margin-top: 1rem;
 }
+.avatar-setting {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+.avatar-frame {
+  width: 96px;
+  height: 96px;
+  margin: 0;
+}
 .avatar-preview {
+  display: block;
+  width: 96px;
+  height: 96px;
   border-radius: 8px;
   object-fit: cover;
   box-shadow: 0 12px 28px rgba(16, 24, 40, 0.14);
+}
+.avatar-actions {
+  min-width: 0;
+}
+.help,
+.token-content {
+  color: var(--text-muted, #64748b);
 }
 .button {
   border-radius: 6px;
@@ -161,29 +185,25 @@ export default {
 pre {
   overflow: auto;
   border-radius: 8px;
-  background: #f8fafc;
-  color: #22313f;
+  background: var(--surface-2, #f8fafc);
+  color: var(--text-strong, #22313f);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-@import '../utils/grid-layout';
-@include screen-grid-layout(".profile-container");
 @media screen and (max-width: 542px) {
   .profile-container {
-    max-width: calc(100vw - 24px);
+    margin-top: 0.75rem;
+    padding: 0 0.55rem 1.5rem;
   }
-  .card-content {
+  .setting-body {
     padding: 0.85rem;
   }
-  .media {
-    display: block;
+  .avatar-setting {
+    grid-template-columns: 1fr;
   }
-  .media-left {
-    margin-right: 0;
-    margin-bottom: 0.85rem;
-  }
-  .image.is-96x96 {
+  .avatar-frame,
+  .avatar-preview {
     width: 72px;
     height: 72px;
   }

@@ -17,40 +17,44 @@
                  class="grid">
               <div class="grid-sizer"></div>
               <div class="gutter-sizer"></div>
-              <div class="board-card grid-item">
-                <div @mouseenter="currentEditBoard = item.id"
-                     @mouseleave="currentEditBoard = null"
-                >
+              <div
+                class="board-card grid-item"
+                @mouseenter="currentEditBoard = item.id"
+                @mouseleave="currentEditBoard = null">
+                <div class="board-stack" aria-hidden="true"></div>
+                <BoardEditorUI
+                  v-show="shouldShowEdit(item)"
+                  :board="item"
+                  v-on:board-delete-succeed="reset"
+                  v-on:board-save-succeed="reset"
+                ></BoardEditorUI>
+                <router-link
+                  class="board-card-link"
+                  :to="{ name: 'board', params: { boardId: item.id } }">
                   <div class="card-image">
-                    <BoardEditorUI
-                      v-show="shouldShowEdit(item)"
-                      :board="item"
-                      v-on:board-delete-succeed="reset"
-                      v-on:board-save-succeed="reset"
-                    ></BoardEditorUI>
-                    <router-link :to="{ name: 'board', params: { boardId: item.id } }">
-                      <div
-                        class="board-image-shell"
-                        :style="item.style"
-                        :data-board-id="item.id">
-                        <img
-                           v-if="item.imageVisible"
-                           :src="item.preview_image_url"
-                           @load="onPinImageLoaded(item.id)"
-                           class="preview-image">
-                        <div v-else class="lazy-image-placeholder"></div>
-                      </div>
-                    </router-link>
+                    <div
+                      class="board-image-shell"
+                      :style="item.style"
+                      :data-board-id="item.id">
+                      <img
+                         v-if="item.imageVisible"
+                         :src="item.preview_image_url"
+                         @load="onPinImageLoaded(item.id)"
+                         class="preview-image">
+                      <div v-else class="lazy-image-placeholder"></div>
+                      <span class="board-kind-pill">
+                        {{ boardVisibilityLabel(item) }}
+                      </span>
+                    </div>
                   </div>
                   <div class="board-footer">
-                    <p class="sub-title board-info">{{ item.name }}</p>
-                    <p class="description">
-                      <small>
-                        {{ $t("pinsInBoard") }}<span class="num-pins">{{ item.total_pins }}</span>
-                      </small>
-                    </p>
+                    <h2 class="board-title">{{ item.name }}</h2>
+                    <div class="board-meta">
+                      <span>{{ item.total_pins }}</span>
+                      <small>{{ $t("pinsLink") }}</small>
+                    </div>
                   </div>
-                </div>
+                </router-link>
               </div>
             </div>
           </template>
@@ -137,9 +141,12 @@ function createBoardItem(board) {
   }
   boardItem.style = {
     aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
+    '--board-cover-image': `url("${boardItem.preview_image_url}")`,
   };
   boardItem.imageVisible = false;
-  boardItem.class = {};
+  boardItem.class = {
+    'is-private': board.private,
+  };
   boardItem.author = board.submitter.username;
   return boardItem;
 }
@@ -179,6 +186,11 @@ export default {
     },
   },
   methods: {
+    boardVisibilityLabel(board) {
+      return board.private
+        ? this.$t('collectionPrivateBoardLabel')
+        : this.$t('collectionPublicBoardLabel');
+    },
     initialize() {
       this.initializeMeta();
       this.fetchMore(true);
@@ -445,53 +457,91 @@ $avatar-height: 30px;
 
 .board-card{
   position: relative;
+  isolation: isolate;
   overflow: visible;
-  background: #fff;
-  border: 1px solid #e4e8ef;
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--line-soft, #e4e8ef);
   border-radius: 8px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  &::before,
-  &::after {
-    content: "";
+  will-change: transform;
+  .board-card-link {
+    display: block;
+    overflow: hidden;
+    color: inherit;
+    border-radius: 8px;
+  }
+  .board-stack,
+  .board-stack::before {
     position: absolute;
-    left: 10px;
-    right: 10px;
-    height: 14px;
-    border: 1px solid #d7deea;
-    border-radius: 0 0 8px 8px;
-    background: #f8fafc;
     pointer-events: none;
   }
-  &::before {
-    bottom: -8px;
+  .board-stack {
+    inset: auto 12px -10px 12px;
     z-index: -1;
+    height: 18px;
+    border: 1px solid rgba(31, 111, 235, 0.22);
+    border-radius: 0 0 8px 8px;
+    background: var(--accent-soft, #eef3f8);
   }
-  &::after {
-    bottom: -14px;
-    left: 20px;
-    right: 20px;
-    background: #eef3f8;
-    z-index: -2;
+  .board-stack::before {
+    content: "";
+    inset: auto 10px -7px 10px;
+    height: 13px;
+    border: 1px solid rgba(31, 111, 235, 0.16);
+    border-radius: 0 0 8px 8px;
+    background: var(--surface-2, #eef3f8);
   }
   &:hover {
     transform: translateY(-4px);
-    border-color: #1f6feb;
+    border-color: var(--accent, #1f6feb);
     box-shadow: 0 16px 32px rgba(16, 24, 40, 0.16);
   }
   .board-image-shell {
     position: relative;
+    isolation: isolate;
     overflow: hidden;
-    background-color: #f5f7fa;
+    min-height: 170px;
+    background-color: var(--surface-2, #f5f7fa);
     border-radius: 8px 8px 0 0;
   }
+  .board-image-shell::before {
+    content: "";
+    position: absolute;
+    inset: -18px;
+    z-index: 0;
+    background-image: var(--board-cover-image);
+    background-position: center;
+    background-size: cover;
+    filter: blur(18px) saturate(1.1);
+    opacity: 0.28;
+  }
   .card-image img {
+    position: relative;
+    z-index: 1;
     display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    background-color: white;
+    background-color: var(--surface-1, white);
     @include loader('../assets/loader.gif');
+  }
+  .board-kind-pill {
+    position: absolute;
+    z-index: 2;
+    top: 9px;
+    left: 9px;
+    max-width: calc(100% - 18px);
+    padding: 0.22rem 0.48rem;
+    overflow: hidden;
+    border-radius: 999px;
+    color: var(--accent-text, #fff);
+    background: var(--accent-strong, #1f6feb);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
+    font-size: 12px;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 .grid.is-visible .board-card,
@@ -507,27 +557,47 @@ $avatar-height: 30px;
   animation: placeholderPulse 1.4s ease-in-out infinite;
 }
 .board-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
   position: relative;
-  background-color: white;
-  border-top: 1px solid #eef1f5;
+  padding: 0.85rem;
+  background-color: var(--surface-1, white);
+  border-top: 1px solid var(--line-soft, #eef1f5);
   border-radius: 0 0 8px 8px;
   font-weight: bold;
-  .description {
-    @include secondary-font;
-    padding: 0 12px 12px;
+  .board-title {
+    display: -webkit-box;
     overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 14px;
-  }
-  .board-info {
-    padding: 12px 12px 6px;
-    color: #22313f;
+    margin: 0;
+    color: var(--text-strong, #22313f);
     font-size: 16px;
     line-height: 1.3;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
-  .num-pins {
-    font-size: 0.9rem;
-    color: #1f6feb;
+  .board-meta {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 30px;
+    padding: 0 0.55rem;
+    border-radius: 999px;
+    color: var(--accent-strong, #1f6feb);
+    background: var(--accent-soft, #eaf3ff);
+    white-space: nowrap;
+  }
+  .board-meta span {
+    font-size: 0.95rem;
+    font-weight: 900;
+  }
+  .board-meta small {
+    color: inherit;
+    font-size: 0.78rem;
+    font-weight: 800;
+    opacity: 0.8;
   }
 }
 

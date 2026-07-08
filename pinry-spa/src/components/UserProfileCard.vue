@@ -1,79 +1,59 @@
 <template>
-    <div class="user-profile-card">
-      <div id="user-home-container">
-        <div class="card">
-          <div class="card-content">
-            <div class="media">
-              <div class="media-left">
-                <figure class="image is-48x48">
-                  <b-skeleton width="48px" height="48px" :active="avatarLoading"></b-skeleton>
-                  <img
-                    @load="onAvatarLoaded"
-                    v-show="!avatarLoading"
-                    :src="user.avatar"
-                    alt="avatar"
-                  >
-                </figure>
-              </div>
-              <div class="media-content" v-show="!avatarLoading">
-                <p class="title is-4">{{ user.username }}</p>
-                <p class="subtitle is-6">@{{ location }}</p>
-              </div>
-            </div>
-            <div class="content">
-              {{ $t("userProfileCardContent") }}
-              <br>
-            </div>
-
-            <div class="tabs is-toggle">
-              <ul>
-                <li :class="trueFalse2Class(inPins)">
-                  <a @click="go2UserPins">
-                    <b-icon
-                      type="is-dark"
-                      icon="image"
-                      custom-size="mdi-24px">
-                    </b-icon>
-                    <span>{{ $t("pinsUserProfileCardLink") }}</span>
-                  </a>
-                </li>
-                <li :class="trueFalse2Class(inBoard)">
-                  <a @click="go2UserBoard">
-                    <b-icon
-                      type="is-dark"
-                      icon="folder-multiple-image"
-                      custom-size="mdi-24px">
-                    </b-icon>
-                    <span>{{ $t("boardsUserProfileCardLink") }}</span>
-                  </a>
-                </li>
-                <li :class="trueFalse2Class(inComics)">
-                  <a @click="go2UserComics">
-                    <b-icon
-                      type="is-dark"
-                      icon="book-open-page-variant"
-                      custom-size="mdi-24px">
-                    </b-icon>
-                    <span>{{ $t("comicsLink") }}</span>
-                  </a>
-                </li>
-                <li :class="trueFalse2Class(inProfile)">
-                  <a @click="go2UserProfile">
-                    <b-icon
-                      type="is-dark"
-                      icon="account"
-                      custom-size="mdi-24px">
-                    </b-icon>
-                    <span>{{ $t("profileUserProfileCardLink") }}</span>
-                  </a>
-                </li>
-              </ul>
-            </div>
-
+  <section class="user-profile-card">
+    <div id="user-home-container">
+      <div class="profile-surface">
+        <div class="profile-main">
+          <figure class="profile-avatar">
+            <b-skeleton width="72px" height="72px" :active="avatarLoading"></b-skeleton>
+            <img
+              v-show="!avatarLoading"
+              :src="user.avatar"
+              alt="avatar"
+              @load="onAvatarLoaded">
+          </figure>
+          <div class="profile-copy">
+            <span class="profile-kicker">@{{ location }}</span>
+            <h1>{{ user.username || username }}</h1>
+            <p>{{ $t("userProfileCardContent") }}</p>
           </div>
         </div>
+        <nav class="profile-nav" aria-label="profile navigation">
+          <button
+            class="profile-tab"
+            type="button"
+            :class="trueFalse2Class(inPins)"
+            @click="go2UserPins">
+            <b-icon icon="image" custom-size="mdi-22px"></b-icon>
+            <span>{{ $t("pinsUserProfileCardLink") }}</span>
+          </button>
+          <button
+            class="profile-tab"
+            type="button"
+            :class="trueFalse2Class(inBoard)"
+            @click="go2UserBoard">
+            <b-icon icon="folder-multiple-image" custom-size="mdi-22px"></b-icon>
+            <span>{{ $t("boardsUserProfileCardLink") }}</span>
+          </button>
+          <button
+            class="profile-tab"
+            type="button"
+            :class="trueFalse2Class(inComics)"
+            @click="go2UserComics">
+            <b-icon icon="book-open-page-variant" custom-size="mdi-22px"></b-icon>
+            <span>{{ $t("comicsLink") }}</span>
+          </button>
+          <button
+            class="profile-tab"
+            type="button"
+            :class="trueFalse2Class(inProfile)"
+            @click="go2UserProfile">
+            <b-icon icon="account" custom-size="mdi-22px"></b-icon>
+            <span>{{ $t("profileUserProfileCardLink") }}</span>
+          </button>
+        </nav>
       </div>
     </div>
+  </section>
 </template>
 
 <script>
@@ -144,19 +124,18 @@ export default {
       this.avatarLoading = false;
     },
     initializeUser(username) {
-      const self = this;
       api.User.fetchUserInfoByName(username).then(
         (user) => {
           if (user === null) {
-            self.$router.push(
+            this.$router.push(
               { name: 'PageNotFound' },
             );
-          } else {
-            self.user.avatar = (user.avatar && user.avatar.medium)
-              || `//gravatar.com/avatar/${user.gravatar}?s=48`;
-            self.user.username = user.username;
-            self.user.meta = user;
+            return;
           }
+          this.user.avatar = (user.avatar && user.avatar.medium)
+            || `//gravatar.com/avatar/${user.gravatar}?s=72`;
+          this.user.username = user.username;
+          this.user.meta = user;
         },
       );
     },
@@ -166,80 +145,150 @@ export default {
 
 <style lang="scss" scoped>
 #user-home-container {
-  margin-top: 2rem;
-  margin-left: auto;
-  margin-right: auto;
+  width: min(100%, 1260px);
+  margin: 1.35rem auto 0;
+  padding: 0 0.75rem;
 }
-.card {
-  overflow: hidden;
-  border: 1px solid #e7ebf2;
-  border-radius: 8px;
-  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.12);
-}
-.card-content {
-  padding: 1.25rem;
-}
-.media .image img {
-  border-radius: 8px;
-  box-shadow: 0 8px 18px rgba(16, 24, 40, 0.14);
-}
-.title {
-  color: #22313f;
-}
-.subtitle,
-.content {
-  color: #64748b;
-  font-size: 14px;
-}
-.tabs {
-  margin-bottom: 0;
-}
-.tabs ul {
+.profile-surface {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  width: 100%;
-  border-bottom: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--line-soft, #e7ebf2);
+  border-radius: 8px;
+  color: var(--text-strong, #22313f);
+  background:
+    radial-gradient(circle at top left, var(--accent-soft, rgba(126, 87, 194, 0.12)), transparent 290px),
+    var(--surface-1, #fff);
+  box-shadow: var(--shadow-soft, 0 14px 34px rgba(16, 24, 40, 0.12));
 }
-.tabs li {
+.profile-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.95rem;
+}
+.profile-avatar {
+  position: relative;
+  flex: 0 0 auto;
+  width: 72px;
+  height: 72px;
+  margin: 0;
+}
+.profile-avatar img {
+  display: block;
+  width: 72px;
+  height: 72px;
+  border: 3px solid var(--surface-1, #fff);
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 12px 26px rgba(16, 24, 40, 0.18);
+}
+.profile-copy {
   min-width: 0;
 }
-.tabs a {
-  display: flex;
-  justify-content: center;
-  border-radius: 6px;
-  font-weight: 600;
-  white-space: normal;
+.profile-kicker {
+  display: inline-flex;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--accent-strong, #7e57c2);
+  font-size: 0.85rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.tabs a span {
+.profile-copy h1 {
+  overflow: hidden;
+  margin: 0.15rem 0 0;
+  color: var(--text-strong, #22313f);
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.profile-copy p {
+  margin: 0.28rem 0 0;
+  color: var(--text-muted, #64748b);
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.profile-nav {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(74px, 1fr));
+  gap: 0.45rem;
+  min-width: min(100%, 430px);
+}
+.profile-tab {
+  display: grid;
+  place-items: center;
+  gap: 0.25rem;
+  min-height: 64px;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid var(--line-soft, #e7ebf2);
+  border-radius: 8px;
+  color: var(--text-muted, #64748b);
+  background: var(--surface-2, #f8fafc);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
+  transition: transform .16s ease, color .16s ease, background .16s ease, border-color .16s ease;
+}
+.profile-tab:hover {
+  transform: translateY(-1px);
+  color: var(--accent-strong, #7e57c2);
+  border-color: var(--accent, #7e57c2);
+  background: var(--accent-soft, rgba(126, 87, 194, 0.12));
+}
+.profile-tab.is-active {
+  color: var(--accent-strong, #7e57c2);
+  border-color: var(--accent, #7e57c2);
+  background: var(--accent-soft, rgba(126, 87, 194, 0.12));
+}
+.profile-tab span {
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-@import '../components/utils/grid-layout';
-@include screen-grid-layout("#user-home-container");
+@media screen and (max-width: 920px) {
+  .profile-surface {
+    grid-template-columns: 1fr;
+  }
+  .profile-nav {
+    min-width: 0;
+    width: 100%;
+  }
+}
 @media screen and (max-width: 542px) {
   #user-home-container {
-    max-width: calc(100vw - 24px);
+    margin-top: 0.8rem;
+    padding: 0 0.55rem;
   }
-  .card-content {
-    padding: 0.85rem;
+  .profile-surface {
+    padding: 0.8rem;
   }
-  .media {
-    align-items: center;
+  .profile-main {
+    align-items: flex-start;
   }
-  .media-left {
-    margin-right: 0.75rem;
+  .profile-avatar,
+  .profile-avatar img {
+    width: 58px;
+    height: 58px;
   }
-  .tabs ul {
-    gap: 0.35rem;
+  .profile-copy p {
+    font-size: 0.88rem;
   }
-  .tabs a {
-    display: grid;
-    gap: 0.15rem;
-    min-height: 58px;
-    padding: 0.45rem 0.25rem;
-    font-size: 0.78rem;
-    line-height: 1.1;
-    text-align: center;
+  .profile-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .profile-tab {
+    min-height: 52px;
+    grid-template-columns: auto minmax(0, auto);
+    place-items: center;
+    justify-content: center;
   }
 }
 </style>
