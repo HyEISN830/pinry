@@ -152,6 +152,31 @@ function sourceText(url) {
 
 const VISIBLE_COMIC_TAGS = 4;
 
+function comicGridCapacity(viewportWidth) {
+  if (viewportWidth < 543) {
+    return 1;
+  }
+  if (viewportWidth < 798) {
+    return 2;
+  }
+  if (viewportWidth < 1053) {
+    return 3;
+  }
+  if (viewportWidth < 1308) {
+    return 4;
+  }
+  if (viewportWidth < 1818) {
+    return 5;
+  }
+  if (viewportWidth < 2583) {
+    return 6;
+  }
+  if (viewportWidth < 2838) {
+    return 7;
+  }
+  return 8;
+}
+
 function comicPageLimit(largeCards = false) {
   if (typeof window === 'undefined') {
     return largeCards ? 3 : 4;
@@ -159,19 +184,8 @@ function comicPageLimit(largeCards = false) {
   const viewportWidth = window.innerWidth
     || document.documentElement.clientWidth
     || 0;
-  if (viewportWidth <= 542) {
-    return 1;
-  }
-  if (viewportWidth <= 860) {
-    return largeCards ? 1 : 2;
-  }
-  if (viewportWidth <= 1180) {
-    return largeCards ? 2 : 3;
-  }
-  if (viewportWidth <= 1563) {
-    return largeCards ? 3 : 4;
-  }
-  return largeCards ? 5 : 6;
+  const capacity = comicGridCapacity(viewportWidth);
+  return largeCards ? Math.max(1, capacity - 1) : capacity;
 }
 
 export default {
@@ -511,8 +525,12 @@ export default {
 }
 .comic-grid {
   display: grid;
-  grid-template-columns: repeat(var(--comic-page-limit), minmax(0, 1fr));
+  grid-template-columns: repeat(
+    var(--comic-page-limit),
+    minmax(0, var(--comic-card-width, var(--pin-card-width, 240px)))
+  );
   gap: var(--pin-grid-gutter, 15px);
+  justify-content: start;
 }
 .comic-card {
   position: relative;
