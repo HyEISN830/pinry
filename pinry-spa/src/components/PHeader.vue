@@ -29,11 +29,19 @@
       <div class="nav-actions">
         <div
           v-if="user.loggedIn"
-          class="nav-group">
-          <button class="nav-pill" type="button">
+          class="nav-group"
+          :class="{ 'is-active': isDropdownOpen('create') }"
+          @mouseenter="openDropdown('create')"
+          @mouseleave="scheduleDropdownClose"
+          @focusin="openDropdown('create')"
+          @focusout="scheduleDropdownClose">
+          <button
+            class="nav-pill"
+            type="button"
+            @click.stop="toggleDropdown('create')">
             {{ $t("createLink") }}
           </button>
-          <div class="nav-popover">
+          <div class="nav-popover" @click.stop>
             <button type="button" @click="createPin">{{ $t("pinLink") }}</button>
             <button type="button" @click="createBoard">{{ $t("boardLink") }}</button>
             <button type="button" @click="createComic">{{ $t("comicLink") }}</button>
@@ -41,39 +49,69 @@
         </div>
         <div
           v-if="user.loggedIn"
-          class="nav-group">
-          <button class="nav-pill" type="button">
+          class="nav-group"
+          :class="{ 'is-active': isDropdownOpen('mine') }"
+          @mouseenter="openDropdown('mine')"
+          @mouseleave="scheduleDropdownClose"
+          @focusin="openDropdown('mine')"
+          @focusout="scheduleDropdownClose">
+          <button
+            class="nav-pill"
+            type="button"
+            @click.stop="toggleDropdown('mine')">
             {{ $t("myLink") }}
           </button>
-          <div class="nav-popover">
+          <div class="nav-popover" @click.stop>
             <router-link
-              :to="{ name: 'user', params: {user: user.meta.username} }">
+              :to="{ name: 'user', params: {user: user.meta.username} }"
+              @click.native="closeDropdown">
               {{ $t("pinsLink") }}
             </router-link>
             <router-link
-              :to="{ name: 'boards4user', params: {username: user.meta.username} }">
+              :to="{ name: 'boards4user', params: {username: user.meta.username} }"
+              @click.native="closeDropdown">
               {{ $t("boardsLink") }}
             </router-link>
             <router-link
-              :to="{ name: 'comics4user', params: {username: user.meta.username} }">
+              :to="{ name: 'comics4user', params: {username: user.meta.username} }"
+              @click.native="closeDropdown">
               {{ $t("comicsLink") }}
             </router-link>
             <router-link
-              :to="{ name: 'profile4user', params: {username: user.meta.username} }">
+              :to="{ name: 'profile4user', params: {username: user.meta.username} }"
+              @click.native="closeDropdown">
               {{ $t("profileLink") }}
             </router-link>
           </div>
         </div>
-        <div class="nav-group theme-group">
-          <button class="nav-pill is-icon" type="button" :title="$t('themeSettingsLabel')">
+        <div
+          class="nav-group theme-group"
+          :class="{ 'is-active': isDropdownOpen('theme') }"
+          @mouseenter="openDropdown('theme')"
+          @mouseleave="scheduleDropdownClose"
+          @focusin="openDropdown('theme')"
+          @focusout="scheduleDropdownClose">
+          <button
+            class="nav-pill is-icon"
+            type="button"
+            :title="$t('themeSettingsLabel')"
+            @click.stop="toggleDropdown('theme')">
             <b-icon icon="palette" custom-size="mdi-20px"></b-icon>
           </button>
-          <div class="nav-popover theme-popover">
+          <div class="nav-popover theme-popover" @click.stop>
             <button
               class="theme-mode"
               type="button"
               @click="toggleThemeMode">
-              {{ themeState.mode === 'dark' ? $t("lightThemeLabel") : $t("darkThemeLabel") }}
+              <span>
+                {{ themeState.mode === 'dark' ? $t("darkThemeLabel") : $t("lightThemeLabel") }}
+              </span>
+              <span
+                class="mode-switch"
+                :class="{ 'is-on': themeState.mode === 'dark' }"
+                aria-hidden="true">
+                <span></span>
+              </span>
             </button>
             <div class="accent-grid">
               <button
@@ -83,16 +121,26 @@
                 type="button"
                 :class="[`is-${accent.value}`, { 'is-active': themeState.accent === accent.value }]"
                 :title="accent.label"
-                @click="setAccent(accent.value)">
+                @click.stop="setAccent(accent.value)">
               </button>
             </div>
           </div>
         </div>
-        <div class="nav-group">
-          <button class="nav-pill is-icon" type="button" :title="$t('languageLabel')">
+        <div
+          class="nav-group"
+          :class="{ 'is-active': isDropdownOpen('language') }"
+          @mouseenter="openDropdown('language')"
+          @mouseleave="scheduleDropdownClose"
+          @focusin="openDropdown('language')"
+          @focusout="scheduleDropdownClose">
+          <button
+            class="nav-pill is-icon"
+            type="button"
+            :title="$t('languageLabel')"
+            @click.stop="toggleDropdown('language')">
             <b-icon icon="translate" custom-size="mdi-20px"></b-icon>
           </button>
-          <div class="nav-popover">
+          <div class="nav-popover" @click.stop>
             <button
               v-for="locale in $i18n.availableLocales"
               :key="`locale-${locale}`"
@@ -155,8 +203,16 @@
         @click.native="closeMenu">
         {{ $t("comicsLink") }}
       </router-link>
-      <button type="button" @click="toggleThemeMode">
-        {{ themeState.mode === 'dark' ? $t("lightThemeLabel") : $t("darkThemeLabel") }}
+      <button class="mobile-theme-toggle" type="button" @click="toggleThemeMode">
+        <span>
+          {{ themeState.mode === 'dark' ? $t("darkThemeLabel") : $t("lightThemeLabel") }}
+        </span>
+        <span
+          class="mode-switch"
+          :class="{ 'is-on': themeState.mode === 'dark' }"
+          aria-hidden="true">
+          <span></span>
+        </span>
       </button>
       <div class="mobile-accent-row">
         <button
@@ -187,9 +243,12 @@ export default {
     return {
       accentOptions: theme.accentOptions,
       active: false,
+      activeDropdown: null,
+      dropdownCloseTimer: null,
       langs: localeUtils.langCode2Name,
       lastScrollTop: 0,
       navHidden: false,
+      pinnedDropdown: null,
       scrollTicking: false,
       themeState: theme.readTheme(),
       user: {
@@ -199,13 +258,62 @@ export default {
     };
   },
   methods: {
+    clearDropdownCloseTimer() {
+      if (this.dropdownCloseTimer) {
+        window.clearTimeout(this.dropdownCloseTimer);
+        this.dropdownCloseTimer = null;
+      }
+    },
+    closeDropdown() {
+      this.clearDropdownCloseTimer();
+      this.activeDropdown = null;
+      this.pinnedDropdown = null;
+    },
     closeMenu() {
       this.active = false;
+      this.closeDropdown();
+    },
+    handleDocumentClick(event) {
+      if (!this.$el.contains(event.target)) {
+        this.closeDropdown();
+      }
+    },
+    isDropdownOpen(name) {
+      return this.activeDropdown === name || this.pinnedDropdown === name;
+    },
+    openDropdown(name) {
+      this.clearDropdownCloseTimer();
+      this.activeDropdown = name;
+      this.navHidden = false;
+    },
+    scheduleDropdownClose() {
+      if (this.pinnedDropdown) {
+        return;
+      }
+      this.clearDropdownCloseTimer();
+      this.dropdownCloseTimer = window.setTimeout(
+        () => {
+          this.activeDropdown = null;
+          this.dropdownCloseTimer = null;
+        },
+        260,
+      );
     },
     setLocale(locale) {
       this.$i18n.locale = locale;
       localStorage.setItem('localeCode', locale);
       this.closeMenu();
+    },
+    toggleDropdown(name) {
+      this.clearDropdownCloseTimer();
+      if (this.pinnedDropdown === name) {
+        this.pinnedDropdown = null;
+        this.activeDropdown = null;
+        return;
+      }
+      this.pinnedDropdown = name;
+      this.activeDropdown = name;
+      this.navHidden = false;
     },
     toggleMenu() {
       this.active = !this.active;
@@ -312,9 +420,12 @@ export default {
   mounted() {
     this.lastScrollTop = window.pageYOffset || 0;
     window.addEventListener('scroll', this.requestScrollUpdate, { passive: true });
+    document.addEventListener('click', this.handleDocumentClick);
   },
   beforeDestroy() {
     window.removeEventListener('scroll', this.requestScrollUpdate);
+    document.removeEventListener('click', this.handleDocumentClick);
+    this.clearDropdownCloseTimer();
   },
 };
 </script>
@@ -418,8 +529,7 @@ export default {
   transform: translateY(-6px) scale(0.98);
   transition: opacity .16s ease, transform .16s ease;
 }
-.nav-group:hover .nav-popover,
-.nav-group:focus-within .nav-popover {
+.nav-group.is-active .nav-popover {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
@@ -448,7 +558,42 @@ export default {
   background: var(--accent-soft);
 }
 .theme-popover {
-  min-width: 190px;
+  min-width: 220px;
+}
+.theme-mode,
+.mobile-theme-toggle {
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+.mode-switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 24px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.12);
+  transition: background .18s ease, border-color .18s ease;
+}
+.mode-switch > span {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+  transition: transform .18s ease, background .18s ease;
+}
+.mode-switch.is-on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.mode-switch.is-on > span {
+  background: var(--accent-strong);
+  transform: translateX(18px);
 }
 .accent-grid,
 .mobile-accent-row {
@@ -458,16 +603,35 @@ export default {
   padding: 0.2rem 0.35rem 0.35rem;
 }
 .accent-swatch {
-  width: 22px;
-  height: 22px;
-  min-height: 22px;
+  position: relative;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
   padding: 0;
-  border: 2px solid transparent;
+  border: 2px solid var(--surface-1);
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.44);
+  box-shadow:
+    0 0 0 1px var(--line-soft),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.44);
+  transition: transform .16s ease, box-shadow .16s ease;
 }
 .accent-swatch.is-active {
-  border-color: var(--text-strong);
+  transform: scale(1.08);
+  box-shadow:
+    0 0 0 2px var(--surface-1),
+    0 0 0 4px var(--accent-strong),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.accent-swatch.is-active::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff;
+  transform: translate(-50%, -50%);
 }
 .accent-swatch.is-elysia { background: #ef7cba; }
 .accent-swatch.is-eden { background: #d5a344; }

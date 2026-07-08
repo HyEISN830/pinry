@@ -126,11 +126,86 @@ export default {
     border-color: var(--accent);
     background-color: var(--accent);
   }
+  .button.is-light {
+    border-color: var(--line-soft);
+    color: var(--text-strong);
+    background-color: var(--surface-2);
+  }
+  .button.is-light:hover {
+    border-color: var(--accent);
+    color: var(--accent-strong);
+    background-color: var(--accent-soft);
+  }
+  .button.is-link,
+  .button.is-info {
+    border-color: var(--accent-strong);
+    background-color: var(--accent-strong);
+  }
+  .button.is-link:hover,
+  .button.is-info:hover {
+    border-color: var(--accent);
+    background-color: var(--accent);
+  }
+  .input,
+  .textarea,
+  .select select,
+  .taginput .taginput-container.is-focusable {
+    border-color: var(--line-soft);
+    color: var(--text-strong);
+    background-color: var(--surface-1);
+  }
+  .input:focus,
+  .textarea:focus,
+  .select select:focus,
+  .taginput .taginput-container.is-focusable:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.125em var(--accent-soft);
+  }
+  .label,
+  .modal-card-title,
+  .card-header-title {
+    color: var(--text-strong);
+  }
+  .help,
+  .subtitle {
+    color: var(--text-muted);
+  }
   .card,
   .modal-card,
   .box {
     color: var(--text-strong);
     background: var(--surface-1);
+  }
+  .modal-card-head,
+  .modal-card-foot,
+  .card-header {
+    border-color: var(--line-soft);
+    background: var(--surface-2);
+  }
+  .modal-card-body,
+  .card-content {
+    color: var(--text-strong);
+    background: var(--surface-1);
+  }
+  .dropdown-content,
+  .autocomplete .dropdown-content {
+    border: 1px solid var(--line-soft);
+    background: var(--surface-1);
+    box-shadow: var(--shadow-soft);
+  }
+  .dropdown-item,
+  .autocomplete .dropdown-item {
+    color: var(--text-strong);
+  }
+  .dropdown-item:hover,
+  .autocomplete .dropdown-item:hover {
+    color: var(--accent-strong);
+    background: var(--accent-soft);
+  }
+  .tabs.is-toggle li.is-active a {
+    border-color: var(--accent-strong);
+    color: var(--accent-text);
+    background-color: var(--accent-strong);
   }
   .pin-preview-at-home .modal-content {
     width: min(96vw, 1600px);

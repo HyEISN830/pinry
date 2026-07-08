@@ -26,6 +26,7 @@ export default {
     buttonStyle() {
       return {
         '--scroll-progress': `${this.progress * 360}deg`,
+        '--scroll-progress-mid': `${this.progress * 210}deg`,
       };
     },
   },
@@ -105,10 +106,15 @@ export default {
   height: 48px;
   border: 0;
   border-radius: 50%;
-  color: #22313f;
+  color: var(--text-strong, #22313f);
   background:
-    linear-gradient(#fff, #fff) padding-box,
-    conic-gradient(#7e57c2 var(--scroll-progress), #e5e7eb 0) border-box;
+    linear-gradient(var(--surface-1, #fff), var(--surface-1, #fff)) padding-box,
+    conic-gradient(
+      var(--accent-soft, rgba(126, 87, 194, 0.16)) 0deg,
+      var(--accent, #7e57c2) var(--scroll-progress-mid),
+      var(--accent-strong, #5e35b1) var(--scroll-progress),
+      var(--line-soft, #e5e7eb) 0
+    ) border-box;
   border: 3px solid transparent;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.2);
   cursor: pointer;
