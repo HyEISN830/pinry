@@ -1,3 +1,4 @@
+import hashlib
 import os
 import PIL.Image
 import requests
@@ -168,6 +169,7 @@ class Image(BaseImage):
             video_length=payload.video_length,
             source=payload.source,
         )
+        motion_photo._video_hash = hashlib.md5(payload.video).hexdigest()
         filename = '{}-motion.mp4'.format(os.path.splitext(
             os.path.basename(self.image.name),
         )[0])
