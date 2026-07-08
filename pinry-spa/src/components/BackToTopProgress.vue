@@ -66,7 +66,7 @@ export default {
       const step = () => {
         const elapsed = Date.now() - startedAt;
         const percent = Math.min(1, elapsed / duration);
-        const eased = 1 - Math.pow(1 - percent, 3);
+        const eased = 1 - ((1 - percent) ** 3);
         window.scrollTo(0, Math.round(startTop * (1 - eased)));
         if (percent < 1) {
           this.scrollAnimationFrame = window.requestAnimationFrame(step);
