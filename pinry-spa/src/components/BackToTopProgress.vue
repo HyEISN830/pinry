@@ -2,6 +2,7 @@
   <button
     v-show="visible"
     class="back-to-top"
+    :class="{ 'is-complete': progress >= 0.995 }"
     type="button"
     :aria-label="$t('backToTopButton')"
     :title="$t('backToTopButton')"
@@ -24,8 +25,9 @@ export default {
   },
   computed: {
     buttonStyle() {
+      const progressDegrees = this.progress * 360;
       return {
-        '--scroll-progress': `${this.progress * 360}deg`,
+        '--scroll-progress': `${progressDegrees}deg`,
         '--scroll-progress-mid': `${this.progress * 210}deg`,
       };
     },
@@ -59,7 +61,7 @@ export default {
       const startTop = window.pageYOffset
         || document.documentElement.scrollTop
         || 0;
-      const duration = window.innerWidth > 760 ? 620 : 420;
+      const duration = window.innerWidth > 760 ? 520 : 360;
       const startedAt = Date.now();
       if (this.scrollAnimationFrame) {
         window.cancelAnimationFrame(this.scrollAnimationFrame);
@@ -67,12 +69,18 @@ export default {
       const step = () => {
         const elapsed = Date.now() - startedAt;
         const percent = Math.min(1, elapsed / duration);
-        const eased = 1 - ((1 - percent) ** 3);
-        window.scrollTo(0, Math.round(startTop * (1 - eased)));
+        window.scrollTo({
+          top: Math.round(startTop * (1 - percent)),
+          behavior: 'auto',
+        });
         if (percent < 1) {
           this.scrollAnimationFrame = window.requestAnimationFrame(step);
           return;
         }
+        window.scrollTo({
+          top: 0,
+          behavior: 'auto',
+        });
         this.scrollAnimationFrame = null;
       };
       this.scrollAnimationFrame = window.requestAnimationFrame(step);
@@ -110,10 +118,11 @@ export default {
   background:
     linear-gradient(var(--surface-1, #fff), var(--surface-1, #fff)) padding-box,
     conic-gradient(
-      var(--accent-soft, rgba(126, 87, 194, 0.16)) 0deg,
-      var(--accent, #7e57c2) var(--scroll-progress-mid),
-      var(--accent-strong, #5e35b1) var(--scroll-progress),
-      var(--line-soft, #e5e7eb) 0
+      from -90deg,
+      var(--scroll-ring-start, #ff9fd0) 0deg,
+      var(--scroll-ring-mid, #ef7cba) var(--scroll-progress-mid),
+      var(--scroll-ring-end, #db4e9c) var(--scroll-progress),
+      var(--scroll-ring-track, #e5eaf2) var(--scroll-progress) 360deg
     ) border-box;
   border: 3px solid transparent;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.2);
@@ -121,11 +130,27 @@ export default {
   font-size: 1.35rem;
   font-weight: 900;
   line-height: 1;
-  transition: transform .18s ease, box-shadow .18s ease;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
 }
+.back-to-top.is-complete {
+  background:
+    linear-gradient(var(--surface-1, #fff), var(--surface-1, #fff)) padding-box,
+    conic-gradient(
+      from -90deg,
+      var(--scroll-ring-start, #ff9fd0) 0deg,
+      var(--scroll-ring-mid, #ef7cba) 38%,
+      var(--scroll-ring-end, #db4e9c) 68%,
+      var(--scroll-ring-start, #ff9fd0) 100%
+    ) border-box;
+}
+/*
+  Legacy build targets render conic gradients more consistently when the
+  completed state avoids an immediate fallback track color at the seam.
+*/
 .back-to-top:hover {
   transform: translateY(-2px);
   box-shadow: 0 18px 38px rgba(15, 23, 42, 0.26);
+  filter: saturate(1.04);
 }
 @media screen and (max-width: 542px) {
   .back-to-top {
