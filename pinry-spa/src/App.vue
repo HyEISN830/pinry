@@ -276,4 +276,10 @@ export default {
     max-height: 96vh;
     overflow: visible;
   }
+  .pin-preview-at-home {
+    z-index: 140;
+  }
+  .pin-preview-at-home .modal-close {
+    z-index: 150;
+  }
 </style>

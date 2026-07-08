@@ -91,6 +91,13 @@
                       {{ $t("permalinkButton") }}
                   </b-button>
                   <b-button
+                      @click="openFullView"
+                      :disabled="!previewImageUrl || imageLoading"
+                      class="meta-link"
+                      type="is-primary">
+                      {{ $t("viewFullImageButton") }}
+                  </b-button>
+                  <b-button
                       @click="downloadImage"
                       :disabled="!imageBlob"
                       :loading="imageLoading"
@@ -104,6 +111,25 @@
           </div>
         </div>
     </section>
+    <div
+      v-if="fullViewOpen"
+      class="full-image-viewer"
+      role="dialog"
+      aria-modal="true"
+      @click.self="closeFullView"
+      @wheel.stop
+      @touchmove.stop
+      @mousedown.stop>
+      <div class="full-image-toolbar">
+        <strong>{{ $t("viewFullImageButton") }}</strong>
+        <button type="button" @click="closeFullView">
+          {{ $t("closeButton") }}
+        </button>
+      </div>
+      <div class="full-image-stage">
+        <img :src="previewImageUrl" alt="Image">
+      </div>
+    </div>
   </div>
 </template>
 
@@ -144,6 +170,8 @@ export default {
       downloadLoaded: 0,
       downloadTotal: null,
       imageBlob: null,
+      bodyOverflowSnapshot: null,
+      fullViewOpen: false,
       imageContentType: 'application/octet-stream',
       imageLoadFailed: false,
       imageLoading: true,
@@ -193,6 +221,9 @@ export default {
   created() {
     this.loadOriginalImage();
   },
+  mounted() {
+    document.addEventListener('keydown', this.onKeydown);
+  },
   beforeDestroy() {
     if (this.imageRequestController) {
       this.imageRequestController.abort();
@@ -206,8 +237,45 @@ export default {
     if (this.motionReplayTimer) {
       window.clearTimeout(this.motionReplayTimer);
     }
+    document.removeEventListener('keydown', this.onKeydown);
+    this.unlockBodyScroll();
   },
   methods: {
+    lockBodyScroll() {
+      if (this.bodyOverflowSnapshot !== null) {
+        return;
+      }
+      const { body } = document;
+      this.bodyOverflowSnapshot = body.style.overflow;
+      body.style.overflow = 'hidden';
+    },
+    unlockBodyScroll() {
+      if (this.bodyOverflowSnapshot === null) {
+        return;
+      }
+      const { body } = document;
+      body.style.overflow = this.bodyOverflowSnapshot;
+      this.bodyOverflowSnapshot = null;
+    },
+    openFullView() {
+      if (!this.previewImageUrl || this.imageLoading) {
+        return;
+      }
+      this.fullViewOpen = true;
+      this.lockBodyScroll();
+    },
+    closeFullView() {
+      if (!this.fullViewOpen) {
+        return;
+      }
+      this.fullViewOpen = false;
+      this.unlockBodyScroll();
+    },
+    onKeydown(event) {
+      if (event.key === 'Escape') {
+        this.closeFullView();
+      }
+    },
     updatePartialPreview(chunks) {
       const now = Date.now();
       if (now - this.lastPartialPreviewAt < 1000 || chunks.length === 0) {
@@ -337,9 +405,10 @@ export default {
         this.pinItem.large_image_url,
         `pin-${this.pinItem.id}`,
       );
-      document.body.appendChild(link);
+      const { body } = document;
+      body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      body.removeChild(link);
     },
     closeAndGoTo() {
       this.$parent.close();
@@ -415,13 +484,18 @@ export default {
     align-items: center;
     justify-content: center;
     min-height: 0;
+    overflow: hidden;
   }
   .content {
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
   .card-content {
+    position: relative;
+    z-index: 4;
     max-height: min(34vh, 260px);
     overflow: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(12, 16, 24, 0.96);
     .author {
       @include title-font-color-in-dark;
     }
@@ -523,6 +597,58 @@ export default {
 .motion-preview-video.is-active {
   opacity: 1;
 }
+.full-image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  color: #fff;
+  background: rgba(3, 6, 12, 0.96);
+  pointer-events: auto;
+  overscroll-behavior: contain;
+}
+.full-image-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(9, 12, 18, 0.88);
+  backdrop-filter: blur(12px);
+}
+.full-image-toolbar strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.full-image-toolbar button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  font-weight: 800;
+}
+.full-image-stage {
+  min-height: 0;
+  overflow: auto;
+  padding: 1.25rem;
+  overscroll-behavior: contain;
+}
+.full-image-stage img {
+  display: block;
+  width: auto;
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0 auto;
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.45);
+}
 @media screen and (max-width: 542px) {
   .card {
     max-width: calc(100vw - 18px);
@@ -541,6 +667,9 @@ export default {
     inset: 12px;
     width: calc(100% - 24px);
     height: calc(100% - 24px);
+  }
+  .full-image-stage {
+    padding: 0.8rem;
   }
 }
 </style>
