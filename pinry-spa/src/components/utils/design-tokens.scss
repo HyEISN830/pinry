@@ -1,0 +1,109 @@
+@import "./ui-tokens";
+
+:root {
+  // Theme-following color aliases. Source values are defined by App.vue and theme.js via data-theme/data-accent.
+  --color-app-bg: var(--app-bg);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-card: var(--surface-card);
+  --color-surface-accent: var(--surface-accent);
+  --color-text-strong: var(--text-strong);
+  --color-text-muted: var(--text-muted);
+  --color-line-soft: var(--line-soft);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-border: var(--accent-border);
+  --color-accent-text: var(--accent-text);
+  --color-theme-glow: var(--theme-glow);
+  --color-theme-glow-strong: var(--theme-glow-strong);
+
+  // Spacing scale.
+  --space-0: 0;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+
+  // Radius scale.
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  // Elevation scale.
+  --shadow-xs: 0 4px 14px rgba(16, 24, 40, 0.08);
+  --shadow-sm: 0 10px 28px rgba(16, 24, 40, 0.10);
+  --shadow-card: var(--shadow-soft);
+  --shadow-hover: 0 20px 52px rgba(16, 24, 40, 0.16), 0 0 0 1px var(--color-accent-border);
+  --shadow-floating: 0 26px 70px rgba(16, 24, 40, 0.22);
+  --focus-ring: 0 0 0 3px var(--color-accent-soft);
+
+  // Layout and responsive tokens. CSS custom properties document the scale; SCSS mixins use the same map.
+  --bp-xs: 360px;
+  --bp-sm: 480px;
+  --bp-md: 760px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+  --container-narrow: 920px;
+  --container-wide: 1280px;
+  --container-max: 1440px;
+
+  // Motion tokens.
+  --motion-duration-instant: 90ms;
+  --motion-duration-fast: 160ms;
+  --motion-duration-standard: 240ms;
+  --motion-duration-card: 520ms;
+  --motion-duration-page: 460ms;
+  --motion-duration-page-exit: 180ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-spring: cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  --motion-hover-scale: 1.025;
+  --motion-hover-lift: -4px;
+
+  // Comic 3D tilt foundation. T6 can set --tilt-rotate-x/y and glare coordinates from pointer/touch events.
+  --tilt-perspective: 900px;
+  --tilt-rotate-x: 0deg;
+  --tilt-rotate-y: 0deg;
+  --tilt-scale: 1.035;
+  --tilt-glare-x: 50%;
+  --tilt-glare-y: 18%;
+  --tilt-glare-opacity: 0;
+
+  // Shared z-index layers.
+  --z-nav: 120;
+  --z-dropdown: 130;
+  --z-modal: 140;
+  --z-page-transition: 170;
+}
+
+html[data-theme="dark"] {
+  --shadow-xs: 0 4px 14px rgba(0, 0, 0, 0.26);
+  --shadow-sm: 0 12px 32px rgba(0, 0, 0, 0.34);
+  --shadow-hover: 0 24px 62px rgba(0, 0, 0, 0.46), 0 0 0 1px var(--color-accent-border);
+  --shadow-floating: 0 30px 80px rgba(0, 0, 0, 0.52);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration-instant: 1ms;
+    --motion-duration-fast: 1ms;
+    --motion-duration-standard: 1ms;
+    --motion-duration-card: 1ms;
+    --motion-duration-page: 1ms;
+    --motion-duration-page-exit: 1ms;
+    --motion-hover-scale: 1;
+    --motion-hover-lift: 0px;
+    --tilt-scale: 1;
+    --tilt-rotate-x: 0deg;
+    --tilt-rotate-y: 0deg;
+    --tilt-glare-opacity: 0;
+  }
+}

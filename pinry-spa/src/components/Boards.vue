@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="boards">
     <section class="section">
       <div id="boards-container" class="container" v-if="blocks">
@@ -14,11 +14,11 @@
             <div v-bind:key="item.id"
                  v-masonry-tile
                  :class="item.class"
-                 class="grid">
+                 class="grid board-masonry motion-card-enter">
               <div class="grid-sizer"></div>
               <div class="gutter-sizer"></div>
               <div
-                class="board-card grid-item"
+                class="board-card grid-item motion-hover-scale"
                 @mouseenter="currentEditBoard = item.id"
                 @mouseleave="currentEditBoard = null">
                 <div class="board-stack" aria-hidden="true"></div>
@@ -37,11 +37,19 @@
                       :style="item.style"
                       :data-board-id="item.id">
                       <img
-                         v-if="item.imageVisible"
+                         v-if="item.imageVisible && item.preview_image_url"
                          :src="item.preview_image_url"
                          @load="onPinImageLoaded(item.id)"
+                         :alt="item.name || $t('imageUnavailableText')"
                          class="preview-image">
-                      <div v-else class="lazy-image-placeholder"></div>
+                      <div
+                        v-else
+                        class="lazy-image-placeholder"
+                        :class="{ 'is-unavailable': item.imageVisible && !item.preview_image_url }">
+                        <span v-if="item.imageVisible && !item.preview_image_url">
+                          {{ $t("imageUnavailableText") }}
+                        </span>
+                      </div>
                       <span class="board-kind-pill">
                         {{ boardVisibilityLabel(item) }}
                       </span>
@@ -61,7 +69,21 @@
         </div>
       </div>
       <loadingSpinner v-bind:show="status.loading"></loadingSpinner>
-      <noMore v-bind:show="!status.hasNext"></noMore>
+      <div v-if="showInitialSkeleton" class="card-skeleton-grid" aria-hidden="true">
+        <div v-for="index in 6" :key="index" class="card-skeleton">
+          <div class="card-skeleton-image"></div>
+          <div class="card-skeleton-line is-wide"></div>
+          <div class="card-skeleton-line"></div>
+        </div>
+      </div>
+      <div v-if="status.error" class="card-state is-error">
+        <p>{{ $t("cardLoadError") }}</p>
+        <button type="button" @click="reset">{{ $t("loadMoreResults") }}</button>
+      </div>
+      <div v-else-if="showEmptyState" class="card-state is-empty">
+        <p>{{ $t("boardsEmptyState") }}</p>
+      </div>
+      <noMore v-bind:show="!status.hasNext && blocks.length > 0"></noMore>
     </section>
   </div>
 </template>
@@ -131,17 +153,26 @@ function createBoardItem(board) {
   boardItem.name = board.name;
   boardItem.private = board.private;
   boardItem.total_pins = board.total_pins;
-  const thumbnail = imageVariant.getCardThumbnail(previewImage.image);
-  if (thumbnail && thumbnail.image !== null) {
+  let thumbnail = {};
+  try {
+    thumbnail = imageVariant.getCardThumbnail(previewImage.image) || {};
+  } catch (e) {
+    thumbnail = {};
+  }
+  if (thumbnail.image !== null && thumbnail.image !== undefined) {
     boardItem.preview_image_url = pinHandler.escapeUrl(
       thumbnail.image,
     );
   } else {
     boardItem.preview_image_url = defaultPreviewImage;
   }
+  const thumbnailWidth = thumbnail.width || 240;
+  const thumbnailHeight = thumbnail.height || 240;
   boardItem.style = {
-    aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
-    '--board-cover-image': `url("${boardItem.preview_image_url}")`,
+    aspectRatio: `${thumbnailWidth} / ${thumbnailHeight}`,
+    '--board-cover-image': boardItem.preview_image_url
+      ? `url("${boardItem.preview_image_url}")`
+      : 'none',
   };
   boardItem.imageVisible = false;
   boardItem.class = {
@@ -164,6 +195,7 @@ function initialData() {
       loading: false,
       hasNext: true,
       offset: 0,
+      error: false,
     },
     editorMeta: {
       user: { loggedIn: false, meta: { username: null } },
@@ -180,6 +212,17 @@ export default {
   },
   data: initialData,
   props: ['filters'],
+  computed: {
+    showInitialSkeleton() {
+      return this.status.loading && this.blocks.length === 0;
+    },
+    showEmptyState() {
+      return !this.status.loading
+        && !this.status.error
+        && this.blocks.length === 0
+        && !this.status.hasNext;
+    },
+  },
   watch: {
     filters() {
       this.reset();
@@ -394,13 +437,17 @@ export default {
           this.blocks = newBlocks;
           this.status.offset = newBlocks.length;
           this.status.hasNext = !(next === null);
+          this.status.error = false;
           this.status.loading = false;
           this.$nextTick(() => {
             this.observeLazyImages();
             this.scheduleViewportFillCheck();
           });
         },
-        () => { this.status.loading = false; },
+        () => {
+          this.status.error = true;
+          this.status.loading = false;
+        },
       );
     },
   },
@@ -429,6 +476,7 @@ export default {
 <style lang="scss" scoped>
 /* grid */
 @import 'utils/pin';
+@import './utils/motion-mixins';
 
 .grid-sizer,
 .grid-item { width: var(--pin-card-width, #{$pin-preview-width}); }

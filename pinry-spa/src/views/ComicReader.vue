@@ -24,7 +24,7 @@
             <div class="reader-source is-warning" v-else>
               {{ $t("missingSourceNotice") }}
             </div>
-            <div class="reader-tags" v-if="comic.tags.length > 0">
+            <div class="reader-tags" v-if="comic.tags && comic.tags.length > 0">
               <router-link
                 v-for="tag in comic.tags"
                 :key="tag"
@@ -171,7 +171,13 @@
         <loadingSpinner :show="loading"></loadingSpinner>
       </div>
     </section>
-    <div class="comic-full-reader" v-if="fullReaderOpen">
+    <div
+      class="comic-full-reader"
+      v-if="fullReaderOpen"
+      tabindex="0"
+      @keydown.left.prevent="goFullPage(-1)"
+      @keydown.right.prevent="goFullPage(1)"
+      @keydown.esc.prevent="closeFullReader">
       <div class="full-reader-bar">
         <strong>{{ comic.title }}</strong>
         <div class="full-reader-actions">
@@ -367,10 +373,20 @@ export default {
       return this.thumbnailUrl(page.image);
     },
     thumbnailUrl(image) {
-      const thumbnail = imageVariant.getCardThumbnail(image);
-      return thumbnail.image;
+      if (!image) {
+        return null;
+      }
+      try {
+        const thumbnail = imageVariant.getCardThumbnail(image) || {};
+        return thumbnail.image || null;
+      } catch (e) {
+        return null;
+      }
     },
     loadPageOriginal(page) {
+      if (!page || !page.image || !page.image.id) {
+        return Promise.resolve(null);
+      }
       const cached = getCachedImage(page.image.id);
       if (cached) {
         this.$set(this.loadedPages, page.id, cached.objectUrl);
@@ -471,6 +487,10 @@ export default {
           this.observeFullReaderPages();
           this.bindFullReaderScroll();
           this.scheduleFullPageMeasure();
+          const fullReader = this.$el.querySelector('.comic-full-reader');
+          if (fullReader) {
+            fullReader.focus();
+          }
         },
       );
       this.loadAllPages();
@@ -595,6 +615,18 @@ export default {
       if (bestPage && bestPage.order !== this.currentFullPageOrder) {
         this.currentFullPageOrder = bestPage.order;
       }
+    },
+    goFullPage(direction) {
+      if (!this.fullReaderOpen || !this.comic) {
+        return;
+      }
+      const pageCount = this.comic.pages.length;
+      const nextOrder = Math.max(1, Math.min(pageCount, this.currentFullPageOrder + direction));
+      const target = this.$el.querySelector(`[data-page-order="${nextOrder}"]`);
+      if (target && target.scrollIntoView) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      this.currentFullPageOrder = nextOrder;
     },
     pageProgressText(page) {
       if (this.pageProgress[page.id] === null) {
@@ -771,6 +803,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '../components/utils/motion-mixins';
 .comic-reader {
   max-width: min(96vw, 1180px);
 }
@@ -1051,6 +1084,119 @@ export default {
     right: 8px;
     bottom: 8px;
     left: 8px;
+  }
+}
+
+
+/* T6 reader actual toolbar and immersive polish */
+.comic-reader-page .section {
+  padding-top: var(--space-lg, 24px);
+  background: radial-gradient(circle at top, var(--theme-glow, rgba(126, 87, 194, 0.14)), transparent 38%), var(--color-page-bg, var(--app-bg, #f6f7fb));
+}
+
+.reader-head,
+.comic-editor,
+.reader-page {
+  border: 1px solid var(--color-border-soft, var(--line-soft, #e7ebf2));
+  border-radius: var(--radius-card, 22px);
+  background: var(--color-surface-card, var(--surface-card, #fff));
+  box-shadow: var(--shadow-card, 0 18px 50px rgba(15, 23, 42, 0.14));
+}
+
+.reader-head {
+  position: sticky;
+  top: calc(var(--nav-height, 72px) + var(--space-sm, 12px));
+  z-index: var(--z-sticky, 20);
+  backdrop-filter: blur(18px);
+}
+
+.reader-head h1 {
+  color: var(--color-text-primary, var(--text-strong, #22313f));
+}
+
+.reader-head p,
+.reader-description,
+.reader-page figcaption {
+  color: var(--color-text-muted, var(--text-muted, #64748b));
+}
+
+.reader-source,
+.reader-tags a {
+  border-radius: var(--radius-pill, 999px);
+  color: var(--accent-strong, #7e57c2);
+  background: var(--accent-soft, #f5f0ff);
+}
+
+.reader-source.is-warning {
+  color: #8a6d1d;
+  background: #fff8dc;
+}
+
+.page-tools,
+.reader-page figcaption {
+  background: var(--color-surface-card, var(--surface-card, #fff));
+}
+
+.reader-page,
+.full-reader-page {
+  border-radius: var(--radius-card, 22px);
+}
+
+.reader-page img,
+.full-reader-page img {
+  border-radius: var(--radius-lg, 18px);
+}
+
+.comic-full-reader:focus {
+  outline: none;
+}
+
+.full-reader-bar {
+  background: color-mix(in srgb, #080b12 86%, var(--accent-strong, #7e57c2) 14%);
+}
+
+.full-reader-page {
+  box-shadow: var(--shadow-card, 0 18px 50px rgba(0, 0, 0, 0.34));
+}
+
+/* T6 reader polish */
+.comic-reader,
+.comic-reader-page,
+.reader-shell,
+.reader-container {
+  min-height: 100vh;
+  color: var(--color-text-primary, #111827);
+  background: radial-gradient(circle at top, var(--color-accent-soft, rgba(99, 102, 241, 0.12)), transparent 36%), var(--color-page-bg, #f8fafc);
+}
+
+.reader-toolbar,
+.comic-reader-toolbar,
+.chapter-toolbar,
+.chapter-nav {
+  position: sticky;
+  top: var(--nav-height, 72px);
+  z-index: var(--z-sticky, 20);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.22));
+  border-radius: var(--radius-card, 22px);
+  background: color-mix(in srgb, var(--color-surface-card, #fff) 88%, transparent);
+  box-shadow: var(--shadow-card, 0 18px 50px rgba(15, 23, 42, 0.12));
+  backdrop-filter: blur(18px);
+}
+
+.comic-reader img,
+.reader-shell img,
+.reader-container img {
+  border-radius: var(--radius-lg, 18px);
+  box-shadow: var(--shadow-card, 0 18px 50px rgba(15, 23, 42, 0.14));
+}
+
+@media (max-width: 760px) {
+  .reader-toolbar,
+  .comic-reader-toolbar,
+  .chapter-toolbar,
+  .chapter-nav {
+    top: var(--space-sm, 12px);
+    border-radius: var(--radius-lg, 18px);
   }
 }
 </style>

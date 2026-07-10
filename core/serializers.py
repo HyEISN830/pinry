@@ -7,7 +7,7 @@ from taggit.models import Tag
 
 from core.likes import like_actor_keys
 from core.models import Image, Board, Comic, ComicPage, MotionPhoto
-from core.models import Pin
+from core.models import ImageFetchJob, Pin
 from django_images.models import Thumbnail
 from users.serializers import UserSerializer
 from users.models import User
@@ -118,6 +118,36 @@ class ImageSerializer(serializers.ModelSerializer):
         return MotionPhotoSerializer(motion_photo, context=self.context).data
 
 
+def image_fetch_job_for(instance):
+    try:
+        return instance.image_fetch_job
+    except ImageFetchJob.DoesNotExist:
+        return None
+
+
+def image_fetch_status_for(instance):
+    job = image_fetch_job_for(instance)
+    if job is not None:
+        return job.status
+    if getattr(instance, 'image_id', None):
+        return ImageFetchJob.STATUS_READY
+    return None
+
+
+def image_fetch_error_for(instance):
+    job = image_fetch_job_for(instance)
+    if job is not None and job.error:
+        return job.error
+    return None
+
+
+def image_fetch_job_id_for(instance):
+    job = image_fetch_job_for(instance)
+    if job is not None:
+        return job.id
+    return None
+
+
 class TagSerializer(serializers.SlugRelatedField):
     class Meta:
         model = Tag
@@ -163,6 +193,9 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
             "referer",
             "image",
             "image_by_id",
+            "image_fetch_status",
+            "image_fetch_error",
+            "image_fetch_job_id",
             "tags",
             "boards",
             "likes_count",
@@ -184,6 +217,9 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
     boards = serializers.SerializerMethodField(read_only=True)
     likes_count = serializers.SerializerMethodField(read_only=True)
     viewer_liked = serializers.SerializerMethodField(read_only=True)
+    image_fetch_status = serializers.SerializerMethodField(read_only=True)
+    image_fetch_error = serializers.SerializerMethodField(read_only=True)
+    image_fetch_job_id = serializers.SerializerMethodField(read_only=True)
 
     def get_boards(self, instance):
         boards = getattr(instance, 'visible_boards', None)
@@ -206,6 +242,28 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
             actor_key__in=like_actor_keys(request),
         ).exists()
 
+    def get_image_fetch_status(self, instance):
+        return image_fetch_status_for(instance)
+
+    def get_image_fetch_error(self, instance):
+        return image_fetch_error_for(instance)
+
+    def get_image_fetch_job_id(self, instance):
+        return image_fetch_job_id_for(instance)
+
+    def validate(self, attrs):
+        if self.instance is not None:
+            return attrs
+        has_image = 'image_by_id' in attrs
+        has_url = bool(attrs.get('url'))
+        if has_image == has_url:
+            raise ValidationError(
+                detail={
+                    "url-or-image": "Exactly one of url or image_by_id is required."
+                },
+            )
+        return attrs
+
     def create(self, validated_data):
         if 'url' not in validated_data and\
                 'image_by_id' not in validated_data:
@@ -216,19 +274,26 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
             )
 
         submitter = self.context['request'].user
+        source_url = None
+        source_referer = None
         if 'url' in validated_data and validated_data['url']:
             url = validated_data['url']
-            image = Image.objects.create_for_url(
-                url,
-                validated_data.get('referer', url),
-            )
-            if not image:
-                raise ValidationError({"url": "invalid image content"})
+            referer = validated_data.get('referer', url)
+            if getattr(settings, 'IMAGE_FETCH_ASYNC_ENABLED', False):
+                image = None
+                source_url = url
+                source_referer = referer
+            else:
+                image = Image.objects.create_for_url(url, referer)
+                if not image:
+                    raise ValidationError({"url": "invalid image content"})
         else:
             image = validated_data.pop("image_by_id")
             image.create_motion_photo()
         tags = validated_data.pop('tag_list', [])
         pin = Pin.objects.create(submitter=submitter, image=image, **validated_data)
+        if source_url:
+            ImageFetchJob.enqueue_for_pin(pin, source_url, source_referer)
         if tags:
             pin.tags.set(*tags)
         return pin
@@ -253,6 +318,14 @@ class PinIdListField(serializers.ListField):
 class ComicPageAddSerializer(serializers.Serializer):
     image_by_id = serializers.PrimaryKeyRelatedField(
         queryset=Image.objects.all(),
+        required=False,
+    )
+    url = serializers.CharField(max_length=2048, required=False)
+    referer = serializers.CharField(
+        max_length=2048,
+        allow_blank=True,
+        allow_null=True,
+        required=False,
     )
     order = serializers.IntegerField(min_value=1, required=False)
     caption = serializers.CharField(
@@ -260,6 +333,17 @@ class ComicPageAddSerializer(serializers.Serializer):
         allow_null=True,
         required=False,
     )
+
+    def validate(self, attrs):
+        has_image = 'image_by_id' in attrs
+        has_url = bool(attrs.get('url'))
+        if has_image == has_url:
+            raise ValidationError(
+                detail={
+                    "url-or-image": "Exactly one of url or image_by_id is required."
+                },
+            )
+        return attrs
 
 
 class ComicPageMoveSerializer(serializers.Serializer):
@@ -275,9 +359,24 @@ class ComicPageSerializer(serializers.ModelSerializer):
             'order',
             'caption',
             'image',
+            'image_fetch_status',
+            'image_fetch_error',
+            'image_fetch_job_id',
         )
 
     image = ImageSerializer(read_only=True)
+    image_fetch_status = serializers.SerializerMethodField(read_only=True)
+    image_fetch_error = serializers.SerializerMethodField(read_only=True)
+    image_fetch_job_id = serializers.SerializerMethodField(read_only=True)
+
+    def get_image_fetch_status(self, instance):
+        return image_fetch_status_for(instance)
+
+    def get_image_fetch_error(self, instance):
+        return image_fetch_error_for(instance)
+
+    def get_image_fetch_job_id(self, instance):
+        return image_fetch_job_id_for(instance)
 
 
 class ComicSerializer(serializers.HyperlinkedModelSerializer):
@@ -367,8 +466,29 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
                 page.order = index
                 page.save(update_fields=['order'])
 
-    def _add_page(self, comic, image, order=None, caption=None):
+    def _image_for_page_data(self, comic, page_data):
+        source_url = None
+        source_referer = None
+        if page_data.get('url'):
+            source_url = page_data['url']
+            source_referer = page_data.get('referer') or comic.referer or source_url
+            if getattr(settings, 'IMAGE_FETCH_ASYNC_ENABLED', False):
+                return None, source_url, source_referer
+            image = Image.objects.create_for_url(source_url, source_referer)
+            if not image:
+                raise ValidationError({"url": "invalid image content"})
+            return image, None, None
+        image = page_data['image_by_id']
+        image.create_motion_photo()
+        return image, None, None
+
+    def _add_page(self, comic, page_data):
+        image, source_url, source_referer = self._image_for_page_data(
+            comic,
+            page_data,
+        )
         pages = list(comic.pages.order_by('order', 'id'))
+        order = page_data.get('order')
         if order is None:
             order = len(pages) + 1
         order = min(max(order, 1), len(pages) + 1)
@@ -376,7 +496,7 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
             comic=comic,
             image=image,
             order=order,
-            caption=caption,
+            caption=page_data.get('caption'),
         )
         pages.insert(order - 1, page)
         with transaction.atomic():
@@ -389,6 +509,12 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
                 current_page.order = index
                 current_page.comic = comic
                 current_page.save()
+        if source_url:
+            ImageFetchJob.enqueue_for_comic_page(
+                page,
+                source_url,
+                source_referer,
+            )
 
     def _remove_pages(self, comic, page_ids):
         comic.pages.filter(id__in=page_ids).delete()
@@ -417,12 +543,7 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
         if tags:
             comic.tags.set(*tags)
         for page_data in pages_to_add:
-            self._add_page(
-                comic,
-                page_data['image_by_id'],
-                page_data.get('order'),
-                page_data.get('caption'),
-            )
+            self._add_page(comic, page_data)
         return comic
 
     def update(self, instance, validated_data):
@@ -438,12 +559,7 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
         if pages_to_reorder:
             self._reorder_pages(instance, pages_to_reorder)
         for page_data in pages_to_add:
-            self._add_page(
-                instance,
-                page_data['image_by_id'],
-                page_data.get('order'),
-                page_data.get('caption'),
-            )
+            self._add_page(instance, page_data)
         return instance
 
 

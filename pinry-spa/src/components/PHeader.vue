@@ -11,23 +11,34 @@
         class="brand"
         :to="{ name: 'home' }"
         @click.native="closeMenu">
-        <img src="../assets/logo-dark.png" alt="Pinry">
+        <span class="brand-logo">
+          <img src="../assets/logo-dark.png" alt="Pinry">
+        </span>
+        <span class="brand-copy" aria-hidden="true">
+          <strong>Pinry</strong>
+          <small>HyEISN Gallery</small>
+        </span>
       </router-link>
-      <div class="nav-links">
+
+      <div class="nav-primary" aria-label="primary navigation">
         <a class="nav-link" href="https://hyeisn.cn/">HyEISN's</a>
         <router-link
           class="nav-link"
-          :to="{ name: 'comics' }">
+          :to="{ name: 'comics' }"
+          @click.native="closeMenu">
           {{ $t("comicsLink") }}
         </router-link>
         <router-link
-          class="nav-icon"
+          class="nav-link is-search"
           :to="{ name: 'search' }"
-          :title="$t('searchButton')">
-          <b-icon icon="magnify" custom-size="mdi-22px"></b-icon>
+          :title="$t('searchButton')"
+          @click.native="closeMenu">
+          <b-icon icon="magnify" custom-size="mdi-20px"></b-icon>
+          <span>{{ $t("searchButton") }}</span>
         </router-link>
       </div>
-      <div class="nav-actions">
+
+      <div class="nav-actions" aria-label="toolbar navigation">
         <div
           v-if="user.loggedIn"
           class="nav-group"
@@ -39,8 +50,11 @@
           <button
             class="nav-pill"
             type="button"
+            aria-haspopup="true"
+            :aria-expanded="isDropdownOpen('create') ? 'true' : 'false'"
             @click.stop="toggleDropdown('create')">
-            {{ $t("createLink") }}
+            <b-icon icon="plus-circle-outline" custom-size="mdi-18px"></b-icon>
+            <span>{{ $t("createLink") }}</span>
           </button>
           <div class="nav-popover" @click.stop>
             <button type="button" @click="createPin">{{ $t("pinLink") }}</button>
@@ -48,6 +62,7 @@
             <button type="button" @click="createComic">{{ $t("comicLink") }}</button>
           </div>
         </div>
+
         <div
           v-if="user.loggedIn"
           class="nav-group"
@@ -59,8 +74,11 @@
           <button
             class="nav-pill"
             type="button"
+            aria-haspopup="true"
+            :aria-expanded="isDropdownOpen('mine') ? 'true' : 'false'"
             @click.stop="toggleDropdown('mine')">
-            {{ $t("myLink") }}
+            <b-icon icon="account-circle-outline" custom-size="mdi-18px"></b-icon>
+            <span>{{ $t("myLink") }}</span>
           </button>
           <div class="nav-popover" @click.stop>
             <router-link
@@ -85,6 +103,7 @@
             </router-link>
           </div>
         </div>
+
         <div
           class="nav-group theme-group"
           :class="{ 'is-active': isDropdownOpen('theme') }"
@@ -95,6 +114,8 @@
           <button
             class="nav-pill is-icon"
             type="button"
+            aria-haspopup="true"
+            :aria-expanded="isDropdownOpen('theme') ? 'true' : 'false'"
             :title="$t('themeSettingsLabel')"
             @click.stop="toggleDropdown('theme')">
             <b-icon icon="palette" custom-size="mdi-20px"></b-icon>
@@ -127,6 +148,7 @@
             </div>
           </div>
         </div>
+
         <div
           class="nav-group"
           :class="{ 'is-active': isDropdownOpen('language') }"
@@ -137,6 +159,8 @@
           <button
             class="nav-pill is-icon"
             type="button"
+            aria-haspopup="true"
+            :aria-expanded="isDropdownOpen('language') ? 'true' : 'false'"
             :title="$t('languageLabel')"
             @click.stop="toggleDropdown('language')">
             <b-icon icon="translate" custom-size="mdi-20px"></b-icon>
@@ -151,6 +175,14 @@
             </button>
           </div>
         </div>
+
+        <button
+          v-show="!user.loggedIn"
+          class="nav-pill"
+          type="button"
+          @click="signUp">
+          {{ $t("signUpLink") }}
+        </button>
         <button
           v-show="!user.loggedIn"
           class="nav-pill"
@@ -166,68 +198,96 @@
           {{ $t("logOutLink") }}
         </button>
       </div>
+
       <button
         class="mobile-toggle"
+        :class="{ 'is-active': active }"
         type="button"
         :aria-label="$t('menuLabel')"
         :aria-expanded="active ? 'true' : 'false'"
+        aria-controls="pinry-mobile-panel"
         @click="toggleMenu">
         <span></span>
         <span></span>
       </button>
     </nav>
-    <div class="mobile-panel" v-if="active">
-      <router-link :to="{ name: 'search' }" @click.native="closeMenu">
-        {{ $t("searchButton") }}
-      </router-link>
-      <router-link :to="{ name: 'comics' }" @click.native="closeMenu">
-        {{ $t("comicsLink") }}
-      </router-link>
-      <button v-if="user.loggedIn" type="button" @click="createPin">{{ $t("pinLink") }}</button>
-      <button v-if="user.loggedIn" type="button" @click="createBoard">{{ $t("boardLink") }}</button>
-      <button v-if="user.loggedIn" type="button" @click="createComic">{{ $t("comicLink") }}</button>
-      <router-link
-        v-if="user.loggedIn"
-        :to="{ name: 'user', params: {user: user.meta.username} }"
-        @click.native="closeMenu">
-        {{ $t("pinsLink") }}
-      </router-link>
-      <router-link
-        v-if="user.loggedIn"
-        :to="{ name: 'boards4user', params: {username: user.meta.username} }"
-        @click.native="closeMenu">
-        {{ $t("boardsLink") }}
-      </router-link>
-      <router-link
-        v-if="user.loggedIn"
-        :to="{ name: 'comics4user', params: {username: user.meta.username} }"
-        @click.native="closeMenu">
-        {{ $t("comicsLink") }}
-      </router-link>
-      <button class="mobile-theme-toggle" type="button" @click="toggleThemeMode">
-        <span>
-          {{ themeState.mode === 'dark' ? $t("darkThemeLabel") : $t("lightThemeLabel") }}
-        </span>
-        <span
-          class="mode-switch"
-          :class="{ 'is-on': themeState.mode === 'dark' }"
-          aria-hidden="true">
-          <span></span>
-        </span>
-      </button>
-      <div class="mobile-accent-row">
-        <button
-          v-for="accent in accentOptions"
-          :key="`mobile-${accent.value}`"
-          class="accent-swatch"
-          type="button"
-          :class="[`is-${accent.value}`, { 'is-active': themeState.accent === accent.value }]"
-          :title="accent.label"
-          @click="setAccent(accent.value)">
+
+    <div class="mobile-backdrop" v-if="active" @click="closeMenu"></div>
+    <div class="mobile-panel" id="pinry-mobile-panel" v-if="active">
+      <section class="mobile-section is-primary">
+        <router-link :to="{ name: 'search' }" @click.native="closeMenu">
+          <b-icon icon="magnify" custom-size="mdi-18px"></b-icon>
+          <span>{{ $t("searchButton") }}</span>
+        </router-link>
+        <router-link :to="{ name: 'comics' }" @click.native="closeMenu">
+          <b-icon icon="book-open-page-variant-outline" custom-size="mdi-18px"></b-icon>
+          <span>{{ $t("comicsLink") }}</span>
+        </router-link>
+      </section>
+
+      <section class="mobile-section" v-if="user.loggedIn">
+        <button type="button" @click="createPin">{{ $t("pinLink") }}</button>
+        <button type="button" @click="createBoard">{{ $t("boardLink") }}</button>
+        <button type="button" @click="createComic">{{ $t("comicLink") }}</button>
+      </section>
+
+      <section class="mobile-section" v-if="user.loggedIn">
+        <router-link
+          :to="{ name: 'user', params: {user: user.meta.username} }"
+          @click.native="closeMenu">
+          {{ $t("pinsLink") }}
+        </router-link>
+        <router-link
+          :to="{ name: 'boards4user', params: {username: user.meta.username} }"
+          @click.native="closeMenu">
+          {{ $t("boardsLink") }}
+        </router-link>
+        <router-link
+          :to="{ name: 'comics4user', params: {username: user.meta.username} }"
+          @click.native="closeMenu">
+          {{ $t("comicsLink") }}
+        </router-link>
+      </section>
+
+      <section class="mobile-section is-preferences">
+        <button class="mobile-theme-toggle" type="button" @click="toggleThemeMode">
+          <span>
+            {{ themeState.mode === 'dark' ? $t("darkThemeLabel") : $t("lightThemeLabel") }}
+          </span>
+          <span
+            class="mode-switch"
+            :class="{ 'is-on': themeState.mode === 'dark' }"
+            aria-hidden="true">
+            <span></span>
+          </span>
         </button>
-      </div>
-      <button v-show="!user.loggedIn" type="button" @click="logIn">{{ $t("logInLink") }}</button>
-      <button v-show="user.loggedIn" type="button" @click="logOut">{{ $t("logOutLink") }}</button>
+        <div class="mobile-accent-row">
+          <button
+            v-for="accent in accentOptions"
+            :key="`mobile-${accent.value}`"
+            class="accent-swatch"
+            type="button"
+            :class="[`is-${accent.value}`, { 'is-active': themeState.accent === accent.value }]"
+            :title="accent.label"
+            @click="setAccent(accent.value)">
+          </button>
+        </div>
+        <div class="mobile-language-row">
+          <button
+            v-for="locale in $i18n.availableLocales"
+            :key="`mobile-locale-${locale}`"
+            type="button"
+            @click="setLocale(locale)">
+            {{ langs[locale] }}
+          </button>
+        </div>
+      </section>
+
+      <section class="mobile-section is-account">
+        <button v-show="!user.loggedIn" type="button" @click="signUp">{{ $t("signUpLink") }}</button>
+        <button v-show="!user.loggedIn" type="button" @click="logIn">{{ $t("logInLink") }}</button>
+        <button v-show="user.loggedIn" type="button" @click="logOut">{{ $t("logOutLink") }}</button>
+      </section>
     </div>
   </header>
 </template>
@@ -483,20 +543,20 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "./utils/motion-mixins";
+
 .p-header {
   position: fixed;
-  z-index: 80;
+  z-index: var(--z-nav);
   top: 0;
   right: 0;
   left: 0;
-  padding: 0.65rem clamp(0.8rem, 3vw, 2rem);
+  padding: var(--space-sm) clamp(var(--space-sm), 3vw, var(--space-xl));
   pointer-events: none;
   transform: translate3d(0, 0, 0);
-  transition: padding .2s ease;
+  transition: padding var(--motion-duration-fast) var(--motion-ease-standard);
 }
-.p-header.is-hidden {
-  transform: translate3d(0, 0, 0);
-}
+.p-header.is-hidden,
 .p-header.is-open {
   transform: translate3d(0, 0, 0);
 }
@@ -507,110 +567,159 @@ export default {
 .nav-shell {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  width: min(100%, 1440px);
-  min-height: 52px;
+  gap: var(--space-sm);
+  width: min(100%, var(--container-max));
+  min-height: 56px;
   margin: 0 auto;
-  padding: 0.45rem 0.55rem;
-  border: 1px solid var(--line-soft);
-  border-radius: 8px;
-  background: var(--surface-1);
-  backdrop-filter: blur(16px);
+  padding: var(--space-xs);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at top left, var(--color-theme-glow), transparent 260px),
+    color-mix(in srgb, var(--color-surface-1) 86%, transparent);
+  backdrop-filter: blur(18px);
   opacity: var(--nav-opacity, 1);
   pointer-events: auto;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow-card);
   transform: translate3d(0, var(--nav-offset, 0), 0) scale(var(--nav-scale, 1));
   transition:
-    border-color .2s ease,
-    box-shadow .28s ease,
-    opacity .12s linear,
-    transform .12s linear;
+    border-color var(--motion-duration-standard) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard),
+    opacity 120ms linear,
+    transform 120ms linear;
   will-change: opacity, transform;
 }
 .p-header.is-hidden .nav-shell {
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-xs);
 }
 .p-header.is-open .nav-shell {
   opacity: 1;
   transform: translate3d(0, 0, 0) scale(1);
   transition:
-    border-color .2s ease,
-    box-shadow .28s ease,
-    opacity .28s ease,
-    transform .34s cubic-bezier(0.16, 1, 0.3, 1);
+    border-color var(--motion-duration-standard) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard),
+    opacity var(--motion-duration-standard) var(--motion-ease-standard),
+    transform 340ms var(--motion-ease-emphasized);
 }
 .brand {
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
   min-width: 0;
-  padding: 0.25rem 0.4rem;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-md);
+  color: var(--color-text-strong);
+  @include hover-scale(1.018, -2px);
+}
+.brand:focus-visible {
+  @include focus-ring;
+}
+.brand-logo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
 }
 .brand img {
   width: auto;
-  max-width: 104px;
-  height: 28px;
+  max-width: 94px;
+  height: 24px;
   object-fit: contain;
 }
-.nav-links,
+.brand-copy {
+  display: grid;
+  line-height: 1.05;
+}
+.brand-copy strong {
+  color: var(--color-text-strong);
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+.brand-copy small {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.nav-primary,
 .nav-actions {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: var(--space-2xs);
 }
-.nav-links {
+.nav-primary {
   min-width: 0;
 }
 .nav-actions {
   margin-left: auto;
 }
 .nav-link,
-.nav-icon,
 .nav-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  padding: 0 0.72rem;
-  border: 0;
-  border-radius: 7px;
-  color: var(--text-strong);
+  gap: 0.35rem;
+  min-height: 38px;
+  padding: 0 var(--space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text-strong);
   background: transparent;
   cursor: pointer;
-  font-size: 0.94rem;
-  font-weight: 800;
-  transition: background .18s ease, color .18s ease, transform .18s ease;
-}
-.nav-icon,
-.nav-pill.is-icon {
-  width: 36px;
-  padding: 0;
+  font-size: 0.92rem;
+  font-weight: 850;
+  text-decoration: none;
+  @include hover-scale(1.018, -2px);
 }
 .nav-link:hover,
-.nav-icon:hover,
-.nav-pill:hover {
-  color: var(--accent-strong);
-  background: var(--accent-soft);
+.nav-pill:hover,
+.nav-link.router-link-exact-active,
+.nav-link.router-link-active {
+  color: var(--color-accent-strong);
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+}
+.nav-link:focus-visible,
+.nav-pill:focus-visible,
+.nav-popover a:focus-visible,
+.nav-popover button:focus-visible,
+.mobile-panel a:focus-visible,
+.mobile-panel button:focus-visible,
+.mobile-toggle:focus-visible,
+.accent-swatch:focus-visible {
+  @include focus-ring;
+}
+.nav-pill.is-icon {
+  width: 38px;
+  padding: 0;
 }
 .nav-group {
   position: relative;
 }
 .nav-popover {
   position: absolute;
-  top: calc(100% + 0.45rem);
+  top: calc(100% + var(--space-xs));
   right: 0;
   display: grid;
-  gap: 0.15rem;
-  min-width: 150px;
-  padding: 0.45rem;
-  border: 1px solid var(--line-soft);
-  border-radius: 8px;
-  background: var(--surface-1);
-  box-shadow: var(--shadow-soft);
+  gap: var(--space-2xs);
+  min-width: 168px;
+  padding: var(--space-xs);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-1);
+  box-shadow: var(--shadow-floating);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-6px) scale(0.98);
-  transition: opacity .16s ease, transform .16s ease;
+  transform: translateY(-8px) scale(0.98);
+  transform-origin: top right;
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
 }
 .nav-group.is-active .nav-popover {
   opacity: 1;
@@ -623,41 +732,50 @@ export default {
 .mobile-panel button {
   display: flex;
   align-items: center;
-  min-height: 34px;
-  padding: 0.45rem 0.6rem;
-  border: 0;
-  border-radius: 7px;
-  color: var(--text-strong);
+  gap: var(--space-xs);
+  min-height: 38px;
+  padding: 0 var(--space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-strong);
   background: transparent;
   cursor: pointer;
-  font-weight: 800;
+  font-weight: 850;
   text-align: left;
+  text-decoration: none;
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
 }
 .nav-popover a:hover,
 .nav-popover button:hover,
 .mobile-panel a:hover,
 .mobile-panel button:hover {
-  color: var(--accent-strong);
-  background: var(--accent-soft);
+  color: var(--color-accent-strong);
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
 }
 .theme-popover {
-  min-width: 220px;
+  min-width: 228px;
 }
 .theme-mode,
 .mobile-theme-toggle {
   justify-content: space-between;
-  gap: 0.85rem;
+  gap: var(--space-sm);
 }
 .mode-switch {
   position: relative;
   flex: 0 0 auto;
   width: 42px;
   height: 24px;
-  border: 1px solid var(--line-soft);
-  border-radius: 999px;
-  background: var(--surface-2);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-2);
   box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.12);
-  transition: background .18s ease, border-color .18s ease;
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard);
 }
 .mode-switch > span {
   position: absolute;
@@ -666,43 +784,51 @@ export default {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--text-muted);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
-  transition: transform .18s ease, background .18s ease;
+  background: var(--color-text-muted);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
 }
 .mode-switch.is-on {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 .mode-switch.is-on > span {
-  background: var(--accent-strong);
+  background: var(--color-accent-strong);
   transform: translateX(18px);
 }
 .accent-grid,
 .mobile-accent-row {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0.35rem;
-  padding: 0.2rem 0.35rem 0.35rem;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-xs) var(--space-xs);
 }
 .accent-swatch {
   position: relative;
-  width: 26px;
-  height: 26px;
-  min-height: 26px;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
   padding: 0;
-  border: 2px solid var(--surface-1);
+  border: 2px solid var(--color-surface-1);
   border-radius: 50%;
   box-shadow:
-    0 0 0 1px var(--line-soft),
+    0 0 0 1px var(--color-line-soft),
     inset 0 0 0 1px rgba(255, 255, 255, 0.44);
-  transition: transform .16s ease, box-shadow .16s ease;
+  cursor: pointer;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+.accent-swatch:hover,
+.accent-swatch.is-active {
+  transform: scale(1.1);
 }
 .accent-swatch.is-active {
-  transform: scale(1.08);
   box-shadow:
-    0 0 0 2px var(--surface-1),
-    0 0 0 4px var(--accent-strong),
+    0 0 0 2px var(--color-surface-1),
+    0 0 0 4px var(--color-accent-strong),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 .accent-swatch.is-active::after {
@@ -728,53 +854,117 @@ export default {
   width: 42px;
   height: 42px;
   margin-left: auto;
-  border: 0;
-  border-radius: 8px;
-  background: var(--accent-soft);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-xs);
+  pointer-events: auto;
 }
 .mobile-toggle span {
   display: block;
   width: 18px;
   height: 2px;
   margin: 3px 0;
-  border-radius: 999px;
-  background: var(--accent-strong);
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-strong);
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
+.mobile-toggle.is-active span:first-child {
+  transform: translateY(4px) rotate(45deg);
+}
+.mobile-toggle.is-active span:last-child {
+  transform: translateY(-4px) rotate(-45deg);
+}
+.mobile-backdrop,
 .mobile-panel {
   display: none;
 }
+@media screen and (max-width: 1024px) {
+  .brand-copy {
+    display: none;
+  }
+}
 @media screen and (max-width: 760px) {
   .p-header {
-    padding: 0.45rem 0.65rem;
+    padding: var(--space-xs);
   }
   .nav-shell {
-    min-height: 48px;
+    min-height: 50px;
+    border-radius: var(--radius-lg);
   }
-  .nav-links,
+  .brand-logo {
+    width: 36px;
+    height: 36px;
+  }
+  .nav-primary,
   .nav-actions {
     display: none;
   }
   .mobile-toggle {
     display: grid;
   }
+  .mobile-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--z-nav) - 1);
+    display: block;
+    pointer-events: auto;
+    background: rgba(12, 18, 28, 0.14);
+    backdrop-filter: blur(2px);
+  }
   .mobile-panel {
+    position: relative;
+    z-index: var(--z-nav);
+    display: grid;
+    gap: var(--space-sm);
+    width: min(100%, var(--container-max));
+    margin: var(--space-xs) auto 0;
+    padding: var(--space-sm);
+    border: 1px solid var(--color-line-soft);
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(circle at top right, var(--color-theme-glow), transparent 240px),
+      var(--color-surface-1);
+    pointer-events: auto;
+    box-shadow: var(--shadow-floating);
+    @include card-entrance;
+  }
+  .mobile-section {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.45rem;
-    width: min(100%, 1440px);
-    margin: 0.45rem auto 0;
-    padding: 0.65rem;
-    border: 1px solid var(--line-soft);
-    border-radius: 8px;
-    background: var(--surface-1);
-    pointer-events: auto;
-    box-shadow: var(--shadow-soft);
+    gap: var(--space-xs);
+  }
+  .mobile-section.is-primary a {
+    min-height: 46px;
+    border-color: var(--color-accent-border);
+    background: var(--color-accent-soft);
+  }
+  .mobile-section.is-preferences,
+  .mobile-section.is-account {
+    grid-template-columns: 1fr;
   }
   .mobile-accent-row {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(6, 24px);
+    grid-template-columns: repeat(6, 28px);
     justify-content: start;
-    padding: 0.15rem 0.45rem;
+    padding: var(--space-2xs);
+  }
+  .mobile-language-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xs);
+  }
+}
+@media screen and (max-width: 460px) {
+  .mobile-section {
+    grid-template-columns: 1fr;
+  }
+  .mobile-accent-row {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .accent-swatch {
+    justify-self: center;
   }
 }
 </style>

@@ -1,0 +1,81 @@
+// Shared UI token helpers for Pinry.
+// This partial intentionally emits no CSS; import it in component styles for maps, functions, and mixins.
+
+$ui-breakpoints: (
+  xs: 360px,
+  sm: 480px,
+  md: 760px,
+  lg: 1024px,
+  xl: 1280px,
+  xxl: 1440px,
+) !default;
+
+$ui-spaces: (
+  none: 0,
+  xxs: 4px,
+  xs: 8px,
+  sm: 12px,
+  md: 16px,
+  lg: 24px,
+  xl: 32px,
+  xxl: 48px,
+  xxxl: 64px,
+) !default;
+
+$ui-radii: (
+  xs: 8px,
+  sm: 12px,
+  md: 18px,
+  lg: 24px,
+  xl: 32px,
+  pill: 999px,
+) !default;
+
+@function ui-var($name, $fallback: null) {
+  @if $fallback == null {
+    @return unquote("var(--#{$name})");
+  }
+
+  @return unquote("var(--#{$name}, #{$fallback})");
+}
+
+@function ui-space($name) {
+  @return map-get($ui-spaces, $name);
+}
+
+@function ui-radius($name) {
+  @return map-get($ui-radii, $name);
+}
+
+@function ui-breakpoint($name) {
+  @return map-get($ui-breakpoints, $name);
+}
+
+@mixin respond-up($breakpoint) {
+  $value: ui-breakpoint($breakpoint);
+
+  @if $value {
+    @media screen and (min-width: $value) {
+      @content;
+    }
+  }
+}
+
+@mixin respond-down($breakpoint) {
+  $value: ui-breakpoint($breakpoint);
+
+  @if $value {
+    @media screen and (max-width: $value) {
+      @content;
+    }
+  }
+}
+
+@mixin themed-card-surface {
+  color: var(--color-text-strong);
+  border: 1px solid var(--color-line-soft);
+  background:
+    radial-gradient(circle at top left, var(--color-theme-glow), transparent 260px),
+    var(--color-surface-card);
+  box-shadow: var(--shadow-card);
+}

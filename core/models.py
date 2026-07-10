@@ -3,13 +3,15 @@ import os
 import PIL.Image
 import requests
 
+from datetime import timedelta
 from io import BytesIO
 
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.db import models
+from django.db import models, OperationalError, transaction
 from django.dispatch import receiver
+from django.utils import timezone
 
 from core.motion_photo import extract_motion_photo_payload
 from core.utils import motion_photo_upload_path
@@ -39,8 +41,7 @@ class ImageManager(models.Manager):
             fp.seek(0)
             return True
 
-    # FIXME: Move this into an asynchronous task
-    def create_for_url(self, url, referer=None):
+    def fetch_from_url(self, url, referer=None):
         file_name = url.split("/")[-1].split('#')[0].split('?')[0]
         buf = BytesIO()
         headers = dict(self._default_ua)
@@ -60,6 +61,9 @@ class ImageManager(models.Manager):
         image.get_animated_thumbnail()
         image.create_motion_photo()
         return image
+
+    def create_for_url(self, url, referer=None):
+        return self.fetch_from_url(url, referer)
 
 
 class Image(BaseImage):
@@ -239,6 +243,8 @@ class ComicPage(models.Model):
     )
     image = models.ForeignKey(
         Image,
+        blank=True,
+        null=True,
         related_name="comic_pages",
         on_delete=models.CASCADE,
     )
@@ -253,7 +259,13 @@ class Pin(models.Model):
     url = models.CharField(null=True, blank=True, max_length=2048)
     referer = models.CharField(null=True, blank=True, max_length=2048)
     description = models.TextField(blank=True, null=True)
-    image = models.ForeignKey(Image, related_name='pin', on_delete=models.CASCADE)
+    image = models.ForeignKey(
+        Image,
+        blank=True,
+        null=True,
+        related_name='pin',
+        on_delete=models.CASCADE,
+    )
     published = models.DateTimeField(auto_now_add=True)
     tags = TaggableManager()
 
@@ -264,10 +276,200 @@ class Pin(models.Model):
         return '%s - %s' % (self.submitter, self.published)
 
 
+class ImageFetchJob(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_PROCESSING = 'processing'
+    STATUS_READY = 'ready'
+    STATUS_FAILED = 'failed'
+    STATUS_CHOICES = (
+        (STATUS_PENDING, STATUS_PENDING),
+        (STATUS_PROCESSING, STATUS_PROCESSING),
+        (STATUS_READY, STATUS_READY),
+        (STATUS_FAILED, STATUS_FAILED),
+    )
+
+    source_url = models.CharField(max_length=2048)
+    referer = models.CharField(null=True, blank=True, max_length=2048)
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_PENDING,
+        db_index=True,
+    )
+    image = models.ForeignKey(
+        Image,
+        blank=True,
+        null=True,
+        related_name='fetch_jobs',
+        on_delete=models.SET_NULL,
+    )
+    pin = models.OneToOneField(
+        Pin,
+        blank=True,
+        null=True,
+        related_name='image_fetch_job',
+        on_delete=models.CASCADE,
+    )
+    comic_page = models.OneToOneField(
+        ComicPage,
+        blank=True,
+        null=True,
+        related_name='image_fetch_job',
+        on_delete=models.CASCADE,
+    )
+    error = models.TextField(blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    published = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    started = models.DateTimeField(blank=True, null=True)
+    finished = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['status', 'published'],
+                name='core_imgfetch_status_idx',
+            ),
+            models.Index(
+                fields=['status', 'started'],
+                name='core_imgfetch_stale_idx',
+            ),
+        ]
+
+    @classmethod
+    def enqueue_for_pin(cls, pin, source_url, referer=None):
+        job, _ = cls.objects.update_or_create(
+            pin=pin,
+            defaults={
+                'source_url': source_url,
+                'referer': referer,
+                'status': cls.STATUS_PENDING,
+                'error': '',
+                'image': None,
+                'attempts': 0,
+                'started': None,
+                'finished': None,
+            },
+        )
+        return job
+
+    @classmethod
+    def enqueue_for_comic_page(cls, comic_page, source_url, referer=None):
+        job, _ = cls.objects.update_or_create(
+            comic_page=comic_page,
+            defaults={
+                'source_url': source_url,
+                'referer': referer,
+                'status': cls.STATUS_PENDING,
+                'error': '',
+                'image': None,
+                'attempts': 0,
+                'started': None,
+                'finished': None,
+            },
+        )
+        return job
+
+    @classmethod
+    def reset_stale_processing(cls, timeout_seconds=None):
+        if timeout_seconds is None:
+            timeout_seconds = getattr(
+                settings,
+                'IMAGE_FETCH_PROCESSING_TIMEOUT_SECONDS',
+                900,
+            )
+        if timeout_seconds <= 0:
+            return 0
+        cutoff = timezone.now() - timedelta(seconds=timeout_seconds)
+        return cls.objects.filter(
+            models.Q(started__lt=cutoff) | models.Q(started__isnull=True),
+            status=cls.STATUS_PROCESSING,
+        ).update(
+            status=cls.STATUS_PENDING,
+            error='Reset after worker processing timeout.',
+            started=None,
+            finished=None,
+            updated=timezone.now(),
+        )
+
+    @classmethod
+    def claim_next(cls):
+        with transaction.atomic():
+            job = cls.objects.filter(
+                status=cls.STATUS_PENDING,
+            ).order_by('published', 'id').first()
+            if job is None:
+                return None
+            job.status = cls.STATUS_PROCESSING
+            job.attempts += 1
+            job.error = ''
+            job.started = timezone.now()
+            job.finished = None
+            job.save(update_fields=[
+                'status',
+                'attempts',
+                'error',
+                'started',
+                'finished',
+                'updated',
+            ])
+            return job
+
+    def process(self):
+        try:
+            image = Image.objects.fetch_from_url(self.source_url, self.referer)
+            if image is None:
+                raise ValueError('invalid image content')
+            self.attach_image(image)
+            self.image = image
+            self.status = self.STATUS_READY
+            self.error = ''
+            self.finished = timezone.now()
+            self.save(update_fields=[
+                'image',
+                'status',
+                'error',
+                'finished',
+                'updated',
+            ])
+            return True
+        except OperationalError as exc:
+            self.status = self.STATUS_PENDING
+            self.error = str(exc)[:4096]
+            self.started = None
+            self.finished = None
+            self.save(update_fields=[
+                'status',
+                'error',
+                'started',
+                'finished',
+                'updated',
+            ])
+            raise
+        except Exception as exc:
+            self.status = self.STATUS_FAILED
+            self.error = str(exc)[:4096]
+            self.finished = timezone.now()
+            self.save(update_fields=['status', 'error', 'finished', 'updated'])
+            return False
+
+    def attach_image(self, image):
+        if self.pin_id:
+            Pin.objects.filter(pk=self.pin_id).update(image=image)
+        if self.comic_page_id:
+            ComicPage.objects.filter(pk=self.comic_page_id).update(image=image)
+
+
 class PinLike(models.Model):
     class Meta:
         unique_together = ("pin", "actor_key")
         index_together = ("pin", "actor_key")
+        indexes = [
+            models.Index(
+                fields=["ip_hash", "published"],
+                name="core_pinlike_ip_pub_idx",
+            ),
+        ]
 
     pin = models.ForeignKey(Pin, related_name="likes", on_delete=models.CASCADE)
     user = models.ForeignKey(
@@ -285,6 +487,12 @@ class ComicLike(models.Model):
     class Meta:
         unique_together = ("comic", "actor_key")
         index_together = ("comic", "actor_key")
+        indexes = [
+            models.Index(
+                fields=["ip_hash", "published"],
+                name="core_comiclike_ip_pub_idx",
+            ),
+        ]
 
     comic = models.ForeignKey(
         Comic,
@@ -304,6 +512,8 @@ class ComicLike(models.Model):
 
 @receiver(models.signals.post_delete, sender=Pin)
 def delete_pin_images(sender, instance, **kwargs):
+    if instance.image_id is None:
+        return
     try:
         image = instance.image
         if image.pin.exists() or image.comic_pages.exists():
@@ -315,6 +525,8 @@ def delete_pin_images(sender, instance, **kwargs):
 
 @receiver(models.signals.post_delete, sender=ComicPage)
 def delete_unused_comic_page_images(sender, instance, **kwargs):
+    if instance.image_id is None:
+        return
     try:
         image = instance.image
         if image.pin.exists() or image.comic_pages.exists():

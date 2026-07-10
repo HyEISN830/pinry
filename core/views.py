@@ -2,6 +2,7 @@ import mimetypes
 import time
 
 from django.conf import settings
+from django.db import IntegrityError
 from django.db.models import Count, Exists, OuterRef, Q
 from django.http import Http404, StreamingHttpResponse
 from django.utils.decorators import method_decorator
@@ -18,6 +19,7 @@ from core import serializers as api
 from core.likes import like_actor_key, like_actor_keys, like_ip_hash
 from core.models import Image, Pin, Board, Comic, PinLike, ComicLike
 from core.permissions import IsOwnerOrReadOnly, OwnerOnlyIfPrivate
+from core.throttles import LikeDailyRateThrottle, LikeMinuteRateThrottle
 from core.serializers import (
     filter_private_pin,
     filter_private_board,
@@ -57,8 +59,14 @@ def toggle_like(request, obj, like_model, object_field):
         }
         if request.user.is_authenticated:
             defaults['user'] = request.user
-        like_model.objects.create(**filters, **defaults)
-        liked = True
+        try:
+            _, created = like_model.objects.get_or_create(
+                defaults=defaults,
+                **filters
+            )
+        except IntegrityError:
+            created = False
+        liked = True if created else like_model.objects.filter(**filters).exists()
     count = obj.likes.count()
     return Response(
         {
@@ -148,6 +156,7 @@ class PinViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['post'],
         permission_classes=[OwnerOnlyIfPrivate("submitter")],
+        throttle_classes=[LikeMinuteRateThrottle, LikeDailyRateThrottle],
     )
     def like(self, request, pk=None):
         return toggle_like(request, self.get_object(), PinLike, 'pin')
@@ -187,6 +196,7 @@ class ComicViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['post'],
         permission_classes=[OwnerOnlyIfPrivate("submitter")],
+        throttle_classes=[LikeMinuteRateThrottle, LikeDailyRateThrottle],
     )
     def like(self, request, pk=None):
         return toggle_like(request, self.get_object(), ComicLike, 'comic')

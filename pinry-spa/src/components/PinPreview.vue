@@ -1,7 +1,7 @@
-<template>
+﻿<template>
   <div class="pin-preview-modal">
     <section>
-        <div class="card">
+        <div class="card motion-card-enter">
           <div class="card-image">
             <figure class="image preview-frame" :style="previewFrameStyle">
               <img
@@ -310,6 +310,12 @@ export default {
       );
     },
     loadOriginalImage() {
+      if (!this.pinItem.image_id) {
+        this.imageLoading = false;
+        this.imageLoadFailed = !this.pinItem.url;
+        this.$nextTick(this.playMotionVideo);
+        return;
+      }
       const cached = getCachedImage(this.pinItem.image_id);
       if (cached) {
         this.imageBlob = cached.blob;
@@ -426,6 +432,7 @@ export default {
 
 <style lang="scss" scoped>
 @import './utils/fonts.scss';
+@import './utils/motion-mixins';
 
 .pin-preview-modal {
   display: flex;

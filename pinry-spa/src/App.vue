@@ -1,12 +1,15 @@
 <template>
   <div id="app">
-    <router-view/>
+    <PageTransition>
+      <router-view :key="routeTransitionKey"/>
+    </PageTransition>
     <BackToTopProgress></BackToTopProgress>
   </div>
 </template>
 
 <script>
 import BackToTopProgress from './components/BackToTopProgress.vue';
+import PageTransition from './components/transitions/PageTransition.vue';
 import bus from './components/utils/bus';
 import theme from './components/utils/theme';
 
@@ -14,6 +17,16 @@ export default {
   name: 'app',
   components: {
     BackToTopProgress,
+    PageTransition,
+  },
+  computed: {
+    routeTransitionKey() {
+      const params = this.$route.params || {};
+      const stableParams = Object.keys(params).sort().map(
+        key => `${key}:${params[key]}`,
+      ).join('|');
+      return `${this.$route.name || this.$route.path}:${stableParams}`;
+    },
   },
   created() {
     theme.applySavedTheme();
@@ -44,6 +57,8 @@ export default {
   // Import Bulma and Buefy styles
   @import "~bulma";
   @import "~buefy/src/scss/buefy";
+  @import "./components/utils/design-tokens";
+  @import "./components/utils/motion-system";
 
   :root {
     --app-bg: #f6f7fb;

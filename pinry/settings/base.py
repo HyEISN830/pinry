@@ -5,6 +5,32 @@ from django.contrib.messages import constants as messages
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+
+def _env_tuple(name, default=''):
+    return tuple(
+        value.strip()
+        for value in os.environ.get(name, default).split(',')
+        if value.strip()
+    )
+
+
+def _env_bool(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def _env_int(name, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -68,6 +94,18 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'pinry/static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 MEDIA_ROOT = os.environ.get('MEDIA_ROOT', '/data/media')
+TRUSTED_PROXY_IPS = _env_tuple('TRUSTED_PROXY_IPS')
+
+IMAGE_FETCH_ASYNC_ENABLED = _env_bool('IMAGE_FETCH_ASYNC_ENABLED', False)
+IMAGE_FETCH_WORKER_IDLE_SECONDS = _env_int('IMAGE_FETCH_WORKER_IDLE_SECONDS', 5)
+IMAGE_FETCH_PROCESSING_TIMEOUT_SECONDS = _env_int(
+    'IMAGE_FETCH_PROCESSING_TIMEOUT_SECONDS',
+    900,
+)
+IMAGE_FETCH_DB_LOCK_BACKOFF_SECONDS = _env_int(
+    'IMAGE_FETCH_DB_LOCK_BACKOFF_SECONDS',
+    2,
+)
 
 WSGI_APPLICATION = 'pinry.wsgi.application'
 
@@ -186,5 +224,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
-    ]
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'likes_minute': '30/min',
+        'likes_day': '300/day',
+    },
 }

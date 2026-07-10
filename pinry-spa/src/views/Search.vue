@@ -3,45 +3,95 @@
     <PHeader></PHeader>
     <section class="section search-shell">
       <div class="container search-container">
-        <aside class="search-sidebar">
-          <h1>{{ $t("aggregateSearchTitle") }}</h1>
-          <div class="search-types">
+        <aside class="search-sidebar motion-card-enter">
+          <div class="sidebar-eyebrow">{{ $t("aggregateSearchTitle") }}</div>
+          <h1>{{ $t("searchPlaceholder") }}</h1>
+          <p>{{ activeTypeLabel }}</p>
+          <div class="search-types" role="list" :aria-label="$t('aggregateSearchTitle')">
             <button
               v-for="option in typeOptions"
               :key="option.value"
-              class="button"
+              class="search-type-pill"
               type="button"
-              :class="{ 'is-primary': activeType === option.value }"
+              role="listitem"
+              :class="{ 'is-active': activeType === option.value }"
+              :aria-pressed="activeType === option.value ? 'true' : 'false'"
               @click="setType(option.value)">
-              {{ option.label }}
+              <span class="type-dot" :class="`is-${option.value}`"></span>
+              <span>{{ option.label }}</span>
             </button>
           </div>
+          <SearchPanel class="quick-filter-panel" @selected="applyQuickFilter"></SearchPanel>
         </aside>
+
         <main class="search-main">
-          <form class="search-card" @submit.prevent="search(true)">
-            <input
-              class="input"
-              v-model="queryText"
-              maxlength="80"
-              :placeholder="$t('searchPlaceholder')">
-            <button
-              class="button is-primary"
-              type="submit"
-              :disabled="normalizedQuery.length === 0 || loading">
+          <form class="search-card motion-fade-up" @submit.prevent="search(true)">
+            <label class="search-label" for="aggregate-search-input">
+              {{ $t("aggregateSearchTitle") }}
+            </label>
+            <div class="search-input-row">
+              <input
+                id="aggregate-search-input"
+                class="input"
+                v-model="queryText"
+                maxlength="80"
+                :aria-label="$t('searchPlaceholder')"
+                :placeholder="$t('searchPlaceholder')"
+                @input="clearError">
+              <button
+                class="button is-primary search-submit"
+                type="submit"
+                :disabled="normalizedQuery.length === 0 || loading">
+                <span v-if="loading">...</span>
+                <span v-else>{{ $t("searchButton") }}</span>
+              </button>
+            </div>
+            <p class="search-helper">
+              {{ activeTypeLabel }} · {{ $t("searchPlaceholder") }}
+            </p>
+          </form>
+
+          <section class="state-card is-idle motion-card-enter" v-if="!hasSearched && !loading">
+            <b-icon icon="magnify" custom-size="mdi-36px"></b-icon>
+            <h2>{{ $t("aggregateSearchTitle") }}</h2>
+            <p>{{ $t("searchPlaceholder") }}</p>
+          </section>
+
+          <section class="state-card is-loading" v-if="loading">
+            <loadingSpinner :show="loading"></loadingSpinner>
+            <div class="skeleton-lines" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </section>
+
+          <section class="state-card is-error" v-if="errorText && !loading">
+            <b-icon icon="alert-circle-outline" custom-size="mdi-34px"></b-icon>
+            <h2>{{ $t("searchFailedTitle") }}</h2>
+            <p>{{ errorText }}</p>
+            <button class="button is-light" type="button" @click="search(true)">
               {{ $t("searchButton") }}
             </button>
-          </form>
-          <div class="result-heading" v-if="hasSearched">
-            {{ $t("searchResultsFor") }} <strong>{{ resultQuery }}</strong>
+          </section>
+
+          <div class="result-heading" v-if="hasSearched && !loading && !errorText">
+            <span>{{ $t("searchResultsFor") }}</span>
+            <strong>{{ resultQuery }}</strong>
           </div>
-          <loadingSpinner :show="loading"></loadingSpinner>
+
           <div
-            class="empty-results"
-            v-if="hasSearched && !loading && !hasAnyResults">
-            {{ $t("noResultsFound") }}
+            class="empty-results motion-card-enter"
+            v-if="hasSearched && !loading && !errorText && !hasAnyResults">
+            <b-icon icon="image-search-outline" custom-size="mdi-32px"></b-icon>
+            <div>
+              <h2>{{ $t("noResultsFound") }}</h2>
+              <p>{{ $t("searchEmptyHint") }}</p>
+            </div>
           </div>
+
           <section
-            class="result-section"
+            class="result-section motion-stagger"
             v-if="shouldShowBucket('comics') && buckets.comics.results.length > 0">
             <div class="section-head">
               <h2>{{ $t("comicsLink") }}</h2>
@@ -51,12 +101,12 @@
                 type="button"
                 :disabled="loadingMore.comics"
                 @click="loadMore('comics')">
-                {{ $t("loadMoreResults") }}
+                {{ loadingMore.comics ? '...' : $t("loadMoreResults") }}
               </button>
             </div>
             <div class="result-grid">
               <article
-                class="result-card comic-result"
+                class="result-card comic-result motion-card-enter motion-hover-scale"
                 v-for="comic in buckets.comics.results"
                 :key="`comic-${comic.id}`">
                 <router-link
@@ -96,8 +146,9 @@
               </article>
             </div>
           </section>
+
           <section
-            class="result-section"
+            class="result-section motion-stagger"
             v-if="shouldShowBucket('pins') && buckets.pins.results.length > 0">
             <div class="section-head">
               <h2>{{ $t("pinsLink") }}</h2>
@@ -107,19 +158,19 @@
                 type="button"
                 :disabled="loadingMore.pins"
                 @click="loadMore('pins')">
-                {{ $t("loadMoreResults") }}
+                {{ loadingMore.pins ? '...' : $t("loadMoreResults") }}
               </button>
             </div>
             <div class="result-grid pin-results">
               <article
-                class="result-card pin-result"
+                class="result-card pin-result motion-card-enter motion-hover-scale"
                 v-for="pin in buckets.pins.results"
                 :key="`pin-${pin.id}`">
                 <router-link
                   class="result-cover"
                   :style="pinCoverStyle(pin)"
                   :to="{ name: 'pin', params: { pinId: pin.id } }">
-                  <img :src="imageUrl(pin.image)" :alt="pin.description">
+                  <img :src="imageUrl(pin.image)" :alt="pin.description || $t('pinLink')">
                   <span class="type-pill">{{ $t("pinLink") }}</span>
                 </router-link>
                 <div class="result-body">
@@ -154,8 +205,9 @@
               </article>
             </div>
           </section>
+
           <section
-            class="result-section"
+            class="result-section motion-stagger"
             v-if="shouldShowBucket('boards') && buckets.boards.results.length > 0">
             <div class="section-head">
               <h2>{{ $t("boardsLink") }}</h2>
@@ -165,12 +217,12 @@
                 type="button"
                 :disabled="loadingMore.boards"
                 @click="loadMore('boards')">
-                {{ $t("loadMoreResults") }}
+                {{ loadingMore.boards ? '...' : $t("loadMoreResults") }}
               </button>
             </div>
             <div class="result-grid">
               <router-link
-                class="result-card board-result"
+                class="result-card board-result motion-card-enter motion-hover-scale"
                 v-for="board in buckets.boards.results"
                 :key="`board-${board.id}`"
                 :to="{ name: 'board', params: { boardId: board.id } }">
@@ -190,8 +242,9 @@
               </router-link>
             </div>
           </section>
+
           <section
-            class="result-section"
+            class="result-section motion-stagger"
             v-if="shouldShowBucket('tags') && buckets.tags.results.length > 0">
             <div class="section-head">
               <h2>{{ $t("tagsLabel") }}</h2>
@@ -201,13 +254,14 @@
                 type="button"
                 :disabled="loadingMore.tags"
                 @click="loadMore('tags')">
-                {{ $t("loadMoreResults") }}
+                {{ loadingMore.tags ? '...' : $t("loadMoreResults") }}
               </button>
             </div>
             <div class="tag-result-list">
               <router-link
                 v-for="tag in buckets.tags.results"
                 :key="`tag-${tag.name}`"
+                class="motion-hover-scale"
                 :to="{ name: 'tag', params: { tag: tag.name } }">
                 {{ tag.name }}
               </router-link>
@@ -222,6 +276,7 @@
 <script>
 import API from '../components/api';
 import PHeader from '../components/PHeader.vue';
+import SearchPanel from '../components/search/SearchPanel.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import format from '../components/utils/format';
 import imageVariant from '../components/utils/imageVariant';
@@ -254,6 +309,7 @@ export default {
   name: 'Search',
   components: {
     PHeader,
+    SearchPanel,
     loadingSpinner,
   },
   data() {
@@ -265,6 +321,7 @@ export default {
         comics: blankBucket(),
         tags: blankBucket(),
       },
+      errorText: '',
       hasSearched: false,
       loading: false,
       loadingMore: {
@@ -278,6 +335,10 @@ export default {
     };
   },
   computed: {
+    activeTypeLabel() {
+      const selected = this.typeOptions.find(option => option.value === this.activeType);
+      return selected ? selected.label : this.$t('searchAllOption');
+    },
     hasAnyResults() {
       return Object.keys(this.buckets).some(
         key => this.buckets[key].results.length > 0,
@@ -297,12 +358,23 @@ export default {
     },
   },
   methods: {
+    applyQuickFilter(payload) {
+      if (!payload || !payload.selected) {
+        return;
+      }
+      this.activeType = payload.filterType === 'Board' ? 'board' : 'tag';
+      this.queryText = String(payload.selected).trim();
+      this.search(true);
+    },
     bucketNamesForType(type) {
       const key = bucketKeyForType(type);
       if (key) {
         return [key];
       }
       return ['comics', 'pins', 'boards', 'tags'];
+    },
+    clearError() {
+      this.errorText = '';
     },
     resetBuckets() {
       this.buckets = {
@@ -326,6 +398,7 @@ export default {
         this.resetBuckets();
       }
       this.loading = true;
+      this.errorText = '';
       this.resultQuery = this.normalizedQuery;
       this.hasSearched = true;
       API.Search.aggregate(
@@ -340,6 +413,7 @@ export default {
         },
         () => {
           this.loading = false;
+          this.errorText = this.$t('searchLoadError');
         },
       );
     },
@@ -364,6 +438,7 @@ export default {
         return;
       }
       this.$set(this.loadingMore, name, true);
+      this.errorText = '';
       const offsets = {};
       offsets[name] = this.buckets[name].next_offset;
       const type = name.slice(0, -1);
@@ -379,6 +454,7 @@ export default {
         },
         () => {
           this.$set(this.loadingMore, name, false);
+          this.errorText = this.$t('searchLoadMoreError');
         },
       );
     },
@@ -449,91 +525,219 @@ export default {
 </script>
 
 <style scoped lang="scss">
+@import "../components/utils/motion-mixins";
+
 .search-shell {
-  padding-top: 1.25rem;
+  padding-top: calc(72px + var(--space-xl));
 }
 .search-container {
   display: grid;
-  grid-template-columns: minmax(180px, 230px) minmax(0, 1fr);
-  gap: 1.25rem;
-  max-width: min(1440px, calc(100vw - 2rem));
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: var(--space-lg);
+  width: min(100%, var(--container-max));
+  max-width: calc(100vw - var(--space-xl));
 }
 .search-sidebar,
 .search-card,
 .result-card,
-.empty-results {
-  border: 1px solid var(--line-soft, #e7ebf2);
-  border-radius: 8px;
-  background: var(--surface-1, #fff);
-  box-shadow: var(--shadow-soft, 0 10px 24px rgba(16, 24, 40, 0.08));
+.empty-results,
+.state-card {
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at top left, var(--color-theme-glow), transparent 260px),
+    var(--color-surface-1);
+  box-shadow: var(--shadow-card);
 }
 .search-sidebar {
   position: sticky;
-  top: 5rem;
+  top: 6.5rem;
   align-self: start;
-  padding: 1rem;
+  padding: var(--space-md);
+}
+.sidebar-eyebrow {
+  color: var(--color-accent-strong);
+  font-size: 0.75rem;
+  font-weight: 950;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
 }
 .search-sidebar h1 {
-  margin: 0 0 0.85rem;
-  color: var(--text-strong, #22313f);
-  font-size: 1.15rem;
-  font-weight: 800;
+  margin: var(--space-xs) 0 var(--space-xs);
+  color: var(--color-text-strong);
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  font-weight: 950;
+  line-height: 1.08;
+}
+.search-sidebar p,
+.search-helper,
+.result-heading,
+.result-body p,
+.state-card p,
+.empty-results p {
+  color: var(--color-text-muted);
 }
 .search-types {
   display: grid;
-  gap: 0.5rem;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
 }
-.search-types .button {
-  justify-content: flex-start;
-  border-radius: 7px;
-  font-weight: 800;
+.search-type-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 42px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-text-strong);
+  background: var(--color-surface-2);
+  cursor: pointer;
+  font-weight: 900;
+  text-align: left;
+  @include hover-scale(1.018, -2px);
+}
+.search-type-pill.is-active {
+  color: var(--color-accent-strong);
+  border-color: var(--color-accent-border);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-xs);
+}
+.search-type-pill:focus-visible,
+.search-card .input:focus,
+.search-submit:focus-visible,
+.section-head .button:focus-visible,
+.result-card:focus-visible,
+.result-cover:focus-visible,
+.like-button:focus-visible,
+.tag-result-list a:focus-visible,
+.state-card .button:focus-visible {
+  @include focus-ring;
+}
+.type-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-soft);
+}
+.type-dot.is-pin { background: #ef7cba; }
+.type-dot.is-board { background: #d5a344; }
+.type-dot.is-comic { background: #7c8cff; }
+.type-dot.is-tag { background: #32b47b; }
+.quick-filter-panel {
+  margin-top: var(--space-md);
 }
 .search-main {
   min-width: 0;
 }
 .search-card {
   display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+}
+.search-label {
+  color: var(--color-text-strong);
+  font-weight: 950;
+}
+.search-input-row {
+  display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.65rem;
-  padding: 1rem;
+  gap: var(--space-xs);
 }
 .search-card .input {
-  min-height: 42px;
-  border-radius: 7px;
+  min-height: 46px;
+  border-color: var(--color-line-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-text-strong);
+  background: var(--color-surface-2);
+  box-shadow: none;
+}
+.search-submit {
+  min-height: 46px;
+  border-radius: var(--radius-md);
+  font-weight: 950;
+  @include hover-scale(1.018, -2px);
 }
 .result-heading {
-  margin: 1rem 0 0;
-  color: var(--text-muted, #64748b);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  align-items: baseline;
+  margin: var(--space-lg) 0 0;
   font-size: 1rem;
 }
 .result-heading strong {
-  color: var(--text-strong, #22313f);
+  color: var(--color-text-strong);
+  font-size: 1.2rem;
 }
-.empty-results {
-  margin-top: 1rem;
-  padding: 1rem;
-  color: var(--text-muted, #64748b);
+.empty-results,
+.state-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
 }
+.state-card.is-loading {
+  display: grid;
+}
+.state-card .icon,
+.empty-results .icon {
+  color: var(--color-accent-strong);
+}
+.state-card h2,
+.empty-results h2 {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+.state-card p,
+.empty-results p {
+  margin: var(--space-2xs) 0 0;
+}
+.skeleton-lines {
+  display: grid;
+  gap: var(--space-xs);
+}
+.skeleton-lines span {
+  display: block;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--color-surface-2), var(--color-accent-soft), var(--color-surface-2));
+  animation: pinry-soft-pulse 1.2s var(--motion-ease-standard) infinite;
+}
+.skeleton-lines span:nth-child(1) { width: 76%; }
+.skeleton-lines span:nth-child(2) { width: 92%; }
+.skeleton-lines span:nth-child(3) { width: 54%; }
 .result-section {
-  margin-top: 1.25rem;
+  margin-top: var(--space-xl);
 }
 .section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.7rem;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
 }
 .section-head h2 {
   margin: 0;
-  color: var(--text-strong, #22313f);
+  color: var(--color-text-strong);
   font-size: 1.35rem;
-  font-weight: 800;
+  font-weight: 950;
+}
+.section-head .button {
+  border-color: var(--color-line-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  font-weight: 900;
 }
 .result-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 1rem;
+  gap: var(--space-md);
 }
 .pin-results {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -541,12 +745,7 @@ export default {
 .result-card {
   overflow: hidden;
   color: inherit;
-  animation: resultAppear .42s cubic-bezier(0.16, 1, 0.3, 1) both;
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-}
-.result-card:hover {
-  transform: translateY(-3px);
-  border-color: var(--accent, #7e57c2);
+  text-decoration: none;
 }
 .result-cover {
   position: relative;
@@ -554,7 +753,7 @@ export default {
   display: block;
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  background: var(--surface-2, #f8fafc);
+  background: var(--color-surface-2);
 }
 .board-result .result-cover {
   aspect-ratio: 16 / 10;
@@ -581,110 +780,103 @@ export default {
 .type-pill {
   position: absolute;
   z-index: 2;
-  top: 0.6rem;
-  left: 0.6rem;
-  padding: 0.22rem 0.48rem;
-  border-radius: 999px;
-  color: var(--accent-text, #fff);
-  background: var(--accent-strong, #7e57c2);
+  top: var(--space-xs);
+  left: var(--space-xs);
+  padding: 0.22rem 0.52rem;
+  border-radius: var(--radius-pill);
+  color: var(--color-accent-text);
+  background: var(--color-accent-strong);
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 950;
 }
 .result-body {
-  padding: 0.85rem;
+  padding: var(--space-sm);
 }
 .result-body h3 {
   display: -webkit-box;
   overflow: hidden;
   margin: 0;
-  color: var(--text-strong, #22313f);
+  color: var(--color-text-strong);
   font-size: 1rem;
-  font-weight: 900;
+  font-weight: 950;
   line-height: 1.35;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 .result-body p {
-  margin: 0.42rem 0 0;
-  color: var(--text-muted, #64748b);
+  margin: var(--space-xs) 0 0;
   font-size: 0.9rem;
 }
-.mini-tags {
+.mini-tags,
+.tag-result-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.5rem;
+  gap: var(--space-xs);
+  margin-top: var(--space-xs);
 }
 .mini-tags a,
 .tag-result-list a {
   display: inline-flex;
   align-items: center;
-  padding: 0.16rem 0.46rem;
-  border-radius: 999px;
-  color: var(--accent-strong, #1f6feb);
-  background: var(--accent-soft, #eaf3ff);
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--radius-pill);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 950;
+  text-decoration: none;
 }
 .like-button {
   display: inline-flex;
   align-items: center;
   gap: 0.28rem;
   min-height: 30px;
-  margin-top: 0.65rem;
+  margin-top: var(--space-sm);
   padding: 0 0.58rem;
-  border: 1px solid var(--line-soft, #dbe3ee);
-  border-radius: 999px;
-  color: var(--text-muted, #64748b);
-  background: var(--surface-2, #f8fafc);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
   cursor: pointer;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 950;
 }
 .like-button.is-liked,
 .like-button:hover {
-  color: var(--accent-strong, #d94691);
-  border-color: var(--accent, #ef7cba);
-  background: var(--accent-soft, rgba(239, 124, 186, 0.16));
+  color: var(--color-accent-strong);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 .like-button:disabled {
   opacity: 0.72;
   cursor: wait;
 }
-.tag-result-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-@keyframes resultAppear {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.985);
+@media screen and (max-width: 860px) {
+  .search-shell {
+    padding-top: calc(62px + var(--space-lg));
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-@media screen and (max-width: 820px) {
   .search-container {
     display: block;
-    max-width: calc(100vw - 1rem);
+    max-width: calc(100vw - var(--space-md));
   }
   .search-sidebar {
     position: static;
-    margin-bottom: 1rem;
+    margin-bottom: var(--space-md);
   }
   .search-types {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
-@media screen and (max-width: 542px) {
-  .search-card {
+@media screen and (max-width: 560px) {
+  .search-input-row,
+  .search-types {
     grid-template-columns: 1fr;
   }
-  .search-types {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .section-head,
+  .empty-results,
+  .state-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
   .result-grid,
   .pin-results {

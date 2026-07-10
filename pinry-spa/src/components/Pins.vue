@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="pins">
     <section class="section">
       <div id="pins-container" class="container" v-if="blocks">
@@ -14,11 +14,11 @@
             <div v-bind:key="item.id"
                  v-masonry-tile
                  :class="item.class"
-                 class="grid pin-masonry">
+                 class="grid pin-masonry motion-card-enter">
               <div class="grid-sizer"></div>
               <div class="gutter-sizer"></div>
               <div
-                class="pin-card grid-item"
+                class="pin-card grid-item motion-hover-scale"
                 @mouseenter="showEditButtons(item)"
                 @touchstart="handleCardTouch(item)"
                 @mouseleave="hideEditButtons(item.id)">
@@ -39,13 +39,20 @@
                     :style="item.style"
                     :data-pin-id="item.id">
                     <img
-                       v-if="item.imageVisible"
+                       v-if="item.imageVisible && item.url"
                        :src="item.url"
                        @load="onPinImageLoaded(item.id)"
                        @click="openPreview(item, $event)"
-                       :alt="item.description"
+                       :alt="item.description || $t('imageUnavailableText')"
                        class="pin-preview-image">
-                    <div v-else class="lazy-image-placeholder"></div>
+                    <div
+                      v-else
+                      class="lazy-image-placeholder"
+                      :class="{ 'is-unavailable': item.imageVisible && !item.url }">
+                      <span v-if="item.imageVisible && !item.url">
+                        {{ $t("imageUnavailableText") }}
+                      </span>
+                    </div>
                     <div
                       v-if="item.motion_photo"
                       class="motion-photo-badge"
@@ -134,7 +141,21 @@
         </div>
       </div>
       <loadingSpinner v-bind:show="status.loading"></loadingSpinner>
-      <noMore v-bind:show="!status.hasNext"></noMore>
+      <div v-if="showInitialSkeleton" class="card-skeleton-grid" aria-hidden="true">
+        <div v-for="index in 6" :key="index" class="card-skeleton">
+          <div class="card-skeleton-image"></div>
+          <div class="card-skeleton-line is-wide"></div>
+          <div class="card-skeleton-line"></div>
+        </div>
+      </div>
+      <div v-if="status.error" class="card-state is-error">
+        <p>{{ $t("cardLoadError") }}</p>
+        <button type="button" @click="reset">{{ $t("loadMoreResults") }}</button>
+      </div>
+      <div v-else-if="showEmptyState" class="card-state is-empty">
+        <p>{{ $t("pinsEmptyState") }}</p>
+      </div>
+      <noMore v-bind:show="!status.hasNext && blocks.length > 0"></noMore>
     </section>
   </div>
 </template>
@@ -217,39 +238,48 @@ function isDocumentScrollable() {
 
 function createImageItem(pin) {
   const image = {};
-  const thumbnail = imageVariant.getCardThumbnail(pin.image);
-  image.url = pinHandler.escapeUrl(thumbnail.image);
+  const pinImage = pin.image || {};
+  let thumbnail = {};
+  try {
+    thumbnail = pinImage.id ? (imageVariant.getCardThumbnail(pinImage) || {}) : {};
+  } catch (e) {
+    thumbnail = {};
+  }
+  const thumbnailWidth = thumbnail.width || pinImage.width || 240;
+  const thumbnailHeight = thumbnail.height || pinImage.height || 320;
+  image.url = thumbnail.image ? pinHandler.escapeUrl(thumbnail.image) : null;
   image.id = pin.id;
-  image.image_id = pin.image.id;
+  image.image_id = pinImage.id || null;
   image.owner_id = pin.submitter.id;
   image.private = pin.private;
   image.description = pin.description;
-  image.tags = pin.tags;
+  image.tags = pin.tags || [];
   image.boards = pin.boards || [];
   image.author = pin.submitter.username;
   image.avatar = (pin.submitter.avatar && pin.submitter.avatar.small)
     || `//gravatar.com/avatar/${pin.submitter.gravatar}?s=30`;
-  image.large_image_url = pinHandler.escapeUrl(pin.image.image);
-  image.original_image_url = pin.url;
-  image.motion_photo = pin.image.motion_photo
+  image.large_image_url = pinImage.image ? pinHandler.escapeUrl(pinImage.image) : null;
+  image.original_image_url = pin.url || image.large_image_url;
+  image.motion_photo = pinImage.motion_photo
     ? Object.assign(
       {},
-      pin.image.motion_photo,
-      { video: escapeMediaUrl(pin.image.motion_photo.video) },
+      pinImage.motion_photo,
+      { video: escapeMediaUrl(pinImage.motion_photo.video) },
     )
     : null;
   image.referer = pin.referer;
   image.likes_count = pin.likes_count || 0;
   image.viewer_liked = !!pin.viewer_liked;
   image.likeBusy = false;
-  image.orgianl_width = pin.image.width;
+  image.orgianl_width = pinImage.width || thumbnailWidth;
   image.style = {
-    aspectRatio: `${thumbnail.width} / ${thumbnail.height}`,
+    aspectRatio: `${thumbnailWidth} / ${thumbnailHeight}`,
   };
   image.imageVisible = false;
   image.class = {
     'has-board': image.boards.length > 0,
     'has-motion-photo': image.motion_photo !== null,
+    'is-image-missing': image.url === null,
   };
   return image;
 }
@@ -268,6 +298,7 @@ function initialData() {
       loading: false,
       hasNext: true,
       offset: 0,
+      error: false,
     },
     editorMeta: {
       currentEditId: null,
@@ -300,6 +331,17 @@ export default {
           boardFilter: null,
         };
       },
+    },
+  },
+  computed: {
+    showInitialSkeleton() {
+      return this.status.loading && this.blocks.length === 0;
+    },
+    showEmptyState() {
+      return !this.status.loading
+        && !this.status.error
+        && this.blocks.length === 0
+        && !this.status.hasNext;
     },
   },
   watch: {
@@ -571,13 +613,17 @@ export default {
           this.blocks = newBlocks;
           this.status.offset = newBlocks.length;
           this.status.hasNext = !(next === null);
+          this.status.error = false;
           this.status.loading = false;
           this.$nextTick(() => {
             this.observeLazyImages();
             this.scheduleViewportFillCheck();
           });
         },
-        () => { this.status.loading = false; },
+        () => {
+          this.status.error = true;
+          this.status.loading = false;
+        },
       );
     },
     niceLinks,
@@ -629,6 +675,7 @@ export default {
 <style lang="scss" scoped>
 /* grid */
 @import 'utils/pin';
+@import './utils/motion-mixins';
 
 .grid-sizer,
 .grid-item { width: var(--pin-card-width, #{$pin-preview-width}); }

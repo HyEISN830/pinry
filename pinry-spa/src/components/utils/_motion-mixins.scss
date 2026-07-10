@@ -1,0 +1,79 @@
+@import "./ui-tokens";
+
+@mixin motion-safe {
+  @media (prefers-reduced-motion: no-preference) {
+    @content;
+  }
+}
+
+@mixin motion-reduce {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+@mixin focus-ring {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+@mixin hover-scale($scale: var(--motion-hover-scale), $lift: var(--motion-hover-lift)) {
+  transform: translateZ(0);
+  transition:
+    transform var(--motion-duration-standard) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard),
+    border-color var(--motion-duration-standard) var(--motion-ease-standard),
+    filter var(--motion-duration-standard) var(--motion-ease-standard);
+  will-change: transform;
+
+  @include motion-safe {
+    @media (hover: hover) and (pointer: fine) {
+      &:hover {
+        transform: translateY($lift) scale($scale);
+        box-shadow: var(--shadow-hover);
+      }
+    }
+
+    &:focus-within {
+      transform: translateY($lift) scale($scale);
+      box-shadow: var(--shadow-hover);
+    }
+  }
+
+  @include motion-reduce {
+    transition: none;
+    will-change: auto;
+
+    &:hover,
+    &:focus-within {
+      transform: none;
+    }
+  }
+}
+
+@mixin card-entrance {
+  @include motion-safe {
+    animation: pinry-card-enter var(--motion-duration-card) var(--motion-ease-emphasized) both;
+    animation-delay: var(--motion-delay, 0ms);
+  }
+}
+
+@mixin comic-tilt-base {
+  transform:
+    perspective(var(--tilt-perspective))
+    rotateX(var(--tilt-rotate-x, 0deg))
+    rotateY(var(--tilt-rotate-y, 0deg))
+    scale(var(--tilt-scale, 1));
+  transform-style: preserve-3d;
+  transition:
+    transform var(--motion-duration-standard) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard),
+    filter var(--motion-duration-standard) var(--motion-ease-standard);
+  will-change: transform;
+
+  @include motion-reduce {
+    transform: none;
+    transition: none;
+    will-change: auto;
+  }
+}

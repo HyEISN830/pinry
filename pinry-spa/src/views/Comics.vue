@@ -1,5 +1,5 @@
-﻿<template>
-  <div class="comics-page">
+<template>
+  <div class="comics-page" :class="{ 'is-embedded': embedded }">
     <PHeader v-if="!embedded"></PHeader>
     <section class="section comics-section">
       <div class="container comics-container">
@@ -37,94 +37,105 @@
             &lsaquo;
           </button>
           <div
-            class="comic-grid"
+            v-if="comics.length > 0"
+            class="comic-grid motion-stagger"
             :style="gridStyle">
             <article
-              class="comic-card"
+              class="comic-card motion-card-enter motion-tilt-scene motion-tilt-card"
               v-for="comic in comics"
               :key="comic.id"
               @mouseenter="showMenu(comic)"
-              @mouseleave="hideMenu"
-              @touchstart="handleCardTouch(comic)"
+              @mouseleave="handleCardLeave($event)"
+              @pointermove="scheduleTilt(comic, $event)"
+              @pointerleave="resetTilt($event)"
+              @pointercancel="resetTilt($event)"
+              @touchstart="handleCardTouch(comic, $event)"
+              @touchmove.passive="scheduleTilt(comic, $event)"
+              @touchend="resetTilt($event)"
+              @touchcancel="resetTilt($event)"
               @click="openComic(comic, $event)">
-            <transition name="comic-menu">
+              <span class="motion-tilt-glare comic-glare" aria-hidden="true"></span>
+              <transition name="comic-menu">
+                <div
+                  class="comic-card-menu"
+                  v-if="shouldShowMenu(comic)"
+                  @click.stop
+                  @touchstart.stop="noop">
+                  <button
+                    class="button is-small is-danger"
+                    type="button"
+                    :title="$t('deleteButton')"
+                    :aria-label="$t('deleteButton')"
+                    @click.stop="deleteComic(comic)">
+                    {{ $t("deleteButton") }}
+                  </button>
+                </div>
+              </transition>
+              <div class="comic-ribbon">{{ $t("comicLink") }}</div>
               <div
-                class="comic-card-menu"
-                v-if="shouldShowMenu(comic)"
-                @click.stop
-                @touchstart.stop="noop">
+                class="comic-cover"
+                :style="coverStyle(comic)">
+                <img
+                  v-if="coverImageUrl(comic)"
+                  :src="coverImageUrl(comic)"
+                  :alt="comic.title">
+                <div v-else class="comic-cover-placeholder">
+                  {{ $t("imageUnavailableText") }}
+                </div>
+              </div>
+              <div class="comic-info">
+                <h2>{{ comic.title }}</h2>
+                <div class="comic-tags" v-if="comic.tags && comic.tags.length > 0">
+                  <router-link
+                    v-for="tag in visibleTags(comic)"
+                    :key="tag"
+                    :to="{ name: 'tag', params: { tag } }"
+                    @click.stop>
+                    {{ tag }}
+                  </router-link>
+                  <button
+                    v-if="hiddenTagCount(comic) > 0"
+                    class="comic-tag-more"
+                    type="button"
+                    :title="comic.title"
+                    @click.stop="openComic(comic, $event)">
+                    ...
+                  </button>
+                </div>
+                <div class="comic-author">
+                  <img :src="avatarUrl(comic)" alt="">
+                  <router-link :to="{ name: 'user', params: { user: comic.submitter.username } }">
+                    {{ comic.submitter.username }}
+                  </router-link>
+                  <span>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</span>
+                </div>
+                <div class="comic-source" v-if="hasSource(comic.referer)">
+                  <a
+                    v-if="isWebUrl(comic.referer)"
+                    :href="comic.referer"
+                    target="_blank"
+                    @click.stop>
+                    {{ $t("sourceLink") }}
+                  </a>
+                  <span v-else>{{ sourceText(comic.referer) }}</span>
+                </div>
+                <div class="comic-source is-warning" v-else>
+                  {{ $t("missingSourceNotice") }}
+                </div>
                 <button
-                  class="button is-small is-danger"
+                  class="comic-like"
                   type="button"
-                  :title="$t('deleteButton')"
-                  :aria-label="$t('deleteButton')"
-                  @click.stop="deleteComic(comic)">
-                  {{ $t("deleteButton") }}
+                  :class="{ 'is-liked': comic.viewer_liked }"
+                  :disabled="comic.likeBusy"
+                  :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                  @click.stop="toggleComicLike(comic)">
+                  <b-icon
+                    :icon="comic.viewer_liked ? 'heart' : 'heart-outline'"
+                    size="is-small">
+                  </b-icon>
+                  <span>{{ formatLikeCount(comic.likes_count) }}</span>
                 </button>
               </div>
-            </transition>
-            <div class="comic-ribbon">{{ $t("comicLink") }}</div>
-            <div
-              class="comic-cover"
-              :style="coverStyle(comic)">
-              <img
-                v-if="comic.cover"
-                :src="coverImageUrl(comic)"
-                :alt="comic.title">
-            </div>
-            <div class="comic-info">
-              <h2>{{ comic.title }}</h2>
-              <div class="comic-tags" v-if="comic.tags && comic.tags.length > 0">
-                <router-link
-                  v-for="tag in visibleTags(comic)"
-                  :key="tag"
-                  :to="{ name: 'tag', params: { tag } }"
-                  @click.stop>
-                  {{ tag }}
-                </router-link>
-                <button
-                  v-if="hiddenTagCount(comic) > 0"
-                  class="comic-tag-more"
-                  type="button"
-                  :title="comic.title"
-                  @click.stop="openComic(comic, $event)">
-                  ...
-                </button>
-              </div>
-              <div class="comic-author">
-                <img :src="avatarUrl(comic)" alt="">
-                <router-link :to="{ name: 'user', params: { user: comic.submitter.username } }">
-                  {{ comic.submitter.username }}
-                </router-link>
-                <span>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</span>
-              </div>
-              <div class="comic-source" v-if="hasSource(comic.referer)">
-                <a
-                  v-if="isWebUrl(comic.referer)"
-                  :href="comic.referer"
-                  target="_blank"
-                  @click.stop>
-                  {{ $t("sourceLink") }}
-                </a>
-                <span v-else>{{ sourceText(comic.referer) }}</span>
-              </div>
-              <div class="comic-source is-warning" v-else>
-                {{ $t("missingSourceNotice") }}
-              </div>
-              <button
-                class="comic-like"
-                type="button"
-                :class="{ 'is-liked': comic.viewer_liked }"
-                :disabled="comic.likeBusy"
-                :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
-                @click.stop="toggleComicLike(comic)">
-                <b-icon
-                  :icon="comic.viewer_liked ? 'heart' : 'heart-outline'"
-                  size="is-small">
-                </b-icon>
-                <span>{{ formatLikeCount(comic.likes_count) }}</span>
-              </button>
-            </div>
             </article>
           </div>
           <button
@@ -138,7 +149,23 @@
             &rsaquo;
           </button>
         </div>
-        <loadingSpinner :show="status.loading"></loadingSpinner>
+        <div v-if="showInitialSkeleton" class="comic-skeleton-grid" aria-hidden="true">
+          <div v-for="index in pageLimit" :key="index" class="comic-skeleton-card">
+            <div class="comic-skeleton-cover"></div>
+            <div class="comic-skeleton-line is-wide"></div>
+            <div class="comic-skeleton-line"></div>
+          </div>
+        </div>
+        <div v-if="status.error" class="comic-state is-error">
+          <p>{{ $t("cardLoadError") }}</p>
+          <button class="button is-light" type="button" @click="fetchPage(currentPage)">
+            {{ $t("loadMoreResults") }}
+          </button>
+        </div>
+        <div v-else-if="showEmptyState" class="comic-state is-empty">
+          <p>{{ $t("comicsEmptyState") }}</p>
+        </div>
+        <loadingSpinner :show="status.loading && comics.length > 0"></loadingSpinner>
       </div>
     </section>
   </div>
@@ -243,11 +270,13 @@ export default {
       resizeTimer: null,
       status: {
         count: null,
+        error: false,
         hasNext: false,
         loading: false,
       },
       suppressNextOpenId: null,
       suppressOpenTimer: null,
+      tiltFrame: null,
       user: {
         loggedIn: false,
         meta: {},
@@ -255,6 +284,14 @@ export default {
     };
   },
   computed: {
+    showInitialSkeleton() {
+      return this.status.loading && this.comics.length === 0;
+    },
+    showEmptyState() {
+      return !this.status.loading
+        && !this.status.error
+        && this.comics.length === 0;
+    },
     displayTitle() {
       return this.title || this.$t('comicsLink');
     },
@@ -265,6 +302,9 @@ export default {
     },
   },
   watch: {
+    largeCards() {
+      this.resetPages();
+    },
     tagFilter() {
       this.resetPages();
     },
@@ -284,28 +324,57 @@ export default {
     if (this.resizeTimer) {
       window.clearTimeout(this.resizeTimer);
     }
+    if (this.tiltFrame) {
+      window.cancelAnimationFrame(this.tiltFrame);
+    }
     window.removeEventListener('resize', this.handleResize);
   },
   methods: {
     avatarUrl(comic) {
-      return (comic.submitter.avatar && comic.submitter.avatar.small)
-        || `//gravatar.com/avatar/${comic.submitter.gravatar}?s=28`;
+      const submitter = comic.submitter || {};
+      return (submitter.avatar && submitter.avatar.small)
+        || `//gravatar.com/avatar/${submitter.gravatar}?s=28`;
+    },
+    coverMeta(comic) {
+      const cover = comic && comic.cover ? comic.cover : null;
+      if (!cover) {
+        return null;
+      }
+      if (typeof cover === 'string') {
+        return { image: cover };
+      }
+      const image = cover.image || cover;
+      if (!image) {
+        return null;
+      }
+      if (typeof image === 'string') {
+        return { image };
+      }
+      try {
+        const thumbnail = imageVariant.getCardThumbnail(image) || {};
+        return thumbnail.image ? thumbnail : null;
+      } catch (e) {
+        return null;
+      }
     },
     coverStyle(comic) {
-      if (!comic.cover) {
-        return {};
+      const thumbnail = this.coverMeta(comic);
+      if (!thumbnail || !thumbnail.image) {
+        return {
+          '--comic-cover-image': 'none',
+        };
       }
-      const thumbnail = imageVariant.getCardThumbnail(comic.cover.image);
       return {
         '--comic-cover-image': `url("${thumbnail.image}")`,
       };
     },
     coverImageUrl(comic) {
-      const thumbnail = imageVariant.getCardThumbnail(comic.cover.image);
-      return thumbnail.image;
+      const thumbnail = this.coverMeta(comic);
+      return thumbnail && thumbnail.image ? thumbnail.image : null;
     },
     isOwner(comic) {
       return this.user.loggedIn
+        && comic.submitter
         && comic.submitter.username === this.user.meta.username;
     },
     shouldShowMenu(comic) {
@@ -319,9 +388,62 @@ export default {
     hideMenu() {
       this.currentMenuId = null;
     },
-    handleCardTouch(comic) {
+    scheduleTilt(comic, event) {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return;
+      }
+      const target = event.currentTarget;
+      const point = event.touches && event.touches.length ? event.touches[0] : event;
+      if (!target || !point || !target.getBoundingClientRect) {
+        return;
+      }
+      if (this.tiltFrame) {
+        window.cancelAnimationFrame(this.tiltFrame);
+      }
+      this.tiltFrame = window.requestAnimationFrame(() => {
+        const rect = target.getBoundingClientRect();
+        if (!rect.width || !rect.height) {
+          return;
+        }
+        const x = Math.max(0, Math.min(1, (point.clientX - rect.left) / rect.width));
+        const y = Math.max(0, Math.min(1, (point.clientY - rect.top) / rect.height));
+        const rotateY = (x - 0.5) * 14;
+        const rotateX = (0.5 - y) * 12;
+        target.style.setProperty('--tilt-rotate-x', `${rotateX.toFixed(2)}deg`);
+        target.style.setProperty('--tilt-rotate-y', `${rotateY.toFixed(2)}deg`);
+        target.style.setProperty('--tilt-glare-x', `${(x * 100).toFixed(1)}%`);
+        target.style.setProperty('--tilt-glare-y', `${(y * 100).toFixed(1)}%`);
+        target.style.setProperty('--tilt-glare-opacity', '0.34');
+        target.classList.add('is-tilting');
+        this.tiltFrame = null;
+      });
+    },
+    resetTilt(event) {
+      const target = event && event.currentTarget;
+      if (this.tiltFrame) {
+        window.cancelAnimationFrame(this.tiltFrame);
+        this.tiltFrame = null;
+      }
+      if (!target || !target.style) {
+        return;
+      }
+      target.style.setProperty('--tilt-rotate-x', '0deg');
+      target.style.setProperty('--tilt-rotate-y', '0deg');
+      target.style.setProperty('--tilt-glare-opacity', '0');
+      window.setTimeout(() => {
+        if (target.classList) {
+          target.classList.remove('is-tilting');
+        }
+      }, 180);
+    },
+    handleCardLeave(event) {
+      this.hideMenu();
+      this.resetTilt(event);
+    },
+    handleCardTouch(comic, event) {
       const wasVisible = this.shouldShowMenu(comic);
       this.showMenu(comic);
+      this.scheduleTilt(comic, event);
       if (this.suppressOpenTimer) {
         window.clearTimeout(this.suppressOpenTimer);
       }
@@ -366,6 +488,7 @@ export default {
         return;
       }
       this.status.loading = true;
+      this.status.error = false;
       API.Comic.fetchList(
         page * this.pageLimit,
         this.pageLimit,
@@ -374,7 +497,7 @@ export default {
       ).then(
         (resp) => {
           const { count, results, next } = resp.data;
-          this.comics = results;
+          this.comics = (results || []).map(item => Object.assign({ likeBusy: false }, item));
           this.currentPage = page;
           this.status.count = count;
           this.status.hasNext = next !== null;
@@ -383,6 +506,7 @@ export default {
         },
         () => {
           this.status.loading = false;
+          this.status.error = true;
         },
       );
     },
@@ -443,6 +567,9 @@ export default {
             () => {
               this.comics = this.comics.filter(item => item.id !== comic.id);
               this.currentMenuId = null;
+              if (this.status.count !== null) {
+                this.status.count = Math.max(0, this.status.count - 1);
+              }
               if (this.comics.length === 0 && this.currentPage > 0) {
                 this.fetchPage(this.currentPage - 1);
               }
@@ -478,64 +605,90 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '../components/utils/motion-mixins';
 @import '../components/utils/grid-layout';
+
+.comics-page {
+  min-height: 100vh;
+  background: var(--color-page-bg, var(--app-bg, #f6f7fb));
+}
+
+.comics-page.is-embedded .comics-section {
+  padding-top: var(--space-md, 16px);
+}
 
 .comics-container {
   margin: 0 auto;
 }
+
 .comics-section {
-  padding-bottom: 1.25rem;
+  padding-bottom: var(--space-xl, 32px);
 }
+
 .comics-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
+  gap: var(--space-md, 16px);
+  margin-bottom: var(--space-lg, 24px);
+  padding: var(--space-md, 16px);
+  border: 1px solid var(--color-border-soft, var(--line-soft, #e7ebf2));
+  border-radius: var(--radius-card, 22px);
+  background: var(--color-surface-card, var(--surface-card, #fff));
+  box-shadow: var(--shadow-soft, 0 14px 34px rgba(16, 24, 40, 0.12));
 }
+
 .comics-toolbar h1 {
   margin: 0;
-  color: var(--text-strong, #22313f);
-  font-size: 1.6rem;
-  font-weight: 800;
+  color: var(--color-text-primary, var(--text-strong, #22313f));
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 900;
 }
+
 .comics-toolbar p {
-  margin: 0.25rem 0 0;
-  color: var(--text-muted, #64748b);
+  margin: var(--space-2xs, 4px) 0 0;
+  color: var(--color-text-muted, var(--text-muted, #64748b));
   font-size: 0.95rem;
 }
+
 .toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-sm, 12px);
 }
+
 .comic-row-shell {
   position: relative;
 }
+
 .comic-row-shell::before,
 .comic-row-shell::after {
   content: "";
   position: absolute;
   z-index: 5;
   top: 0;
-  bottom: -16px;
+  bottom: calc(-1 * var(--space-md, 16px));
   width: 76px;
   opacity: 0;
   pointer-events: none;
-  transition: opacity .18s ease;
+  transition: opacity var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease);
 }
+
 .comic-row-shell::before {
   left: 0;
-  background: linear-gradient(to right, var(--app-bg, #f6f7fb), transparent);
+  background: linear-gradient(to right, var(--color-page-bg, var(--app-bg, #f6f7fb)), transparent);
 }
+
 .comic-row-shell::after {
   right: 0;
-  background: linear-gradient(to left, var(--app-bg, #f6f7fb), transparent);
+  background: linear-gradient(to left, var(--color-page-bg, var(--app-bg, #f6f7fb)), transparent);
 }
+
 .comic-row-shell.can-page-left::before,
 .comic-row-shell.can-page-right::after {
   opacity: 1;
 }
+
 .comic-page-button {
   position: absolute;
   z-index: 6;
@@ -548,114 +701,141 @@ export default {
   font-size: 1.45rem;
   line-height: 1;
   transform: translateY(-50%);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+  box-shadow: var(--shadow-card, 0 12px 28px rgba(15, 23, 42, 0.2));
 }
+
 .comic-page-button.is-left {
-  left: 0.45rem;
+  left: var(--space-xs, 8px);
 }
+
 .comic-page-button.is-right {
-  right: 0.45rem;
+  right: var(--space-xs, 8px);
 }
+
 .comic-grid {
   display: grid;
   grid-template-columns: repeat(
     var(--comic-page-limit),
     minmax(0, var(--comic-card-width, var(--pin-card-width, 240px)))
   );
-  gap: var(--pin-grid-gutter, 15px);
+  gap: var(--space-md, var(--pin-grid-gutter, 15px));
   justify-content: start;
+  perspective: 1200px;
 }
+
 .comic-card {
   position: relative;
   isolation: isolate;
-  overflow: visible;
+  overflow: hidden;
   min-width: 0;
   color: inherit;
   cursor: pointer;
-  animation: comicCardAppear .44s cubic-bezier(0.16, 1, 0.3, 1) both;
-  border: 1px solid var(--accent-border, rgba(126, 87, 194, 0.42));
-  border-radius: 8px;
+  border: 1px solid var(--color-border-accent, var(--accent-border, rgba(126, 87, 194, 0.42)));
+  border-radius: var(--radius-card, 22px);
   background:
     radial-gradient(circle at top left, var(--theme-glow), transparent 240px),
-    var(--surface-card, #fff);
+    var(--color-surface-card, var(--surface-card, #fff));
   box-shadow:
     0 0 0 2px var(--accent-soft, rgba(126, 87, 194, 0.08)),
-    0 1px 2px rgba(16, 24, 40, 0.06);
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    var(--shadow-card, 0 18px 50px rgba(15, 23, 42, 0.16));
+  transform-style: preserve-3d;
+  will-change: transform;
 }
+
 .comic-card::before,
 .comic-card::after {
   content: "";
   position: absolute;
-  left: 12px;
-  right: 12px;
+  left: var(--space-sm, 12px);
+  right: var(--space-sm, 12px);
   height: 12px;
   border: 1px solid var(--accent-border, rgba(126, 87, 194, 0.22));
-  border-radius: 0 0 8px 8px;
+  border-radius: 0 0 var(--radius-sm, 8px) var(--radius-sm, 8px);
   background: var(--accent-soft, #faf7ff);
   pointer-events: none;
 }
+
 .comic-card::before {
   bottom: -7px;
   z-index: -1;
 }
+
 .comic-card::after {
   bottom: -13px;
-  left: 24px;
-  right: 24px;
+  left: var(--space-lg, 24px);
+  right: var(--space-lg, 24px);
   background: var(--surface-accent, #f0ebff);
   z-index: -2;
 }
-.comic-card:hover {
-  transform: translateY(-4px);
-  border-color: var(--accent, rgba(126, 87, 194, 0.74));
-  box-shadow:
-    0 0 0 2px var(--accent-soft, rgba(126, 87, 194, 0.14)),
-    var(--accent-shadow, 0 16px 32px rgba(16, 24, 40, 0.16));
+
+.comic-card.is-tilting {
+  z-index: 3;
 }
+
+.comic-glare {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--tilt-glare-opacity, 0);
+  background: radial-gradient(
+    circle at var(--tilt-glare-x, 50%) var(--tilt-glare-y, 50%),
+    rgba(255, 255, 255, 0.52),
+    rgba(255, 255, 255, 0.08) 34%,
+    transparent 62%
+  );
+  mix-blend-mode: screen;
+  transition: opacity var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease);
+  z-index: 2;
+}
+
 .comic-ribbon {
   position: absolute;
   z-index: 4;
-  top: 10px;
-  left: 10px;
+  top: var(--space-sm, 12px);
+  left: var(--space-sm, 12px);
   padding: 0.25rem 0.45rem;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 8px);
   color: var(--accent-text, #fff);
   background: var(--accent-strong, #7e57c2);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.02em;
 }
+
 .comic-card-menu {
   position: absolute;
   z-index: 8;
-  top: 8px;
-  right: 8px;
+  top: var(--space-xs, 8px);
+  right: var(--space-xs, 8px);
   padding: 5px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 7px;
+  border-radius: var(--radius-sm, 8px);
   background: rgba(15, 23, 42, 0.58);
   backdrop-filter: blur(8px);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+  box-shadow: var(--shadow-card, 0 10px 24px rgba(15, 23, 42, 0.24));
 }
+
 .comic-menu-enter-active,
 .comic-menu-leave-active {
-  transition: opacity .18s ease, transform .18s ease;
+  transition: opacity var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease), transform var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease);
 }
+
 .comic-menu-enter,
 .comic-menu-leave-to {
   opacity: 0;
   transform: translateY(-6px) scale(0.96);
 }
+
 .comic-cover {
   position: relative;
   isolation: isolate;
   aspect-ratio: 2 / 3;
   min-height: 220px;
   overflow: hidden;
-  border-radius: 8px 8px 0 0;
-  background: var(--surface-accent, #f7f3ff);
+  border-radius: var(--radius-card, 22px) var(--radius-card, 22px) 0 0;
+  background: var(--color-surface-muted, var(--surface-accent, #f7f3ff));
 }
+
 .comic-cover::before {
   content: "";
   position: absolute;
@@ -668,6 +848,7 @@ export default {
   opacity: 0.42;
   transform: scale(1.06);
 }
+
 .comic-cover::after {
   content: "";
   position: absolute;
@@ -675,35 +856,55 @@ export default {
   inset: 0;
   background: var(--theme-glow, rgba(255, 255, 255, 0.18));
 }
-.comic-cover img {
+
+.comic-cover img,
+.comic-cover-placeholder {
   position: relative;
   z-index: 1;
-  display: block;
   width: 100%;
   height: 100%;
+}
+
+.comic-cover img {
+  display: block;
   object-fit: cover;
 }
-.comic-info {
-  padding: 0.85rem;
-  border-top: 1px solid var(--line-soft, #efe9ff);
+
+.comic-cover-placeholder,
+.comic-skeleton-cover {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  padding: var(--space-md, 16px);
+  color: var(--color-text-muted, var(--text-muted, #64748b));
+  background: linear-gradient(135deg, var(--color-surface-muted, #f1f5f9), var(--color-surface-card, #fff));
+  text-align: center;
 }
+
+.comic-info {
+  padding: var(--space-md, 16px);
+  border-top: 1px solid var(--color-border-soft, var(--line-soft, #efe9ff));
+}
+
 .comic-info h2 {
   overflow: hidden;
   margin: 0;
-  color: var(--text-strong, #22313f);
+  color: var(--color-text-primary, var(--text-strong, #22313f));
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .comic-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.32rem;
   max-height: 3.25rem;
-  margin-top: 0.48rem;
+  margin-top: var(--space-xs, 8px);
   overflow: hidden;
 }
+
 .comic-tags a,
 .comic-tag-more {
   max-width: 100%;
@@ -719,108 +920,160 @@ export default {
   white-space: nowrap;
   overflow: hidden;
 }
+
 .comic-tag-more {
-  color: var(--text-muted, #64748b);
-  background: var(--surface-2, #eef1f5);
+  color: var(--color-text-muted, var(--text-muted, #64748b));
+  background: var(--color-surface-muted, var(--surface-2, #eef1f5));
   cursor: pointer;
 }
-.comic-tag-more:hover {
-  color: var(--text-strong, #334155);
-  background: var(--surface-accent, #e2e8f0);
-}
+
 .comic-author {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--space-xs, 8px);
   min-width: 0;
-  margin-top: 0.45rem;
-  color: var(--text-muted, #64748b);
+  margin-top: var(--space-xs, 8px);
+  color: var(--color-text-muted, var(--text-muted, #64748b));
   font-size: 13px;
 }
+
 .comic-author img {
   width: 24px;
   height: 24px;
   border-radius: 50%;
   object-fit: cover;
 }
+
 .comic-author a {
   overflow: hidden;
   min-width: 0;
-  color: var(--text-strong, #334155);
+  color: var(--color-text-primary, var(--text-strong, #334155));
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .comic-author span {
   flex: 0 0 auto;
 }
+
 .comic-source {
   overflow: hidden;
-  margin: 0.45rem 0 0;
-  color: var(--text-muted, #64748b);
+  margin: var(--space-xs, 8px) 0 0;
+  color: var(--color-text-muted, var(--text-muted, #64748b));
   font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .comic-source a,
 .comic-source span {
   color: var(--accent-strong, #7e57c2);
   font-weight: 700;
 }
+
 .comic-source.is-warning {
   color: #8a6d1d;
 }
+
 .comic-like {
   display: inline-flex;
   align-items: center;
   gap: 0.28rem;
   min-height: 30px;
-  margin-top: 0.52rem;
+  margin-top: var(--space-xs, 8px);
   padding: 0 0.58rem;
-  border: 1px solid var(--line-soft, #e0e6ef);
+  border: 1px solid var(--color-border-soft, var(--line-soft, #e0e6ef));
   border-radius: 999px;
-  color: var(--text-muted, #64748b);
-  background: var(--surface-2, #f8fafc);
+  color: var(--color-text-muted, var(--text-muted, #64748b));
+  background: var(--color-surface-muted, var(--surface-2, #f8fafc));
   cursor: pointer;
   font-size: 13px;
   font-weight: 800;
-  transition: transform .16s ease, color .16s ease, background .16s ease, border-color .16s ease;
+  transition: transform var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease), color var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease), background var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease), border-color var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease);
 }
-.comic-like:hover {
-  transform: translateY(-1px);
-  color: var(--accent-strong, #7e57c2);
-  border-color: var(--accent, #7e57c2);
-  background: var(--accent-soft, rgba(126, 87, 194, 0.14));
-}
+
+.comic-like:hover,
 .comic-like.is-liked {
   color: var(--accent-strong, #7e57c2);
   border-color: var(--accent, #7e57c2);
   background: var(--accent-soft, rgba(126, 87, 194, 0.14));
 }
+
+.comic-like:hover {
+  transform: translateY(-1px);
+}
+
 .comic-like:disabled {
   opacity: 0.72;
   cursor: wait;
 }
-@keyframes comicCardAppear {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+
+.comic-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-lg, 24px);
 }
+
+.comic-skeleton-card,
+.comic-state {
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.24));
+  border-radius: var(--radius-card, 22px);
+  background: var(--color-surface-card, #fff);
+  box-shadow: var(--shadow-card, 0 18px 50px rgba(15, 23, 42, 0.12));
+}
+
+.comic-skeleton-card {
+  padding: var(--space-sm, 12px);
+}
+
+.comic-skeleton-line {
+  height: 10px;
+  margin-top: var(--space-sm, 12px);
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--skeleton-base, #eef2f7), var(--skeleton-highlight, #f8fafc), var(--skeleton-base, #eef2f7));
+  animation: pinry-soft-pulse 1.4s ease-in-out infinite;
+}
+
+.comic-skeleton-line.is-wide {
+  width: 76%;
+}
+
+.comic-state {
+  margin: var(--space-lg, 24px) auto;
+  max-width: 460px;
+  padding: var(--space-xl, 32px);
+  text-align: center;
+  color: var(--color-text-muted, #6b7280);
+}
+
 @media screen and (max-width: 542px) {
   .comics-toolbar {
     display: block;
   }
+
   .toolbar-actions {
-    margin-top: 0.8rem;
+    margin-top: var(--space-sm, 12px);
   }
+
   .toolbar-actions .button.is-primary {
-    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .comic-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
+
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .comic-card.motion-tilt-card {
+    transform: none !important;
+  }
+
+  .comic-glare {
+    display: none;
+  }
+}
+
 @include screen-grid-layout(".comics-container");
 </style>

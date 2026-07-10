@@ -43,4 +43,8 @@ export default {
 </script>
 
 <style scoped lang="scss">
+.comics-for-user {
+  min-height: 100vh;
+  background: var(--color-page-bg, var(--app-bg, #f6f7fb));
+}
 </style>
