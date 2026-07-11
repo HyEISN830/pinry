@@ -1,10 +1,5 @@
 <template>
-  <div
-    class="comics-page"
-    :class="{
-      'is-embedded': embedded,
-      'is-personal-masonry': personalMasonry
-    }">
+  <div class="comics-page" :class="{ 'is-embedded': embedded }">
     <PHeader v-if="!embedded"></PHeader>
     <section class="section comics-section">
       <div ref="comicsContainer" class="container comics-container">

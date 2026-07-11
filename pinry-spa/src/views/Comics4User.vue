@@ -7,29 +7,24 @@
     </div>
     <div class="comic-collection-container">
       <div class="comic-collection-surface">
-        <Comics
-          embedded
-          container-sizing
-          personal-masonry
-          :show-toolbar="false"
-          :user-filter="filters.comicUsername"
-          :title="$t('comicsLink')"
-          @comics-meta-loaded="handleComicsMeta">
-        </Comics>
+        <PersonalComics
+          :username="filters.comicUsername"
+          @meta="handleComicsMeta">
+        </PersonalComics>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import Comics from './Comics.vue';
+import PersonalComics from '../components/PersonalComics.vue';
 import PHeader from '../components/PHeader.vue';
 import UserProfileCard from '../components/UserProfileCard.vue';
 
 export default {
   name: 'Comics4User',
   components: {
-    Comics,
+    PersonalComics,
     PHeader,
     UserProfileCard,
   },
