@@ -2,8 +2,8 @@
   <div class="comics-page" :class="{ 'is-embedded': embedded }">
     <PHeader v-if="!embedded"></PHeader>
     <section class="section comics-section">
-      <div ref="comicsContainer" class="container comics-container">
-        <div v-if="showToolbar" class="comics-toolbar">
+      <div class="container comics-container">
+        <div class="comics-toolbar">
           <div>
             <h1>{{ displayTitle }}</h1>
             <p v-if="status.count !== null">
@@ -38,30 +38,108 @@
           </button>
           <div
             v-if="comics.length > 0"
-            ref="masonryGrid"
-            v-masonry=""
+            class="comic-grid motion-stagger"
             v-layout-ready="{ itemSelector: '.comic-card-shell' }"
-            :key="masonryKey"
-            :style="masonryGridStyle"
-            class="comic-grid comic-masonry-grid motion-stagger"
-            transition-duration="0.12s"
-            item-selector=".comic-card-shell"
-            column-width=".comic-grid-sizer"
-            gutter=".comic-gutter-sizer"
-            fit-width="true">
-            <div class="comic-grid-sizer"></div>
-            <div class="comic-gutter-sizer"></div>
-            <ComicCard
+            :style="gridStyle">
+            <article
+              class="comic-card-shell motion-card-enter motion-tilt-scene"
               v-for="comic in comics"
               :key="comic.id"
-              :comic="comic"
-              variant="home"
-              :current-username="user.loggedIn ? user.meta.username : null"
-              :like-busy="comic.likeBusy"
-              @delete="deleteComic"
-              @toggle-like="toggleComicLike"
-              @image-settled="redrawMasonryLayout">
-            </ComicCard>
+              @mouseenter="showMenu(comic)"
+              @mouseleave="handleCardLeave($event)"
+              @pointermove="scheduleTilt(comic, $event)"
+              @pointerleave="resetTilt($event)"
+              @pointercancel="resetTilt($event)"
+              @touchstart="handleCardTouch(comic, $event)"
+              @touchmove.passive="scheduleTilt(comic, $event)"
+              @touchend="resetTilt($event)"
+              @touchcancel="resetTilt($event)"
+              @click="openComic(comic, $event)">
+              <div class="comic-card motion-tilt-card">
+                <span class="motion-tilt-glare comic-glare" aria-hidden="true"></span>
+              <transition name="comic-menu">
+                <div
+                  class="comic-card-menu"
+                  v-if="shouldShowMenu(comic)"
+                  @click.stop
+                  @touchstart.stop="noop">
+                  <button
+                    class="button is-small is-danger"
+                    type="button"
+                    :title="$t('deleteButton')"
+                    :aria-label="$t('deleteButton')"
+                    @click.stop="deleteComic(comic)">
+                    {{ $t("deleteButton") }}
+                  </button>
+                </div>
+              </transition>
+              <div class="comic-ribbon">{{ $t("comicLink") }}</div>
+              <div
+                class="comic-cover"
+                :style="coverStyle(comic)">
+                <img
+                  v-if="coverImageUrl(comic)"
+                  :src="coverImageUrl(comic)"
+                  :alt="comic.title">
+                <div v-else class="comic-cover-placeholder">
+                  {{ $t("imageUnavailableText") }}
+                </div>
+              </div>
+              <div class="comic-info">
+                <h2>{{ comic.title }}</h2>
+                <div class="comic-tags" v-if="comic.tags && comic.tags.length > 0">
+                  <router-link
+                    v-for="tag in visibleTags(comic)"
+                    :key="tag"
+                    :to="{ name: 'tag', params: { tag } }"
+                    @click.stop>
+                    {{ tag }}
+                  </router-link>
+                  <button
+                    v-if="hiddenTagCount(comic) > 0"
+                    class="comic-tag-more"
+                    type="button"
+                    :title="comic.title"
+                    @click.stop="openComic(comic, $event)">
+                    ...
+                  </button>
+                </div>
+                <div class="comic-author">
+                  <img :src="avatarUrl(comic)" alt="">
+                  <router-link :to="{ name: 'user', params: { user: comic.submitter.username } }">
+                    {{ comic.submitter.username }}
+                  </router-link>
+                  <span>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</span>
+                </div>
+                <div class="comic-source" v-if="hasSource(comic.referer)">
+                  <a
+                    v-if="isWebUrl(comic.referer)"
+                    :href="comic.referer"
+                    target="_blank"
+                    @click.stop>
+                    {{ $t("sourceLink") }}
+                  </a>
+                  <span v-else>{{ sourceText(comic.referer) }}</span>
+                </div>
+                <div class="comic-source is-warning" v-else>
+                  {{ $t("missingSourceNotice") }}
+                </div>
+                <button
+                  class="comic-like"
+                  type="button"
+                  :class="{ 'is-liked': comic.viewer_liked }"
+                  :disabled="comic.likeBusy"
+                  :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                  @click.stop="toggleComicLike(comic)">
+                  <b-icon
+                    :icon="comic.viewer_liked ? 'heart' : 'heart-outline'"
+                    size="is-small">
+                  </b-icon>
+                  <span>{{ formatLikeCount(comic.likes_count) }}</span>
+                </button>
+              </div>
+              </div>
+            </article>
           </div>
           <button
             v-if="status.hasNext"
@@ -98,7 +176,6 @@
 
 <script>
 import API from '../components/api';
-import ComicCard from '../components/ComicCard.vue';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import modals from '../components/modals';
@@ -156,23 +233,9 @@ function comicPageLimit(largeCards = false) {
   return largeCards ? Math.max(1, capacity - 1) : capacity;
 }
 
-function comicContainerCapacity(containerWidth) {
-  if (containerWidth <= 540) {
-    return 1;
-  }
-  if (containerWidth <= 780) {
-    return 2;
-  }
-  if (containerWidth <= 1020) {
-    return 3;
-  }
-  return 4;
-}
-
 export default {
   name: 'Comics',
   components: {
-    ComicCard,
     PHeader,
     loadingSpinner,
   },
@@ -181,21 +244,9 @@ export default {
       type: Boolean,
       default: false,
     },
-    containerSizing: {
-      type: Boolean,
-      default: false,
-    },
     showCreate: {
       type: Boolean,
       default: true,
-    },
-    showToolbar: {
-      type: Boolean,
-      default: true,
-    },
-    personalMasonry: {
-      type: Boolean,
-      default: false,
     },
     largeCards: {
       type: Boolean,
@@ -217,15 +268,9 @@ export default {
   data() {
     return {
       comics: [],
-      containerMeasureFrame: null,
-      containerMeasureRetry: null,
-      containerResizeObserver: null,
-      gridMetrics: { columns: 1, gutterWidth: 0, itemWidth: 240 },
-      gridSignature: '240-0-1',
-      masonryKey: 0,
       currentMenuId: null,
       currentPage: 0,
-      pageLimit: this.containerSizing ? 1 : comicPageLimit(this.largeCards),
+      pageLimit: comicPageLimit(this.largeCards),
       resizeTimer: null,
       status: {
         count: null,
@@ -254,10 +299,9 @@ export default {
     displayTitle() {
       return this.title || this.$t('comicsLink');
     },
-    masonryGridStyle() {
+    gridStyle() {
       return {
-        '--comic-card-width': `${this.gridMetrics.itemWidth}px`,
-        '--comic-grid-gutter': `${this.gridMetrics.gutterWidth}px`,
+        '--comic-page-limit': this.pageLimit,
       };
     },
   },
@@ -275,25 +319,9 @@ export default {
   created() {
     this.fetchUser();
     this.fetchPage(0);
-    if (!this.containerSizing) {
-      window.addEventListener('resize', this.handleResize);
-    }
-  },
-  mounted() {
-    if (this.containerSizing) {
-      this.initializeContainerSizing();
-    }
+    window.addEventListener('resize', this.handleResize);
   },
   beforeDestroy() {
-    if (this.containerResizeObserver) {
-      this.containerResizeObserver.disconnect();
-    }
-    if (this.containerMeasureFrame) {
-      window.cancelAnimationFrame(this.containerMeasureFrame);
-    }
-    if (this.containerMeasureRetry) {
-      window.clearTimeout(this.containerMeasureRetry);
-    }
     if (this.suppressOpenTimer) {
       window.clearTimeout(this.suppressOpenTimer);
     }
@@ -304,7 +332,6 @@ export default {
       window.cancelAnimationFrame(this.tiltFrame);
     }
     window.removeEventListener('resize', this.handleResize);
-    window.removeEventListener('resize', this.measureContainer);
   },
   methods: {
     avatarUrl(comic) {
@@ -480,10 +507,6 @@ export default {
           this.status.hasNext = next !== null;
           this.status.loading = false;
           this.$emit('comics-meta-loaded', { count });
-          this.$nextTick(() => {
-            this.measureContainer();
-            this.redrawMasonryLayout();
-          });
         },
         () => {
           this.status.loading = false;
@@ -504,76 +527,12 @@ export default {
       }
       this.resizeTimer = window.setTimeout(() => {
         const nextLimit = comicPageLimit(this.largeCards);
-        this.applyPageLimit(nextLimit);
+        if (nextLimit === this.pageLimit) {
+          return;
+        }
+        this.pageLimit = nextLimit;
+        this.resetPages();
       }, 120);
-    },
-    applyPageLimit(nextLimit) {
-      if (!nextLimit || nextLimit === this.pageLimit) {
-        return;
-      }
-      this.pageLimit = nextLimit;
-      this.resetPages();
-    },
-    redrawMasonryLayout() {
-      this.$nextTick(() => {
-        if (this.$redrawVueMasonry) {
-          this.$redrawVueMasonry();
-        }
-      });
-    },
-    updateMasonryMetrics(width) {
-      if (!width) {
-        return false;
-      }
-      const columns = comicContainerCapacity(width);
-      const gutterWidth = width <= 540 ? 0 : 16;
-      const itemWidth = Math.floor(
-        (width - ((columns - 1) * gutterWidth)) / columns,
-      );
-      const signature = `${itemWidth}-${gutterWidth}-${columns}`;
-      if (signature === this.gridSignature) {
-        return false;
-      }
-      this.gridMetrics = { columns, gutterWidth, itemWidth };
-      this.gridSignature = signature;
-      return true;
-    },
-    measureContainer() {
-      const container = this.$refs.comicsContainer;
-      const width = container ? container.clientWidth : 0;
-      if (!width) {
-        if (this.containerMeasureRetry) {
-          window.clearTimeout(this.containerMeasureRetry);
-        }
-        this.containerMeasureRetry = window.setTimeout(() => {
-          this.containerMeasureRetry = null;
-          this.measureContainer();
-        }, 80);
-        return;
-      }
-      const metricsChanged = this.updateMasonryMetrics(width);
-      this.applyPageLimit(comicContainerCapacity(width));
-      if (metricsChanged) {
-        this.masonryKey += 1;
-      }
-      this.redrawMasonryLayout();
-    },
-    initializeContainerSizing() {
-      this.$nextTick(() => {
-        this.containerMeasureFrame = window.requestAnimationFrame(() => {
-          this.containerMeasureFrame = null;
-          this.measureContainer();
-          const container = this.$refs.comicsContainer;
-          if (container && typeof ResizeObserver !== 'undefined') {
-            this.containerResizeObserver = new ResizeObserver(() => {
-              this.measureContainer();
-            });
-            this.containerResizeObserver.observe(container);
-          } else {
-            window.addEventListener('resize', this.measureContainer);
-          }
-        });
-      });
     },
     nextPage() {
       if (this.status.hasNext) {
@@ -660,17 +619,6 @@ export default {
 
 .comics-page.is-embedded .comics-section {
   padding-top: var(--space-md, 16px);
-}
-
-.comics-page.is-personal-masonry,
-.comics-page.is-personal-masonry .comics-section,
-.comics-page.is-personal-masonry .comics-container,
-.comics-page.is-personal-masonry .comic-row-shell {
-  background: transparent;
-}
-
-.comics-page.is-personal-masonry .comics-section {
-  padding: 0;
 }
 
 .comics-container {
@@ -769,24 +717,14 @@ export default {
 }
 
 .comic-grid {
-  display: block;
-  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(
+    var(--comic-page-limit),
+    minmax(0, var(--comic-card-width, var(--pin-card-width, 240px)))
+  );
+  gap: var(--space-md, var(--pin-grid-gutter, 15px));
+  justify-content: start;
   perspective: 1200px;
-}
-
-.comic-masonry-grid {
-  margin-right: auto;
-  margin-left: auto;
-}
-
-.comic-grid-sizer,
-.comic-card-shell {
-  width: var(--comic-card-width, 240px);
-}
-
-.comic-gutter-sizer {
-  width: var(--comic-grid-gutter, 16px);
-  height: 0;
 }
 
 .comic-card-shell {
@@ -900,17 +838,6 @@ export default {
 .comic-menu-leave-to {
   opacity: 0;
   transform: translateY(-6px) scale(0.96);
-}
-
-.comics-page.is-personal-masonry .comic-cover {
-  aspect-ratio: auto;
-  min-height: 220px;
-}
-
-.comics-page.is-personal-masonry .comic-cover img {
-  height: auto;
-  min-height: 220px;
-  object-fit: contain;
 }
 
 .comic-cover {

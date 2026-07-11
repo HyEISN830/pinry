@@ -48,12 +48,7 @@ export default {
     const observer = new MutationObserver(() => {
       checkLayout(element, binding, observer);
     });
-    // Never leave real content permanently hidden if Masonry fails before it
-    // writes its inline geometry (for example, after a sibling render error).
-    const failOpenTimer = window.setTimeout(() => {
-      markReady(element, observer);
-    }, 1500);
-    layoutObservers.set(element, { observer, failOpenTimer });
+    layoutObservers.set(element, observer);
     observer.observe(element, {
       attributes: true,
       attributeFilter: ['style'],
@@ -63,10 +58,9 @@ export default {
     nextFrame(() => checkLayout(element, binding, observer));
   },
   unbind(element) {
-    const state = layoutObservers.get(element);
-    if (state) {
-      state.observer.disconnect();
-      window.clearTimeout(state.failOpenTimer);
+    const observer = layoutObservers.get(element);
+    if (observer) {
+      observer.disconnect();
       layoutObservers.delete(element);
     }
   },
