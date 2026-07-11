@@ -2,11 +2,16 @@
   <div class="comics-for-user user-collection-page">
     <PHeader></PHeader>
     <UserProfileCard :in-comics="true" :username="filters.comicUsername"></UserProfileCard>
-    <Comics
-      embedded
-      :user-filter="filters.comicUsername"
-      :title="$t('comicsLink')">
-    </Comics>
+    <div class="comic-collection-container">
+      <div class="comic-collection-surface">
+        <Comics
+          embedded
+          container-sizing
+          :user-filter="filters.comicUsername"
+          :title="$t('comicsLink')">
+        </Comics>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -48,34 +53,53 @@ export default {
   background: var(--color-page-bg, var(--app-bg, #f6f7fb));
 }
 
-/* R6 profile collection alignment */
-.user-collection-page {
-  --user-profile-content-width: min(1040px, calc(100vw - 32px));
-}
-.user-collection-page .container,
-.user-collection-page .section > .container {
-  width: 100%;
-  max-width: var(--user-profile-content-width);
-  margin-right: auto;
-  margin-left: auto;
-}
-.user-collection-page ::v-deep #pins-container,
-.user-collection-page ::v-deep #boards-container,
-.user-collection-page ::v-deep .comics-section,
-.user-collection-page ::v-deep .comics-grid {
-  width: 100%;
+.comic-collection-container {
+  width: var(--user-profile-shell-width);
   max-width: 100%;
-  margin-right: 0;
-  margin-left: 0;
+  margin: 22px auto 36px;
 }
-.user-collection-page ::v-deep .pin-masonry,
-.user-collection-page ::v-deep .board-masonry,
-.user-collection-page ::v-deep .comic-card-shell {
-  min-width: 0;
+
+.comic-collection-surface {
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(18px, 2.4vw, 30px);
+  overflow: hidden;
+  background: var(--surface-1);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  box-shadow: var(--shadow-soft);
 }
-@media screen and (max-width: 760px) {
-  .user-collection-page {
-    --user-profile-content-width: calc(100vw - 20px);
+
+.comic-collection-surface ::v-deep .comics-section,
+.comic-collection-surface ::v-deep .comics-container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.comic-collection-surface ::v-deep .comic-grid {
+  justify-content: center;
+}
+
+@media screen and (max-width: 768px) {
+  .comic-collection-container {
+    width: min(var(--user-profile-shell-width), calc(100vw - 20px));
+    margin-top: 16px;
+  }
+
+  .comic-collection-surface {
+    padding: 16px;
+  }
+}
+
+@media screen and (max-width: 540px) {
+  .comic-collection-surface {
+    padding: 14px 12px;
+  }
+
+  .comic-collection-surface ::v-deep .comic-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 </style>

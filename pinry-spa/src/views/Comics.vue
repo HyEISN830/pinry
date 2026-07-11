@@ -2,7 +2,7 @@
   <div class="comics-page" :class="{ 'is-embedded': embedded }">
     <PHeader v-if="!embedded"></PHeader>
     <section class="section comics-section">
-      <div class="container comics-container">
+      <div ref="comicsContainer" class="container comics-container">
         <div class="comics-toolbar">
           <div>
             <h1>{{ displayTitle }}</h1>
@@ -233,6 +233,19 @@ function comicPageLimit(largeCards = false) {
   return largeCards ? Math.max(1, capacity - 1) : capacity;
 }
 
+function comicContainerCapacity(containerWidth) {
+  if (containerWidth <= 540) {
+    return 1;
+  }
+  if (containerWidth <= 780) {
+    return 2;
+  }
+  if (containerWidth <= 1020) {
+    return 3;
+  }
+  return 4;
+}
+
 export default {
   name: 'Comics',
   components: {
@@ -241,6 +254,10 @@ export default {
   },
   props: {
     embedded: {
+      type: Boolean,
+      default: false,
+    },
+    containerSizing: {
       type: Boolean,
       default: false,
     },
@@ -268,9 +285,12 @@ export default {
   data() {
     return {
       comics: [],
+      containerMeasureFrame: null,
+      containerMeasureRetry: null,
+      containerResizeObserver: null,
       currentMenuId: null,
       currentPage: 0,
-      pageLimit: comicPageLimit(this.largeCards),
+      pageLimit: this.containerSizing ? 1 : comicPageLimit(this.largeCards),
       resizeTimer: null,
       status: {
         count: null,
@@ -319,9 +339,25 @@ export default {
   created() {
     this.fetchUser();
     this.fetchPage(0);
-    window.addEventListener('resize', this.handleResize);
+    if (!this.containerSizing) {
+      window.addEventListener('resize', this.handleResize);
+    }
+  },
+  mounted() {
+    if (this.containerSizing) {
+      this.initializeContainerSizing();
+    }
   },
   beforeDestroy() {
+    if (this.containerResizeObserver) {
+      this.containerResizeObserver.disconnect();
+    }
+    if (this.containerMeasureFrame) {
+      window.cancelAnimationFrame(this.containerMeasureFrame);
+    }
+    if (this.containerMeasureRetry) {
+      window.clearTimeout(this.containerMeasureRetry);
+    }
     if (this.suppressOpenTimer) {
       window.clearTimeout(this.suppressOpenTimer);
     }
@@ -332,6 +368,7 @@ export default {
       window.cancelAnimationFrame(this.tiltFrame);
     }
     window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('resize', this.measureContainer);
   },
   methods: {
     avatarUrl(comic) {
@@ -527,12 +564,47 @@ export default {
       }
       this.resizeTimer = window.setTimeout(() => {
         const nextLimit = comicPageLimit(this.largeCards);
-        if (nextLimit === this.pageLimit) {
-          return;
-        }
-        this.pageLimit = nextLimit;
-        this.resetPages();
+        this.applyPageLimit(nextLimit);
       }, 120);
+    },
+    applyPageLimit(nextLimit) {
+      if (!nextLimit || nextLimit === this.pageLimit) {
+        return;
+      }
+      this.pageLimit = nextLimit;
+      this.resetPages();
+    },
+    measureContainer() {
+      const container = this.$refs.comicsContainer;
+      const width = container ? container.clientWidth : 0;
+      if (!width) {
+        if (this.containerMeasureRetry) {
+          window.clearTimeout(this.containerMeasureRetry);
+        }
+        this.containerMeasureRetry = window.setTimeout(() => {
+          this.containerMeasureRetry = null;
+          this.measureContainer();
+        }, 80);
+        return;
+      }
+      this.applyPageLimit(comicContainerCapacity(width));
+    },
+    initializeContainerSizing() {
+      this.$nextTick(() => {
+        this.containerMeasureFrame = window.requestAnimationFrame(() => {
+          this.containerMeasureFrame = null;
+          this.measureContainer();
+          const container = this.$refs.comicsContainer;
+          if (container && typeof ResizeObserver !== 'undefined') {
+            this.containerResizeObserver = new ResizeObserver(() => {
+              this.measureContainer();
+            });
+            this.containerResizeObserver.observe(container);
+          } else {
+            window.addEventListener('resize', this.measureContainer);
+          }
+        });
+      });
     },
     nextPage() {
       if (this.status.hasNext) {
