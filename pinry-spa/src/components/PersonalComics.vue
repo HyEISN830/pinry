@@ -25,26 +25,17 @@
       transition-duration="0.12s">
       <div class="personal-comic-sizer"></div>
       <div class="personal-comic-gutter"></div>
-      <article
+      <ComicCard
         v-for="comic in comics"
         :key="comic.id"
-        class="personal-comic-tile">
-        <router-link
-          :to="{ name: 'comic-reader', params: { comicId: comic.id } }"
-          class="personal-comic-card motion-tilt-card">
-          <img
-            v-if="coverUrl(comic)"
-            :src="coverUrl(comic)"
-            :alt="comic.title"
-            @load="redraw"
-            @error="redraw">
-          <div v-else class="personal-comic-placeholder"></div>
-          <div class="personal-comic-info">
-            <h3>{{ comic.title }}</h3>
-            <p v-if="comic.description">{{ comic.description }}</p>
-          </div>
-        </router-link>
-      </article>
+        :comic="comic"
+        :current-username="username"
+        :like-busy="comic.likeBusy"
+        class="personal-comic-tile"
+        @delete="deleteComic"
+        @toggle-like="toggleLike"
+        @image-settled="redraw">
+      </ComicCard>
     </div>
     <div v-if="hasMore" class="personal-comics-more">
       <b-button :loading="loading" @click="loadMore">加载更多</b-button>
@@ -54,6 +45,7 @@
 
 <script>
 import API from './api';
+import ComicCard from './ComicCard.vue';
 
 function metricsFor(width) {
   if (width <= 540) return { columns: 1, gutter: 0, item: Math.max(240, width) };
@@ -69,6 +61,7 @@ function metricsFor(width) {
 
 export default {
   name: 'PersonalComics',
+  components: { ComicCard },
   props: {
     username: { type: String, required: true },
   },
@@ -145,6 +138,26 @@ export default {
       this.fetchNext();
     },
     loadMore() { this.fetchNext(); },
+    deleteComic(comic) {
+      this.$buefy.dialog.confirm({
+        message: this.$t('deleteComicConfirm'),
+        type: 'is-danger',
+        onConfirm: () => API.Comic.delete(comic.id).then(() => {
+          this.comics = this.comics.filter(item => item.id !== comic.id);
+          this.total = Math.max(0, this.total - 1);
+          this.$emit('meta', { count: this.total });
+          this.redraw();
+        }),
+      });
+    },
+    toggleLike(comic) {
+      if (comic.likeBusy) return;
+      this.$set(comic, 'likeBusy', true);
+      API.Comic.toggleLike(comic.id).then((response) => {
+        this.$set(comic, 'viewer_liked', response.data.viewer_liked);
+        this.$set(comic, 'likes_count', response.data.likes_count);
+      }).finally(() => this.$set(comic, 'likeBusy', false));
+    },
     fetchNext() {
       if (this.loading) return;
       this.loading = true;

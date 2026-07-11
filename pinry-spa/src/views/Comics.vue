@@ -51,107 +51,16 @@
             fit-width="true">
             <div class="comic-grid-sizer"></div>
             <div class="comic-gutter-sizer"></div>
-            <article
-              class="comic-card-shell motion-card-enter motion-tilt-scene"
+            <ComicCard
               v-for="comic in comics"
               :key="comic.id"
-              @mouseenter="showMenu(comic)"
-              @mouseleave="handleCardLeave($event)"
-              @pointermove="scheduleTilt(comic, $event)"
-              @pointerleave="resetTilt($event)"
-              @pointercancel="resetTilt($event)"
-              @touchstart="handleCardTouch(comic, $event)"
-              @touchmove.passive="scheduleTilt(comic, $event)"
-              @touchend="resetTilt($event)"
-              @touchcancel="resetTilt($event)"
-              @click="openComic(comic, $event)">
-              <div class="comic-card motion-tilt-card">
-                <span class="motion-tilt-glare comic-glare" aria-hidden="true"></span>
-              <transition name="comic-menu">
-                <div
-                  class="comic-card-menu"
-                  v-if="shouldShowMenu(comic)"
-                  @click.stop
-                  @touchstart.stop="noop">
-                  <button
-                    class="button is-small is-danger"
-                    type="button"
-                    :title="$t('deleteButton')"
-                    :aria-label="$t('deleteButton')"
-                    @click.stop="deleteComic(comic)">
-                    {{ $t("deleteButton") }}
-                  </button>
-                </div>
-              </transition>
-              <div class="comic-ribbon">{{ $t("comicLink") }}</div>
-              <div
-                class="comic-cover"
-                :style="coverStyle(comic)">
-                <img
-                  v-if="coverImageUrl(comic)"
-                  :src="coverImageUrl(comic)"
-                  :alt="comic.title"
-                  @load="redrawMasonryLayout"
-                  @error="redrawMasonryLayout">
-                <div v-else class="comic-cover-placeholder">
-                  {{ $t("imageUnavailableText") }}
-                </div>
-              </div>
-              <div class="comic-info">
-                <h2>{{ comic.title }}</h2>
-                <div class="comic-tags" v-if="comic.tags && comic.tags.length > 0">
-                  <router-link
-                    v-for="tag in visibleTags(comic)"
-                    :key="tag"
-                    :to="{ name: 'tag', params: { tag } }"
-                    @click.stop>
-                    {{ tag }}
-                  </router-link>
-                  <button
-                    v-if="hiddenTagCount(comic) > 0"
-                    class="comic-tag-more"
-                    type="button"
-                    :title="comic.title"
-                    @click.stop="openComic(comic, $event)">
-                    ...
-                  </button>
-                </div>
-                <div class="comic-author">
-                  <img :src="avatarUrl(comic)" alt="">
-                  <router-link :to="{ name: 'user', params: { user: comic.submitter.username } }">
-                    {{ comic.submitter.username }}
-                  </router-link>
-                  <span>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</span>
-                </div>
-                <div class="comic-source" v-if="hasSource(comic.referer)">
-                  <a
-                    v-if="isWebUrl(comic.referer)"
-                    :href="comic.referer"
-                    target="_blank"
-                    @click.stop>
-                    {{ $t("sourceLink") }}
-                  </a>
-                  <span v-else>{{ sourceText(comic.referer) }}</span>
-                </div>
-                <div class="comic-source is-warning" v-else>
-                  {{ $t("missingSourceNotice") }}
-                </div>
-                <button
-                  class="comic-like"
-                  type="button"
-                  :class="{ 'is-liked': comic.viewer_liked }"
-                  :disabled="comic.likeBusy"
-                  :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
-                  @click.stop="toggleComicLike(comic)">
-                  <b-icon
-                    :icon="comic.viewer_liked ? 'heart' : 'heart-outline'"
-                    size="is-small">
-                  </b-icon>
-                  <span>{{ formatLikeCount(comic.likes_count) }}</span>
-                </button>
-              </div>
-              </div>
-            </article>
+              :comic="comic"
+              :current-username="user.loggedIn ? user.meta.username : null"
+              :like-busy="comic.likeBusy"
+              @delete="deleteComic"
+              @toggle-like="toggleComicLike"
+              @image-settled="redrawMasonryLayout">
+            </ComicCard>
           </div>
           <button
             v-if="status.hasNext"
@@ -188,6 +97,7 @@
 
 <script>
 import API from '../components/api';
+import ComicCard from '../components/ComicCard.vue';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import modals from '../components/modals';
@@ -261,6 +171,7 @@ function comicContainerCapacity(containerWidth) {
 export default {
   name: 'Comics',
   components: {
+    ComicCard,
     PHeader,
     loadingSpinner,
   },
