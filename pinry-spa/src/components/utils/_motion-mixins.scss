@@ -1,13 +1,13 @@
 @import "./ui-tokens";
 
 @mixin motion-safe {
-  @media (prefers-reduced-motion: no-preference) {
+  html[data-motion="full"] & {
     @content;
   }
 }
 
 @mixin motion-reduce {
-  @media (prefers-reduced-motion: reduce) {
+  html[data-motion="reduce"] & {
     @content;
   }
 }

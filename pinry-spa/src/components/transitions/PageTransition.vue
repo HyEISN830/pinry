@@ -14,6 +14,8 @@
 </template>
 
 <script>
+import motionPreference from '../utils/motionPreference';
+
 export default {
   name: 'PageTransition',
   props: {
@@ -46,8 +48,7 @@ export default {
   },
   methods: {
     showCurtain() {
-      if (window.matchMedia
-        && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (motionPreference.isReducedMotionEnabled()) {
         return;
       }
       this.curtainVisible = false;
@@ -117,9 +118,7 @@ export default {
   to { transform: translate3d(330%, 0, 0) skewX(-14deg); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .route-curtain {
-    display: none;
-  }
+html[data-motion="reduce"] .route-curtain {
+  display: none;
 }
 </style>

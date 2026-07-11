@@ -7,6 +7,7 @@ import App from './App.vue';
 import router from './router';
 import setUpAxiosCsrfConfig from './components/utils/csrf';
 import setUpAxiosFeedback from './components/utils/apiFeedback';
+import motionPreference from './components/utils/motionPreference';
 // import './registerServiceWorker';
 
 
@@ -16,6 +17,7 @@ Vue.use(Buefy, {
 });
 Vue.use(VueMasonryPlugin);
 Vue.use(VueI18n);
+motionPreference.applySavedMotionPreference();
 setUpAxiosCsrfConfig();
 setUpAxiosFeedback();
 

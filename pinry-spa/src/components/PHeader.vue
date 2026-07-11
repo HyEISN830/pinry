@@ -140,6 +140,21 @@
                 <span></span>
               </span>
             </button>
+            <button
+              class="theme-mode motion-preference"
+              type="button"
+              role="switch"
+              :aria-checked="reduceMotion ? 'true' : 'false'"
+              :aria-label="$t('reduceMotionLabel')"
+              @click="toggleReduceMotion">
+              <span>{{ $t("reduceMotionLabel") }}</span>
+              <span
+                class="mode-switch"
+                :class="{ 'is-on': reduceMotion }"
+                aria-hidden="true">
+                <span></span>
+              </span>
+            </button>
             <div class="accent-grid">
               <button
                 v-for="accent in accentOptions"
@@ -269,6 +284,21 @@
             <span></span>
           </span>
         </button>
+        <button
+          class="mobile-theme-toggle motion-preference"
+          type="button"
+          role="switch"
+          :aria-checked="reduceMotion ? 'true' : 'false'"
+          :aria-label="$t('reduceMotionLabel')"
+          @click="toggleReduceMotion">
+          <span>{{ $t("reduceMotionLabel") }}</span>
+          <span
+            class="mode-switch"
+            :class="{ 'is-on': reduceMotion }"
+            aria-hidden="true">
+            <span></span>
+          </span>
+        </button>
         <div class="mobile-accent-row">
           <button
             v-for="accent in accentOptions"
@@ -304,6 +334,7 @@
 import localeUtils from '@/components/utils/i18n';
 import api from './api';
 import modals from './modals';
+import motionPreference from './utils/motionPreference';
 import theme from './utils/theme';
 
 const NAV_HIDE_DISTANCE = 96;
@@ -333,6 +364,7 @@ export default {
       navProgress: 0,
       pinnedDropdown: null,
       scrollTicking: false,
+      reduceMotion: motionPreference.readMotionPreference(),
       themeState: theme.readTheme(),
       user: {
         loggedIn: false,
@@ -466,6 +498,12 @@ export default {
     signUp() {
       this.closeMenu();
       modals.openSignUp(this, this.onSignUpSucceed);
+    },
+    toggleReduceMotion() {
+      this.reduceMotion = motionPreference.saveAndApplyMotionPreference(!this.reduceMotion);
+      window.dispatchEvent(new CustomEvent('pinry-motion-change', {
+        detail: { reduceMotion: this.reduceMotion },
+      }));
     },
     toggleThemeMode() {
       const mode = this.themeState.mode === 'dark' ? 'light' : 'dark';

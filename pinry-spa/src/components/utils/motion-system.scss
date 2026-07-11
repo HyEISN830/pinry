@@ -182,10 +182,8 @@
   transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
+html[data-motion="reduce"] {
+  scroll-behavior: auto;
 
   .page-reveal-enter-active,
   .page-reveal-leave-active,
@@ -235,7 +233,16 @@
   transition-duration: 40ms;
 }
 
-@media (prefers-reduced-motion: reduce), (hover: none) {
+@media (hover: none) {
+  .comic-card-shell .motion-tilt-card {
+    transform: none !important;
+  }
+  .comic-card-shell .motion-tilt-glare {
+    opacity: 0 !important;
+  }
+}
+
+html[data-motion="reduce"] {
   .comic-card-shell .motion-tilt-card {
     transform: none !important;
   }

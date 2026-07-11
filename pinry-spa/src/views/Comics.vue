@@ -179,6 +179,7 @@ import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import modals from '../components/modals';
 import imageVariant from '../components/utils/imageVariant';
+import motionPreference from '../components/utils/motionPreference';
 import format from '../components/utils/format';
 
 function isWebUrl(url) {
@@ -391,7 +392,7 @@ export default {
       this.currentMenuId = null;
     },
     scheduleTilt(comic, event) {
-      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (motionPreference.isReducedMotionEnabled()) {
         return;
       }
       const target = event.currentTarget;
@@ -1077,7 +1078,17 @@ export default {
   }
 }
 
-@media (hover: none), (prefers-reduced-motion: reduce) {
+@media (hover: none) {
+  .comic-card.motion-tilt-card {
+    transform: none !important;
+  }
+
+  .comic-glare {
+    display: none;
+  }
+}
+
+html[data-motion="reduce"] {
   .comic-card.motion-tilt-card {
     transform: none !important;
   }

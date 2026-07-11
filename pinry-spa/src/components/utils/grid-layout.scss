@@ -130,7 +130,14 @@
   transform: translate3d(18%, 18%, 0) rotate(10deg);
 }
 
-@media (hover: none), (prefers-reduced-motion: reduce) {
+@media (hover: none) {
+  .pin-card-glare,
+  .board-card-glare {
+    display: none;
+  }
+}
+
+html[data-motion="reduce"] {
   .pin-card-glare,
   .board-card-glare {
     display: none;

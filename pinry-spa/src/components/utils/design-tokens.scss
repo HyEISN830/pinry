@@ -91,19 +91,17 @@ html[data-theme="dark"] {
   --shadow-floating: 0 30px 80px rgba(0, 0, 0, 0.52);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  :root {
-    --motion-duration-instant: 1ms;
-    --motion-duration-fast: 1ms;
-    --motion-duration-standard: 1ms;
-    --motion-duration-card: 1ms;
-    --motion-duration-page: 1ms;
-    --motion-duration-page-exit: 1ms;
-    --motion-hover-scale: 1;
-    --motion-hover-lift: 0px;
-    --tilt-scale: 1;
-    --tilt-rotate-x: 0deg;
-    --tilt-rotate-y: 0deg;
-    --tilt-glare-opacity: 0;
-  }
+html[data-motion="reduce"] {
+  --motion-duration-instant: 1ms;
+  --motion-duration-fast: 1ms;
+  --motion-duration-standard: 1ms;
+  --motion-duration-card: 1ms;
+  --motion-duration-page: 1ms;
+  --motion-duration-page-exit: 1ms;
+  --motion-hover-scale: 1;
+  --motion-hover-lift: 0px;
+  --tilt-scale: 1;
+  --tilt-rotate-x: 0deg;
+  --tilt-rotate-y: 0deg;
+  --tilt-glare-opacity: 0;
 }
