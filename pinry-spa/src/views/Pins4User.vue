@@ -2,7 +2,11 @@
   <div class="pins-for-user user-collection-page">
     <PHeader></PHeader>
     <UserProfileCard :in-pins="true" :username="filters.userFilter"></UserProfileCard>
-    <Pins :pin-filters="filters"></Pins>
+    <div class="pin-collection-container">
+      <div class="pin-collection-surface">
+        <Pins :pin-filters="filters"></Pins>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -52,6 +56,36 @@ export default {
   margin-right: auto;
   margin-left: auto;
 }
+.pin-collection-container {
+  box-sizing: border-box;
+  width: min(100%, 1260px);
+  margin: 1rem auto 0;
+  padding: 0 0.75rem;
+}
+
+.pin-collection-surface {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--line-soft, #e7ebf2);
+  border-radius: 8px;
+  background: var(--surface-1, #fff);
+  box-shadow: var(--shadow-soft, 0 14px 34px rgba(16, 24, 40, 0.12));
+}
+
+.user-collection-page ::v-deep .pin-collection-surface .pins > .section {
+  padding: 0;
+}
+
+.user-collection-page ::v-deep .pin-collection-surface #pins-container {
+  --profile-pin-columns: 5;
+  --profile-pin-gap: 16px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
 .user-collection-page ::v-deep #pins-container,
 .user-collection-page ::v-deep #boards-container,
 .user-collection-page ::v-deep .comics-section,
@@ -66,11 +100,6 @@ export default {
 .user-collection-page ::v-deep .comic-card-shell {
   min-width: 0;
 }
-.user-collection-page ::v-deep #pins-container {
-  --profile-pin-columns: 4;
-  --profile-pin-gap: 20px;
-}
-
 .user-collection-page ::v-deep #pins-container .pin-masonry {
   width: calc(
     (100% - (var(--profile-pin-columns) - 1) * var(--profile-pin-gap))
@@ -84,27 +113,31 @@ export default {
 
 @media screen and (max-width: 1040px) {
   .user-collection-page ::v-deep #pins-container {
-    --profile-pin-columns: 3;
-    --profile-pin-gap: 18px;
-  }
-}
-
-@media screen and (max-width: 720px) {
-  .user-collection-page ::v-deep #pins-container {
-    --profile-pin-columns: 2;
+    --profile-pin-columns: 4;
     --profile-pin-gap: 14px;
   }
 }
 
-@media screen and (max-width: 420px) {
+@media screen and (max-width: 768px) {
   .user-collection-page ::v-deep #pins-container {
-    --profile-pin-columns: 1;
+    --profile-pin-columns: 3;
+    --profile-pin-gap: 12px;
   }
 }
 
-@media screen and (max-width: 760px) {
-  .user-collection-page {
-    --user-profile-content-width: calc(100vw - 20px);
+@media screen and (max-width: 540px) {
+  .pin-collection-container {
+    margin-top: 0.8rem;
+    padding: 0 0.55rem;
+  }
+
+  .pin-collection-surface {
+    padding: 0.8rem;
+  }
+
+  .user-collection-page ::v-deep #pins-container {
+    --profile-pin-columns: 1;
+    --profile-pin-gap: 0px;
   }
 }
 </style>
