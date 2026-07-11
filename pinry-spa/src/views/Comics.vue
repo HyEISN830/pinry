@@ -39,6 +39,7 @@
           <div
             v-if="comics.length > 0"
             class="comic-grid motion-stagger"
+            v-layout-ready="{ itemSelector: '.comic-card-shell' }"
             :style="gridStyle">
             <article
               class="comic-card-shell motion-card-enter motion-tilt-scene"

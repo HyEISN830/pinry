@@ -1,6 +1,14 @@
 @import "./ui-tokens";
 @import "./motion-mixins";
 
+.masonry-layout-pending {
+  visibility: hidden;
+}
+
+.masonry-layout-ready {
+  visibility: visible;
+}
+
 @keyframes pinry-card-enter {
   0% {
     opacity: 0;
@@ -215,6 +223,7 @@ html[data-motion="reduce"] {
   transform:
     rotateX(var(--tilt-rotate-x, 0deg))
     rotateY(var(--tilt-rotate-y, 0deg))
+    scale(var(--comic-hover-scale, 1))
     translateZ(0);
   transform-origin: center center;
   will-change: transform;
@@ -249,6 +258,26 @@ html[data-motion="reduce"] {
   .comic-card-shell .motion-tilt-glare {
     opacity: 0 !important;
   }
+}
+
+/* R9 local card hover polish */
+html[data-motion="full"] {
+  .comic-card-shell:hover {
+    --comic-hover-scale: 1.035;
+  }
+
+  .pin-card.motion-hover-scale:hover,
+  .pin-card.motion-hover-scale:focus-within {
+    transform: translateY(var(--motion-hover-lift, -4px)) scale(var(--motion-hover-scale, 1.018));
+  }
+}
+
+.comic-card-shell .motion-tilt-card {
+  transition: transform 360ms var(--motion-ease-spring, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+
+.comic-card-shell.is-tilting .motion-tilt-card {
+  transition-duration: 52ms;
 }
 
 /* R6 comic tilt reset polish */

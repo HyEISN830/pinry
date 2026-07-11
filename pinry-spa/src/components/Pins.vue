@@ -4,6 +4,7 @@
       <div id="pins-container" class="container" v-if="blocks">
         <div
           v-masonry=""
+          v-layout-ready="{ itemSelector: '.grid-item' }"
           :key="masonryKey"
           transition-duration="0.12s"
           item-selector=".grid-item"

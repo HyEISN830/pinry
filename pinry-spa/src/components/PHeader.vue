@@ -78,7 +78,9 @@
             aria-haspopup="true"
             :aria-expanded="isDropdownOpen('mine') ? 'true' : 'false'"
             @click.stop="toggleDropdown('mine')">
-            <b-icon icon="account-circle-outline" custom-size="mdi-18px"></b-icon>
+            <svg class="nav-inline-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z"/>
+            </svg>
             <span>{{ $t("myLink") }}</span>
           </button>
           <div class="nav-popover" @click.stop>
@@ -97,7 +99,9 @@
             <router-link
               :to="{ name: 'comics4user', params: {username: user.meta.username} }"
               @click.native="closeDropdown">
-              <b-icon icon="book-open-page-variant-outline" custom-size="mdi-18px"></b-icon>
+              <svg class="nav-inline-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 5a2 2 0 0 1 2-2h11a3 3 0 0 1 3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Zm3 1v12h10V6H7Zm2 2h6v2H9V8Zm0 4h6v2H9v-2Z"/>
+              </svg>
               <span>{{ $t("comicsLink") }}</span>
             </router-link>
             <router-link
@@ -1066,6 +1070,13 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.nav-inline-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: currentColor;
+  display: block;
 }
 .nav-user,
 .user-menu a,

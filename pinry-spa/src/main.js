@@ -8,6 +8,7 @@ import router from './router';
 import setUpAxiosCsrfConfig from './components/utils/csrf';
 import setUpAxiosFeedback from './components/utils/apiFeedback';
 import motionPreference from './components/utils/motionPreference';
+import layoutReady from './components/utils/layoutReady';
 // import './registerServiceWorker';
 
 
@@ -16,6 +17,7 @@ Vue.use(Buefy, {
   defaultModalScroll: 'keep',
 });
 Vue.use(VueMasonryPlugin);
+Vue.directive('layout-ready', layoutReady);
 Vue.use(VueI18n);
 motionPreference.applySavedMotionPreference();
 setUpAxiosCsrfConfig();
