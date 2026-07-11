@@ -85,22 +85,26 @@
             <router-link
               :to="{ name: 'user', params: {user: user.meta.username} }"
               @click.native="closeDropdown">
-              {{ $t("pinsLink") }}
+              <b-icon icon="image-outline" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("pinsLink") }}</span>
             </router-link>
             <router-link
               :to="{ name: 'boards4user', params: {username: user.meta.username} }"
               @click.native="closeDropdown">
-              {{ $t("boardsLink") }}
+              <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("boardsLink") }}</span>
             </router-link>
             <router-link
               :to="{ name: 'comics4user', params: {username: user.meta.username} }"
               @click.native="closeDropdown">
-              {{ $t("comicsLink") }}
+              <b-icon icon="book-open-page-variant-outline" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("comicsLink") }}</span>
             </router-link>
             <router-link
               :to="{ name: 'profile4user', params: {username: user.meta.username} }"
               @click.native="closeDropdown">
-              {{ $t("profileLink") }}
+              <b-icon icon="account-outline" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("profileLink") }}</span>
             </router-link>
           </div>
         </div>
@@ -236,17 +240,20 @@
         <router-link
           :to="{ name: 'user', params: {user: user.meta.username} }"
           @click.native="closeMenu">
-          {{ $t("pinsLink") }}
+          <b-icon icon="image-outline" custom-size="mdi-18px"></b-icon>
+          <span>{{ $t("pinsLink") }}</span>
         </router-link>
         <router-link
           :to="{ name: 'boards4user', params: {username: user.meta.username} }"
           @click.native="closeMenu">
-          {{ $t("boardsLink") }}
+          <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
+          <span>{{ $t("boardsLink") }}</span>
         </router-link>
         <router-link
           :to="{ name: 'comics4user', params: {username: user.meta.username} }"
           @click.native="closeMenu">
-          {{ $t("comicsLink") }}
+          <b-icon icon="book-open-page-variant-outline" custom-size="mdi-18px"></b-icon>
+          <span>{{ $t("comicsLink") }}</span>
         </router-link>
       </section>
 
@@ -632,14 +639,18 @@ export default {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
+  flex: 0 0 auto;
+  min-width: 104px;
+  height: 38px;
+  padding: 0 var(--space-sm);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
   background: var(--color-accent-soft);
 }
 .brand img {
+  display: block;
   width: auto;
-  max-width: 94px;
+  max-width: 86px;
   height: 24px;
   object-fit: contain;
 }
@@ -927,8 +938,12 @@ export default {
     border-radius: var(--radius-lg);
   }
   .brand-logo {
-    width: 36px;
+    min-width: 92px;
     height: 36px;
+    padding: 0 var(--space-xs);
+  }
+  .brand img {
+    max-width: 76px;
   }
   .nav-primary,
   .nav-actions {
@@ -997,6 +1012,43 @@ export default {
   }
   .accent-swatch {
     justify-self: center;
+  }
+}
+
+/* R6 nav anti-overlap polish */
+.brand {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: min(34vw, 270px);
+  overflow: hidden;
+}
+.brand-copy {
+  min-width: 0;
+  max-width: 154px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-user,
+.user-menu a,
+.mobile-menu a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs, 8px);
+}
+.user-menu a .icon,
+.mobile-menu a .icon,
+.nav-user .icon {
+  flex: 0 0 auto;
+}
+@media screen and (max-width: 1180px) {
+  .brand {
+    max-width: 128px;
+  }
+}
+@media screen and (max-width: 760px) {
+  .brand {
+    max-width: calc(100vw - 142px);
   }
 }
 </style>

@@ -228,7 +228,11 @@ export default {
         && !this.status.hasNext;
     },
   },
+  // R6 route/category switching layout guard
   watch: {
+    '$route.fullPath': function () {
+      this.queueMasonryLayout();
+    },
     filters() {
       this.reset();
     },

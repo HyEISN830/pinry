@@ -349,7 +349,11 @@ export default {
         && !this.status.hasNext;
     },
   },
+  // R6 route/category switching layout guard
   watch: {
+    '$route.fullPath': function () {
+      this.queueMasonryLayout();
+    },
     pinFilters() {
       this.reset();
     },
@@ -583,7 +587,11 @@ export default {
         }
         return;
       }
-      this.$buefy.modal.open(
+      const routeAtOpen = this.$route.fullPath;
+      const restoreScroll = scroll.preserveModalScrollPosition(
+        () => this.$route.fullPath === routeAtOpen,
+      );
+      const previewModal = this.$buefy.modal.open(
         {
           parent: this,
           component: PinPreview,
@@ -594,6 +602,7 @@ export default {
           customClass: 'pin-preview-at-home',
         },
       );
+      previewModal.$once('close', restoreScroll);
     },
     shouldFetchMore(created) {
       if (!created) {

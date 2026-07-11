@@ -243,3 +243,11 @@
     opacity: 0 !important;
   }
 }
+
+/* R6 comic tilt reset polish */
+.comic-card-shell .motion-tilt-card {
+  transition: transform var(--motion-duration-standard, 280ms) var(--motion-ease-spring, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+.comic-card-shell:not(.is-tilting) .motion-tilt-glare {
+  transition-duration: var(--motion-duration-standard, 280ms);
+}

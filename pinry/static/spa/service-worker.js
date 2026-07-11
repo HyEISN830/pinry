@@ -14,7 +14,7 @@
 importScripts("https://storage.googleapis.com/workbox-cdn/releases/4.3.1/workbox-sw.js");
 
 importScripts(
-  "/static/spa/precache-manifest.b11144d6147bea65df8dc62fe3a463c3.js"
+  "/static/spa/precache-manifest.13a04716eac187c76b206a0637dd275c.js"
 );
 
 workbox.core.setCacheNameDetails({prefix: "pinry-spa"});

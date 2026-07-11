@@ -780,7 +780,7 @@ export default {
   z-index: -2;
 }
 
-.comic-card.is-tilting {
+.comic-card-shell.is-tilting {
   z-index: 3;
 }
 
@@ -1088,4 +1088,16 @@ export default {
 }
 
 @include screen-grid-layout(".comics-container");
+
+/* R6 comic reset transition */
+.comic-card-shell .motion-tilt-card {
+  transition: transform var(--motion-duration-standard, 280ms) var(--motion-ease-spring, cubic-bezier(0.2, 0.8, 0.2, 1));
+}
+.comic-card-shell:not(.is-tilting) .motion-tilt-glare {
+  transition-duration: var(--motion-duration-standard, 280ms);
+}
+.comic-card-shell.is-tilting .motion-tilt-card,
+.comic-card-shell.is-tilting .motion-tilt-glare {
+  transition-duration: 44ms;
+}
 </style>

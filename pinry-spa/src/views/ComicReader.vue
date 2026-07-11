@@ -1104,10 +1104,10 @@ export default {
 }
 
 .reader-head {
-  position: sticky;
-  top: calc(var(--nav-height, 72px) + var(--space-sm, 12px));
-  z-index: var(--z-sticky, 20);
-  backdrop-filter: blur(18px);
+  position: relative;
+  top: auto;
+  z-index: 1;
+  backdrop-filter: blur(10px);
 }
 
 .reader-head h1 {
@@ -1198,5 +1198,12 @@ export default {
     top: var(--space-sm, 12px);
     border-radius: var(--radius-lg, 18px);
   }
+}
+
+/* R6 reader info card non-floating */
+.reader-head {
+  position: relative;
+  top: auto;
+  z-index: 1;
 }
 </style>
