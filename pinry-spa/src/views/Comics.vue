@@ -3,7 +3,7 @@
     <PHeader v-if="!embedded"></PHeader>
     <section class="section comics-section">
       <div ref="comicsContainer" class="container comics-container">
-        <div class="comics-toolbar">
+        <div v-if="showToolbar" class="comics-toolbar">
           <div>
             <h1>{{ displayTitle }}</h1>
             <p v-if="status.count !== null">
@@ -38,9 +38,19 @@
           </button>
           <div
             v-if="comics.length > 0"
-            class="comic-grid motion-stagger"
+            ref="masonryGrid"
+            v-masonry=""
             v-layout-ready="{ itemSelector: '.comic-card-shell' }"
-            :style="gridStyle">
+            :key="masonryKey"
+            :style="masonryGridStyle"
+            class="comic-grid comic-masonry-grid motion-stagger"
+            transition-duration="0.12s"
+            item-selector=".comic-card-shell"
+            column-width=".comic-grid-sizer"
+            gutter=".comic-gutter-sizer"
+            fit-width="true">
+            <div class="comic-grid-sizer"></div>
+            <div class="comic-gutter-sizer"></div>
             <article
               class="comic-card-shell motion-card-enter motion-tilt-scene"
               v-for="comic in comics"
@@ -80,7 +90,9 @@
                 <img
                   v-if="coverImageUrl(comic)"
                   :src="coverImageUrl(comic)"
-                  :alt="comic.title">
+                  :alt="comic.title"
+                  @load="redrawMasonryLayout"
+                  @error="redrawMasonryLayout">
                 <div v-else class="comic-cover-placeholder">
                   {{ $t("imageUnavailableText") }}
                 </div>
@@ -265,6 +277,10 @@ export default {
       type: Boolean,
       default: true,
     },
+    showToolbar: {
+      type: Boolean,
+      default: true,
+    },
     largeCards: {
       type: Boolean,
       default: false,
@@ -288,6 +304,9 @@ export default {
       containerMeasureFrame: null,
       containerMeasureRetry: null,
       containerResizeObserver: null,
+      gridMetrics: { columns: 1, gutterWidth: 0, itemWidth: 240 },
+      gridSignature: '240-0-1',
+      masonryKey: 0,
       currentMenuId: null,
       currentPage: 0,
       pageLimit: this.containerSizing ? 1 : comicPageLimit(this.largeCards),
@@ -319,9 +338,10 @@ export default {
     displayTitle() {
       return this.title || this.$t('comicsLink');
     },
-    gridStyle() {
+    masonryGridStyle() {
       return {
-        '--comic-page-limit': this.pageLimit,
+        '--comic-card-width': `${this.gridMetrics.itemWidth}px`,
+        '--comic-grid-gutter': `${this.gridMetrics.gutterWidth}px`,
       };
     },
   },
@@ -544,6 +564,10 @@ export default {
           this.status.hasNext = next !== null;
           this.status.loading = false;
           this.$emit('comics-meta-loaded', { count });
+          this.$nextTick(() => {
+            this.measureContainer();
+            this.redrawMasonryLayout();
+          });
         },
         () => {
           this.status.loading = false;
@@ -574,6 +598,30 @@ export default {
       this.pageLimit = nextLimit;
       this.resetPages();
     },
+    redrawMasonryLayout() {
+      this.$nextTick(() => {
+        if (this.$redrawVueMasonry) {
+          this.$redrawVueMasonry();
+        }
+      });
+    },
+    updateMasonryMetrics(width) {
+      if (!width) {
+        return false;
+      }
+      const columns = comicContainerCapacity(width);
+      const gutterWidth = width <= 540 ? 0 : 16;
+      const itemWidth = Math.floor(
+        (width - ((columns - 1) * gutterWidth)) / columns,
+      );
+      const signature = `${itemWidth}-${gutterWidth}-${columns}`;
+      if (signature === this.gridSignature) {
+        return false;
+      }
+      this.gridMetrics = { columns, gutterWidth, itemWidth };
+      this.gridSignature = signature;
+      return true;
+    },
     measureContainer() {
       const container = this.$refs.comicsContainer;
       const width = container ? container.clientWidth : 0;
@@ -587,7 +635,12 @@ export default {
         }, 80);
         return;
       }
+      const metricsChanged = this.updateMasonryMetrics(width);
       this.applyPageLimit(comicContainerCapacity(width));
+      if (metricsChanged) {
+        this.masonryKey += 1;
+      }
+      this.redrawMasonryLayout();
     },
     initializeContainerSizing() {
       this.$nextTick(() => {
@@ -789,14 +842,24 @@ export default {
 }
 
 .comic-grid {
-  display: grid;
-  grid-template-columns: repeat(
-    var(--comic-page-limit),
-    minmax(0, var(--comic-card-width, var(--pin-card-width, 240px)))
-  );
-  gap: var(--space-md, var(--pin-grid-gutter, 15px));
-  justify-content: start;
+  display: block;
+  width: 100%;
   perspective: 1200px;
+}
+
+.comic-masonry-grid {
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.comic-grid-sizer,
+.comic-card-shell {
+  width: var(--comic-card-width, 240px);
+}
+
+.comic-gutter-sizer {
+  width: var(--comic-grid-gutter, 16px);
+  height: 0;
 }
 
 .comic-card-shell {
