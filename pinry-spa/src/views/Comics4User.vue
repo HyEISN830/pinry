@@ -3,14 +3,14 @@
     <PHeader></PHeader>
     <UserProfileCard :in-comics="true" :username="filters.comicUsername"></UserProfileCard>
     <div class="comic-stat-card">
-      <span class="comic-stat-label">{{ $t('comicsLink') }}</span>
-      <strong class="comic-stat-value">{{ comicCount }}</strong>
+      <span class="comic-stat-label">作品数: {{ comicCount }}</span>
     </div>
     <div class="comic-collection-container">
       <div class="comic-collection-surface">
         <Comics
           embedded
           container-sizing
+          personal-masonry
           :show-toolbar="false"
           :user-filter="filters.comicUsername"
           :title="$t('comicsLink')"

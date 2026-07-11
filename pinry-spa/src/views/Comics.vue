@@ -1,5 +1,10 @@
 <template>
-  <div class="comics-page" :class="{ 'is-embedded': embedded }">
+  <div
+    class="comics-page"
+    :class="{
+      'is-embedded': embedded,
+      'is-personal-masonry': personalMasonry
+    }">
     <PHeader v-if="!embedded"></PHeader>
     <section class="section comics-section">
       <div ref="comicsContainer" class="container comics-container">
@@ -280,6 +285,10 @@ export default {
     showToolbar: {
       type: Boolean,
       default: true,
+    },
+    personalMasonry: {
+      type: Boolean,
+      default: false,
     },
     largeCards: {
       type: Boolean,
@@ -746,6 +755,17 @@ export default {
   padding-top: var(--space-md, 16px);
 }
 
+.comics-page.is-personal-masonry,
+.comics-page.is-personal-masonry .comics-section,
+.comics-page.is-personal-masonry .comics-container,
+.comics-page.is-personal-masonry .comic-row-shell {
+  background: transparent;
+}
+
+.comics-page.is-personal-masonry .comics-section {
+  padding: 0;
+}
+
 .comics-container {
   margin: 0 auto;
 }
@@ -973,6 +993,17 @@ export default {
 .comic-menu-leave-to {
   opacity: 0;
   transform: translateY(-6px) scale(0.96);
+}
+
+.comics-page.is-personal-masonry .comic-cover {
+  aspect-ratio: auto;
+  min-height: 220px;
+}
+
+.comics-page.is-personal-masonry .comic-cover img {
+  height: auto;
+  min-height: 220px;
+  object-fit: contain;
 }
 
 .comic-cover {
