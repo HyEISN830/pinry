@@ -3,13 +3,17 @@
     <section class="section">
       <div id="pins-container" class="container" v-if="blocks">
         <div
+          ref="masonryGrid"
           v-masonry=""
           v-layout-ready="{ itemSelector: '.grid-item' }"
           :key="masonryKey"
+          :style="masonryGridStyle"
+          class="pins-masonry-grid"
           transition-duration="0.12s"
           item-selector=".grid-item"
           column-width=".grid-sizer"
           gutter=".gutter-sizer"
+          fit-width="true"
         >
           <template v-for="item in blocks">
             <div v-bind:key="item.id"
@@ -199,36 +203,38 @@ function escapeMediaUrl(url) {
   return url;
 }
 
-function getResponsiveCardWidth(viewportWidth) {
-  if (viewportWidth >= 2328) {
-    return 320;
+function getResponsiveCardWidth(containerWidth) {
+  if (containerWidth >= 1240) {
+    return 224;
   }
-  if (viewportWidth >= 2073) {
-    return 300;
+  if (containerWidth >= 980) {
+    return 220;
   }
-  if (viewportWidth >= 1563) {
-    return 270;
+  if (containerWidth >= 720) {
+    return 216;
   }
-  return 240;
+  return Math.max(240, containerWidth);
 }
 
-function getResponsiveGridSignature() {
-  if (typeof window === 'undefined') {
-    return '240-1';
+function getResponsiveGridMetrics(containerWidth) {
+  const safeWidth = Math.max(0, containerWidth || 0);
+  if (safeWidth <= 540) {
+    return {
+      columns: 1,
+      gutterWidth: 0,
+      itemWidth: safeWidth,
+    };
   }
-  const viewportWidth = window.innerWidth
-    || document.documentElement.clientWidth
-    || 0;
-  const itemWidth = getResponsiveCardWidth(viewportWidth);
-  const gutterWidth = viewportWidth >= 1563 ? 18 : 15;
-  const sidePadding = 48;
+  const gutterWidth = safeWidth >= 980 ? 16 : 14;
+  const preferredWidth = getResponsiveCardWidth(safeWidth);
   const columns = Math.max(
     1,
-    Math.floor(
-      (viewportWidth - sidePadding + gutterWidth) / (itemWidth + gutterWidth),
-    ),
+    Math.floor((safeWidth + gutterWidth) / (preferredWidth + gutterWidth)),
   );
-  return `${itemWidth}-${columns}`;
+  const itemWidth = Math.floor(
+    (safeWidth - ((columns - 1) * gutterWidth)) / columns,
+  );
+  return { columns, gutterWidth, itemWidth };
 }
 
 function isDocumentScrollable() {
@@ -292,7 +298,8 @@ function initialData() {
   return {
     blocks: [],
     blocksMap: {},
-    gridSignature: getResponsiveGridSignature(),
+    gridMetrics: getResponsiveGridMetrics(0),
+    gridSignature: '0-0-0',
     fillViewportTimer: null,
     masonryKey: 0,
     resizeTimer: null,
@@ -340,6 +347,12 @@ export default {
     },
   },
   computed: {
+    masonryGridStyle() {
+      return {
+        '--pin-card-width': `${this.gridMetrics.itemWidth}px`,
+        '--pin-grid-gutter': `${this.gridMetrics.gutterWidth}px`,
+      };
+    },
     showInitialSkeleton() {
       return this.status.loading && this.blocks.length === 0;
     },
@@ -513,7 +526,23 @@ export default {
       this.blocksMap[itemId].style.height = 'auto';
       this.scheduleViewportFillCheck();
     },
+    updateGridMetrics() {
+      const container = this.$el && this.$el.querySelector('#pins-container');
+      const containerWidth = container ? container.clientWidth : 0;
+      if (!containerWidth) {
+        return false;
+      }
+      const metrics = getResponsiveGridMetrics(containerWidth);
+      const signature = `${metrics.itemWidth}-${metrics.gutterWidth}-${metrics.columns}`;
+      if (signature === this.gridSignature) {
+        return false;
+      }
+      this.gridMetrics = metrics;
+      this.gridSignature = signature;
+      return true;
+    },
     refreshMasonryLayout() {
+      this.updateGridMetrics();
       this.masonryKey += 1;
       this.$nextTick(() => {
         this.observeLazyImages();
@@ -527,12 +556,15 @@ export default {
         window.clearTimeout(this.resizeTimer);
       }
       this.resizeTimer = window.setTimeout(() => {
-        const signature = getResponsiveGridSignature();
-        if (signature === this.gridSignature) {
+        if (!this.updateGridMetrics()) {
           return;
         }
-        this.gridSignature = signature;
-        this.refreshMasonryLayout();
+        this.masonryKey += 1;
+        this.$nextTick(() => {
+          if (this.$redrawVueMasonry) {
+            this.$redrawVueMasonry();
+          }
+        });
         this.scheduleViewportFillCheck();
       }, 120);
     },
@@ -750,6 +782,11 @@ export default {
 /* grid */
 @import 'utils/pin';
 @import './utils/motion-mixins';
+
+.pins-masonry-grid {
+  margin-right: auto;
+  margin-left: auto;
+}
 
 .grid-sizer,
 .grid-item { width: var(--pin-card-width, #{$pin-preview-width}); }

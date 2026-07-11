@@ -58,9 +58,10 @@ export default {
 }
 .pin-collection-container {
   box-sizing: border-box;
-  width: min(100%, 1260px);
+  width: var(--user-profile-content-width);
+  max-width: 100%;
   margin: 1rem auto 0;
-  padding: 0 0.75rem;
+  padding: 0;
 }
 
 .pin-collection-surface {
@@ -78,8 +79,6 @@ export default {
 }
 
 .user-collection-page ::v-deep .pin-collection-surface #pins-container {
-  --profile-pin-columns: 5;
-  --profile-pin-gap: 16px;
   width: 100%;
   max-width: none;
   margin: 0;
@@ -100,44 +99,15 @@ export default {
 .user-collection-page ::v-deep .comic-card-shell {
   min-width: 0;
 }
-.user-collection-page ::v-deep #pins-container .pin-masonry {
-  width: calc(
-    (100% - (var(--profile-pin-columns) - 1) * var(--profile-pin-gap))
-    / var(--profile-pin-columns)
-  );
-}
-
-.user-collection-page ::v-deep #pins-container .gutter-sizer {
-  width: var(--profile-pin-gap);
-}
-
-@media screen and (max-width: 1040px) {
-  .user-collection-page ::v-deep #pins-container {
-    --profile-pin-columns: 4;
-    --profile-pin-gap: 14px;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .user-collection-page ::v-deep #pins-container {
-    --profile-pin-columns: 3;
-    --profile-pin-gap: 12px;
-  }
-}
 
 @media screen and (max-width: 540px) {
   .pin-collection-container {
     margin-top: 0.8rem;
-    padding: 0 0.55rem;
   }
 
   .pin-collection-surface {
     padding: 0.8rem;
   }
 
-  .user-collection-page ::v-deep #pins-container {
-    --profile-pin-columns: 1;
-    --profile-pin-gap: 0px;
-  }
 }
 </style>
