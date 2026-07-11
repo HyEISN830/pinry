@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="pin-preview-modal">
     <section>
         <div class="card motion-card-enter">

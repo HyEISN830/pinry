@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="pins">
     <section class="section">
       <div id="pins-container" class="container" v-if="blocks">
@@ -14,15 +14,17 @@
             <div v-bind:key="item.id"
                  v-masonry-tile
                  :class="item.class"
-                 class="grid pin-masonry motion-card-enter">
+                 class="grid-item pin-masonry">
               <div class="grid-sizer"></div>
               <div class="gutter-sizer"></div>
-              <div
-                class="pin-card grid-item motion-hover-scale"
-                @mouseenter="showEditButtons(item)"
-                @touchstart="handleCardTouch(item)"
-                @mouseleave="hideEditButtons(item.id)">
-                <div>
+              <div class="pin-card-frame motion-card-enter" :style="item.motionStyle">
+                <div
+                  class="pin-card motion-hover-scale"
+                  @mouseenter="showEditButtons(item)"
+                  @touchstart="handleCardTouch(item)"
+                  @mouseleave="hideEditButtons(item.id)">
+                  <span class="pin-card-glare" aria-hidden="true"></span>
+                  <div>
                   <transition name="pin-editor-menu">
                     <EditorUI
                       v-show="shouldShowEdit(item)"
@@ -134,6 +136,7 @@
                     </b-icon>
                     <span>{{ formatLikeCount(item.likes_count) }}</span>
                   </button>
+                </div>
                 </div>
               </div>
             </div>
@@ -292,6 +295,8 @@ function initialData() {
     fillViewportTimer: null,
     masonryKey: 0,
     resizeTimer: null,
+    masonryLayoutRaf: null,
+    masonryLayoutTimers: [],
     suppressNextPreviewId: null,
     suppressPreviewTimer: null,
     status: {
@@ -349,7 +354,64 @@ export default {
       this.reset();
     },
   },
+  updated() {
+    this.queueMasonryLayout();
+  },
+  activated() {
+    this.queueMasonryLayout();
+  },
   methods: {
+    bindMasonryMediaEvents() {
+      if (this.$el && this.$el.addEventListener) {
+        this.$el.addEventListener('load', this.handleMasonryMediaEvent, true);
+        this.$el.addEventListener('error', this.handleMasonryMediaEvent, true);
+      }
+    },
+    unbindMasonryMediaEvents() {
+      if (this.$el && this.$el.removeEventListener) {
+        this.$el.removeEventListener('load', this.handleMasonryMediaEvent, true);
+        this.$el.removeEventListener('error', this.handleMasonryMediaEvent, true);
+      }
+    },
+    handleMasonryMediaEvent(event) {
+      const target = event && event.target;
+      if (!target || target.tagName !== 'IMG') {
+        return;
+      }
+      this.queueMasonryLayout();
+    },
+    queueMasonryLayout() {
+      this.clearMasonryTimers();
+      this.$nextTick(() => {
+        const requestFrame = window.requestAnimationFrame
+          || (callback => window.setTimeout(callback, 16));
+        this.masonryLayoutRaf = requestFrame(() => {
+          this.masonryLayoutRaf = null;
+          this.redrawMasonryLayout();
+        });
+        [80, 180, 360].forEach((delay) => {
+          const timer = window.setTimeout(() => {
+            this.redrawMasonryLayout();
+          }, delay);
+          this.masonryLayoutTimers.push(timer);
+        });
+      });
+    },
+    clearMasonryTimers() {
+      if (this.masonryLayoutRaf) {
+        const cancelFrame = window.cancelAnimationFrame || window.clearTimeout;
+        cancelFrame(this.masonryLayoutRaf);
+        this.masonryLayoutRaf = null;
+      }
+      this.masonryLayoutTimers.forEach(timer => window.clearTimeout(timer));
+      this.masonryLayoutTimers = [];
+    },
+    redrawMasonryLayout() {
+      if (typeof this.$redrawVueMasonry === 'function') {
+        this.$redrawVueMasonry();
+      }
+    },
+
     formatLikeCount(count) {
       return format.formatCount(count);
     },
@@ -655,6 +717,8 @@ export default {
     this.initialize();
   },
   beforeDestroy() {
+    this.unbindMasonryMediaEvents();
+    this.clearMasonryTimers();
     if (this.lazyObserver) {
       this.lazyObserver.disconnect();
     }
@@ -1013,6 +1077,6 @@ $avatar-height: 30px;
 }
 
 @import 'utils/grid-layout';
-@include screen-grid-layout("#pins-container")
+@include screen-grid-layout("#pins-container");
 
 </style>

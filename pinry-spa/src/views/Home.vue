@@ -40,12 +40,19 @@ export default {
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
+<style lang="scss">
 @import '../components/utils/grid-layout';
 
+.home .comics-page.is-embedded {
+  min-height: 0;
+}
+.home .comics-page.is-embedded .comics-section {
+  padding-top: var(--space-lg, 24px);
+  padding-bottom: var(--space-lg, 24px);
+}
 .home-pin-heading {
-  padding-top: 0.5rem;
-  padding-bottom: 0;
+  padding-top: var(--space-sm, 12px);
+  padding-bottom: var(--space-md, 16px);
 }
 .home-pin-heading h1 {
   margin: 0;

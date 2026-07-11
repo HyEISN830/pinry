@@ -206,3 +206,40 @@
     display: none !important;
   }
 }
+
+/* R2 tilt shell separation */
+.comic-card-shell.motion-tilt-scene {
+  perspective: var(--tilt-perspective, 900px);
+  transform-style: preserve-3d;
+}
+
+.comic-card-shell .motion-tilt-card {
+  transform:
+    rotateX(var(--tilt-rotate-x, 0deg))
+    rotateY(var(--tilt-rotate-y, 0deg))
+    translateZ(0);
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.comic-card-shell .motion-tilt-glare {
+  background:
+    radial-gradient(circle at var(--tilt-glare-x, 50%) var(--tilt-glare-y, 50%), rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.18) 26%, transparent 58%),
+    linear-gradient(135deg, transparent 18%, rgba(255, 255, 255, 0.18) 48%, transparent 74%);
+  opacity: var(--tilt-glare-opacity, 0);
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.comic-card-shell.is-tilting .motion-tilt-card,
+.comic-card-shell.is-tilting .motion-tilt-glare {
+  transition-duration: 40ms;
+}
+
+@media (prefers-reduced-motion: reduce), (hover: none) {
+  .comic-card-shell .motion-tilt-card {
+    transform: none !important;
+  }
+  .comic-card-shell .motion-tilt-glare {
+    opacity: 0 !important;
+  }
+}

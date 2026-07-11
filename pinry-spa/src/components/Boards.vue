@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="boards">
     <section class="section">
       <div id="boards-container" class="container" v-if="blocks">
@@ -14,14 +14,16 @@
             <div v-bind:key="item.id"
                  v-masonry-tile
                  :class="item.class"
-                 class="grid board-masonry motion-card-enter">
+                 class="grid-item board-masonry">
               <div class="grid-sizer"></div>
               <div class="gutter-sizer"></div>
-              <div
-                class="board-card grid-item motion-hover-scale"
-                @mouseenter="currentEditBoard = item.id"
-                @mouseleave="currentEditBoard = null">
-                <div class="board-stack" aria-hidden="true"></div>
+              <div class="board-card-frame motion-card-enter" :style="item.motionStyle">
+                <div
+                  class="board-card motion-hover-scale"
+                  @mouseenter="currentEditBoard = item.id"
+                  @mouseleave="currentEditBoard = null">
+                  <span class="board-card-glare" aria-hidden="true"></span>
+                  <div class="board-stack" aria-hidden="true"></div>
                 <BoardEditorUI
                   v-show="shouldShowEdit(item)"
                   :board="item"
@@ -63,6 +65,7 @@
                     </div>
                   </div>
                 </router-link>
+                </div>
               </div>
             </div>
           </template>
@@ -191,6 +194,8 @@ function initialData() {
     fillViewportTimer: null,
     masonryKey: 0,
     resizeTimer: null,
+    masonryLayoutRaf: null,
+    masonryLayoutTimers: [],
     status: {
       loading: false,
       hasNext: true,
@@ -228,7 +233,64 @@ export default {
       this.reset();
     },
   },
+  updated() {
+    this.queueMasonryLayout();
+  },
+  activated() {
+    this.queueMasonryLayout();
+  },
   methods: {
+    bindMasonryMediaEvents() {
+      if (this.$el && this.$el.addEventListener) {
+        this.$el.addEventListener('load', this.handleMasonryMediaEvent, true);
+        this.$el.addEventListener('error', this.handleMasonryMediaEvent, true);
+      }
+    },
+    unbindMasonryMediaEvents() {
+      if (this.$el && this.$el.removeEventListener) {
+        this.$el.removeEventListener('load', this.handleMasonryMediaEvent, true);
+        this.$el.removeEventListener('error', this.handleMasonryMediaEvent, true);
+      }
+    },
+    handleMasonryMediaEvent(event) {
+      const target = event && event.target;
+      if (!target || target.tagName !== 'IMG') {
+        return;
+      }
+      this.queueMasonryLayout();
+    },
+    queueMasonryLayout() {
+      this.clearMasonryTimers();
+      this.$nextTick(() => {
+        const requestFrame = window.requestAnimationFrame
+          || (callback => window.setTimeout(callback, 16));
+        this.masonryLayoutRaf = requestFrame(() => {
+          this.masonryLayoutRaf = null;
+          this.redrawMasonryLayout();
+        });
+        [80, 180, 360].forEach((delay) => {
+          const timer = window.setTimeout(() => {
+            this.redrawMasonryLayout();
+          }, delay);
+          this.masonryLayoutTimers.push(timer);
+        });
+      });
+    },
+    clearMasonryTimers() {
+      if (this.masonryLayoutRaf) {
+        const cancelFrame = window.cancelAnimationFrame || window.clearTimeout;
+        cancelFrame(this.masonryLayoutRaf);
+        this.masonryLayoutRaf = null;
+      }
+      this.masonryLayoutTimers.forEach(timer => window.clearTimeout(timer));
+      this.masonryLayoutTimers = [];
+    },
+    redrawMasonryLayout() {
+      if (typeof this.$redrawVueMasonry === 'function') {
+        this.$redrawVueMasonry();
+      }
+    },
+
     boardVisibilityLabel(board) {
       return board.private
         ? this.$t('collectionPrivateBoardLabel')
@@ -459,6 +521,8 @@ export default {
     this.initialize();
   },
   beforeDestroy() {
+    this.unbindMasonryMediaEvents();
+    this.clearMasonryTimers();
     if (this.lazyObserver) {
       this.lazyObserver.disconnect();
     }
@@ -672,6 +736,6 @@ $avatar-height: 30px;
 }
 
 @import 'utils/grid-layout';
-@include screen-grid-layout("#boards-container")
+@include screen-grid-layout("#boards-container");
 
 </style>

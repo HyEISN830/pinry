@@ -1,14 +1,18 @@
 <template>
   <div id="app">
-    <PageTransition>
-      <router-view :key="routeTransitionKey"/>
-    </PageTransition>
+    <PHeader app-shell class="app-global-header"></PHeader>
+    <main class="app-route-content">
+      <PageTransition :route-key="routeTransitionKey">
+        <router-view :key="routeTransitionKey"/>
+      </PageTransition>
+    </main>
     <BackToTopProgress></BackToTopProgress>
   </div>
 </template>
 
 <script>
 import BackToTopProgress from './components/BackToTopProgress.vue';
+import PHeader from './components/PHeader.vue';
 import PageTransition from './components/transitions/PageTransition.vue';
 import bus from './components/utils/bus';
 import theme from './components/utils/theme';
@@ -17,6 +21,7 @@ export default {
   name: 'app',
   components: {
     BackToTopProgress,
+    PHeader,
     PageTransition,
   },
   computed: {
@@ -80,7 +85,7 @@ export default {
     --theme-glow-strong: rgba(232, 121, 185, 0.36);
     --skeleton-base: #f7edf4;
     --skeleton-highlight: #ffffff;
-    --nav-height: 64px;
+    --nav-height: 80px;
   }
   html[data-theme="dark"] {
     --app-bg: #0f1218;
@@ -172,16 +177,22 @@ export default {
   }
   #app {
     min-height: 100vh;
-    padding-top: var(--nav-height);
     background:
       radial-gradient(circle at top left, var(--theme-glow-strong), transparent 360px),
       radial-gradient(circle at 92% 12%, var(--theme-glow), transparent 300px),
       linear-gradient(180deg, var(--accent-soft), transparent 420px),
       var(--app-bg);
   }
+  .app-global-header {
+    isolation: isolate;
+  }
+  .app-route-content {
+    min-height: 100vh;
+    padding-top: var(--nav-height);
+  }
   @media screen and (max-width: 760px) {
     :root {
-      --nav-height: 58px;
+      --nav-height: 66px;
     }
   }
   a {

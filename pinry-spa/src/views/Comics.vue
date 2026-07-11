@@ -41,7 +41,7 @@
             class="comic-grid motion-stagger"
             :style="gridStyle">
             <article
-              class="comic-card motion-card-enter motion-tilt-scene motion-tilt-card"
+              class="comic-card-shell motion-card-enter motion-tilt-scene"
               v-for="comic in comics"
               :key="comic.id"
               @mouseenter="showMenu(comic)"
@@ -54,7 +54,8 @@
               @touchend="resetTilt($event)"
               @touchcancel="resetTilt($event)"
               @click="openComic(comic, $event)">
-              <span class="motion-tilt-glare comic-glare" aria-hidden="true"></span>
+              <div class="comic-card motion-tilt-card">
+                <span class="motion-tilt-glare comic-glare" aria-hidden="true"></span>
               <transition name="comic-menu">
                 <div
                   class="comic-card-menu"
@@ -135,6 +136,7 @@
                   </b-icon>
                   <span>{{ formatLikeCount(comic.likes_count) }}</span>
                 </button>
+              </div>
               </div>
             </article>
           </div>
@@ -721,6 +723,16 @@ export default {
   gap: var(--space-md, var(--pin-grid-gutter, 15px));
   justify-content: start;
   perspective: 1200px;
+}
+
+.comic-card-shell {
+  position: relative;
+  min-width: 0;
+  z-index: 1;
+}
+
+.comic-card-shell.is-tilting {
+  z-index: 3;
 }
 
 .comic-card {

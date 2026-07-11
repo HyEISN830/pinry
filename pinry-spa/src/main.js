@@ -11,7 +11,9 @@ import setUpAxiosFeedback from './components/utils/apiFeedback';
 
 
 Vue.config.productionTip = false;
-Vue.use(Buefy);
+Vue.use(Buefy, {
+  defaultModalScroll: 'keep',
+});
 Vue.use(VueMasonryPlugin);
 Vue.use(VueI18n);
 setUpAxiosCsrfConfig();

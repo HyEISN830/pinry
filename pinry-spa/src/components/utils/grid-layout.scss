@@ -80,3 +80,59 @@
     }
   }
 }
+
+/* R2 layout-motion separation */
+.pin-masonry,
+.board-masonry {
+  transform: none;
+  will-change: top, left;
+}
+
+.pin-card-frame,
+.board-card-frame {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  transform: translateZ(0);
+  transform-origin: center center;
+  will-change: opacity, transform;
+}
+
+.pin-card,
+.board-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transform-origin: center center;
+}
+
+.pin-card-glare,
+.board-card-glare {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.42), transparent 24%),
+    linear-gradient(135deg, transparent 8%, rgba(255, 255, 255, 0.28) 46%, transparent 64%);
+  mix-blend-mode: screen;
+  transform: translate3d(-18%, -18%, 0) rotate(10deg);
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-standard) var(--motion-ease-standard);
+}
+
+.pin-card:hover .pin-card-glare,
+.pin-card:focus-within .pin-card-glare,
+.board-card:hover .board-card-glare,
+.board-card:focus-within .board-card-glare {
+  opacity: 0.55;
+  transform: translate3d(18%, 18%, 0) rotate(10deg);
+}
+
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .pin-card-glare,
+  .board-card-glare {
+    display: none;
+  }
+}

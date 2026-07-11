@@ -1,5 +1,6 @@
 <template>
   <header
+    v-if="appShell"
     class="p-header"
     :class="{
       'is-open': navOpen,
@@ -307,6 +308,12 @@ function clamp(value, min, max) {
 
 export default {
   name: 'p-header',
+  props: {
+    appShell: {
+      type: Boolean,
+      default: false,
+    },
+  },
   data() {
     return {
       accentOptions: theme.accentOptions,
@@ -527,9 +534,15 @@ export default {
     },
   },
   beforeMount() {
+    if (!this.appShell) {
+      return;
+    }
     this.initializeUser();
   },
   mounted() {
+    if (!this.appShell) {
+      return;
+    }
     this.lastScrollTop = window.pageYOffset || 0;
     window.addEventListener('scroll', this.requestScrollUpdate, { passive: true });
     document.addEventListener('click', this.handleDocumentClick);
@@ -881,12 +894,31 @@ export default {
 .mobile-panel {
   display: none;
 }
-@media screen and (max-width: 1024px) {
+@media screen and (max-width: 1180px) {
+  .nav-shell {
+    gap: var(--space-xs);
+  }
+  .nav-primary {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--space-2xs);
+    overflow: hidden;
+  }
+  .nav-actions {
+    flex: 0 0 auto;
+    gap: var(--space-2xs);
+  }
+  .nav-link,
+  .nav-pill {
+    padding: 0 var(--space-xs);
+    white-space: nowrap;
+    font-size: 0.86rem;
+  }
   .brand-copy {
     display: none;
   }
 }
-@media screen and (max-width: 760px) {
+@media screen and (max-width: 980px) {
   .p-header {
     padding: var(--space-xs);
   }

@@ -21,7 +21,6 @@
               <span>{{ option.label }}</span>
             </button>
           </div>
-          <SearchPanel class="quick-filter-panel" @selected="applyQuickFilter"></SearchPanel>
         </aside>
 
         <main class="search-main">
@@ -276,7 +275,6 @@
 <script>
 import API from '../components/api';
 import PHeader from '../components/PHeader.vue';
-import SearchPanel from '../components/search/SearchPanel.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import format from '../components/utils/format';
 import imageVariant from '../components/utils/imageVariant';
@@ -309,7 +307,6 @@ export default {
   name: 'Search',
   components: {
     PHeader,
-    SearchPanel,
     loadingSpinner,
   },
   data() {
@@ -358,14 +355,6 @@ export default {
     },
   },
   methods: {
-    applyQuickFilter(payload) {
-      if (!payload || !payload.selected) {
-        return;
-      }
-      this.activeType = payload.filterType === 'Board' ? 'board' : 'tag';
-      this.queryText = String(payload.selected).trim();
-      this.search(true);
-    },
     bucketNamesForType(type) {
       const key = bucketKeyForType(type);
       if (key) {
@@ -528,7 +517,7 @@ export default {
 @import "../components/utils/motion-mixins";
 
 .search-shell {
-  padding-top: calc(72px + var(--space-xl));
+  padding-top: var(--space-lg);
 }
 .search-container {
   display: grid;
@@ -625,9 +614,6 @@ export default {
 .type-dot.is-board { background: #d5a344; }
 .type-dot.is-comic { background: #7c8cff; }
 .type-dot.is-tag { background: #32b47b; }
-.quick-filter-panel {
-  margin-top: var(--space-md);
-}
 .search-main {
   min-width: 0;
 }
