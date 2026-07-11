@@ -29,6 +29,7 @@
         v-for="comic in comics"
         :key="comic.id"
         :comic="comic"
+        variant="personal"
         :current-username="username"
         :like-busy="comic.likeBusy"
         class="personal-comic-tile"

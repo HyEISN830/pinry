@@ -55,6 +55,7 @@
               v-for="comic in comics"
               :key="comic.id"
               :comic="comic"
+              variant="home"
               :current-username="user.loggedIn ? user.meta.username : null"
               :like-busy="comic.likeBusy"
               @delete="deleteComic"

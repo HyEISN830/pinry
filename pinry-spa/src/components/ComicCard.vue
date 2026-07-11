@@ -1,12 +1,17 @@
 <template>
   <article
+    ref="shell"
     class="comic-card-shell motion-card-enter motion-tilt-scene"
-    :class="{ 'is-tilting': tilting }"
+    :class="[`comic-card-shell--${variant}`, { 'is-tilting': tilting }]"
     @mouseenter="menuVisible = isOwner"
     @mouseleave="handleLeave"
     @pointermove="scheduleTilt"
-    @pointerleave="resetTilt"
-    @pointercancel="resetTilt"
+    @pointerout="handlePointerExit"
+    @pointerleave="handlePointerExit"
+    @pointercancel="handlePointerExit"
+    @lostpointercapture="handlePointerExit"
+    @touchcancel="handlePointerExit"
+    @focusout="handlePointerExit"
     @click="openComic">
     <div ref="card" class="comic-card motion-tilt-card">
       <span class="motion-tilt-glare comic-glare" aria-hidden="true"></span>
@@ -56,6 +61,7 @@ export default {
   name: 'ComicCard',
   props: {
     comic: { type: Object, required: true },
+    variant: { type: String, default: 'home', validator: value => ['home', 'personal'].includes(value) },
     currentUsername: { type: String, default: null },
     likeBusy: { type: Boolean, default: false },
   },
@@ -77,7 +83,10 @@ export default {
     isWebSource() { return /^https?:\/\//i.test((this.comic.referer || '').trim()); },
     formattedLikes() { return format.formatCount(this.comic.likes_count); },
   },
-  beforeDestroy() { if (this.tiltFrame) window.cancelAnimationFrame(this.tiltFrame); },
+  beforeDestroy() {
+    this.clearTiltFrame();
+    this.resetTiltState(this.$refs.shell);
+  },
   methods: {
     openComic() { this.$router.push({ name: 'comic', params: { comicId: this.comic.id } }); },
     scheduleTilt(event) {
@@ -99,14 +108,40 @@ export default {
         this.tiltFrame = null;
       });
     },
-    resetTilt(event) { const shell = event.currentTarget; if (shell) { shell.style.setProperty('--tilt-rotate-x', '0deg'); shell.style.setProperty('--tilt-rotate-y', '0deg'); shell.style.setProperty('--tilt-glare-opacity', '0'); } this.tilting = false; },
+    clearTiltFrame() {
+      if (this.tiltFrame) {
+        window.cancelAnimationFrame(this.tiltFrame);
+        this.tiltFrame = null;
+      }
+    },
+    resetTiltState(shell) {
+      if (shell) {
+        shell.style.setProperty('--tilt-rotate-x', '0deg');
+        shell.style.setProperty('--tilt-rotate-y', '0deg');
+        shell.style.setProperty('--tilt-glare-opacity', '0');
+        shell.style.setProperty('--tilt-glare-x', '50%');
+        shell.style.setProperty('--tilt-glare-y', '50%');
+      }
+      this.tilting = false;
+    },
+    handlePointerExit(event) {
+      if ((event.type === 'pointerout' || event.type === 'focusout') && event.relatedTarget
+        && event.currentTarget.contains(event.relatedTarget)) return;
+      this.resetTilt(event);
+    },
+    resetTilt(event) {
+      this.clearTiltFrame();
+      this.resetTiltState((event && event.currentTarget) || this.$refs.shell);
+    },
     handleLeave(event) { this.menuVisible = false; this.resetTilt(event); },
   },
 };
 </script>
 
 <style scoped lang="scss">
-.comic-card-shell { position: relative; width: var(--comic-card-width, var(--personal-comic-width, 240px)); min-width: 0; z-index: 1; margin-bottom: var(--comic-grid-gutter, var(--personal-comic-gutter, 16px)); }
+.comic-card-shell { position: relative; width: var(--comic-card-width, 240px); min-width: 0; z-index: 1; margin-bottom: var(--comic-grid-gutter, 16px); }
+.comic-card-shell--home { width: 246px; --comic-card-width: 246px; --comic-grid-gutter: 20px; }
+.comic-card-shell--personal { width: var(--personal-comic-width, 240px); margin-bottom: var(--personal-comic-gutter, 16px); }
 .comic-card-shell.is-tilting { z-index: 3; }
 .comic-card { position: relative; isolation: isolate; overflow: hidden; cursor: pointer; border: 1px solid var(--accent-border, rgba(126,87,194,.42)); border-radius: var(--radius-card,22px); background: var(--surface-card,#fff); box-shadow: var(--shadow-card,0 18px 50px rgba(15,23,42,.16)); transform-style: preserve-3d; transition: transform 280ms cubic-bezier(.2,.8,.2,1); }
 .comic-glare { position:absolute; inset:0; z-index:2; pointer-events:none; opacity:var(--tilt-glare-opacity,0); background:radial-gradient(circle at var(--tilt-glare-x,50%) var(--tilt-glare-y,50%),rgba(255,255,255,.52),transparent 62%); mix-blend-mode:screen; }
