@@ -43,7 +43,7 @@ export default {
 
 /* R6 profile collection alignment */
 .user-collection-page {
-  --user-profile-content-width: min(1040px, calc(100vw - 32px));
+  --user-profile-content-width: var(--user-profile-shell-width);
 }
 .user-collection-page .container,
 .user-collection-page .section > .container {
@@ -66,6 +66,42 @@ export default {
 .user-collection-page ::v-deep .comic-card-shell {
   min-width: 0;
 }
+.user-collection-page ::v-deep #pins-container {
+  --profile-pin-columns: 4;
+  --profile-pin-gap: 20px;
+}
+
+.user-collection-page ::v-deep #pins-container .pin-masonry {
+  width: calc(
+    (100% - (var(--profile-pin-columns) - 1) * var(--profile-pin-gap))
+    / var(--profile-pin-columns)
+  );
+}
+
+.user-collection-page ::v-deep #pins-container .gutter-sizer {
+  width: var(--profile-pin-gap);
+}
+
+@media screen and (max-width: 1040px) {
+  .user-collection-page ::v-deep #pins-container {
+    --profile-pin-columns: 3;
+    --profile-pin-gap: 18px;
+  }
+}
+
+@media screen and (max-width: 720px) {
+  .user-collection-page ::v-deep #pins-container {
+    --profile-pin-columns: 2;
+    --profile-pin-gap: 14px;
+  }
+}
+
+@media screen and (max-width: 420px) {
+  .user-collection-page ::v-deep #pins-container {
+    --profile-pin-columns: 1;
+  }
+}
+
 @media screen and (max-width: 760px) {
   .user-collection-page {
     --user-profile-content-width: calc(100vw - 20px);

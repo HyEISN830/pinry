@@ -64,6 +64,7 @@ export default {
   @import "~buefy/src/scss/buefy";
   @import "./components/utils/design-tokens";
   @import "./components/utils/motion-system";
+  @import "./components/utils/user-shell";
 
   :root {
     --app-bg: #f6f7fb;
