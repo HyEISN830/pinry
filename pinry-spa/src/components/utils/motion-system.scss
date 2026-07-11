@@ -1,19 +1,19 @@
 @import "./ui-tokens";
 @import "./motion-mixins";
 
-html[data-motion='full'] .pin-card-frame.motion-hover-scale,
-html:not([data-motion]) .pin-card-frame.motion-hover-scale {
+html[data-motion='full'] .pin-card.motion-hover-scale,
+html:not([data-motion]) .pin-card.motion-hover-scale {
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 220ms ease;
+    box-shadow 220ms ease,
+    border-color 180ms ease;
   transform-origin: center;
   will-change: transform;
 }
 
-html[data-motion='full'] .pin-card-frame.motion-hover-scale:hover,
-html:not([data-motion]) .pin-card-frame.motion-hover-scale:hover {
-  z-index: 2;
-  transform: translate3d(0, -6px, 0) scale(1.045) !important;
-  box-shadow: 0 18px 42px rgba(16, 24, 40, 0.18);
+html[data-motion='full'] .pin-card.motion-hover-scale:hover,
+html:not([data-motion]) .pin-card.motion-hover-scale:hover {
+  transform: translate3d(0, -7px, 0) scale(1.055);
+  box-shadow: 0 20px 46px rgba(16, 24, 40, 0.22);
 }
 
 .masonry-layout-pending {

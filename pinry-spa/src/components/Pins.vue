@@ -899,10 +899,10 @@ $avatar-height: 30px;
     }
   }
 }
-.pin-masonry.is-visible .pin-card,
-.pin-masonry.image-loaded .pin-card {
-  animation: cardAppear .46s cubic-bezier(0.16, 1, 0.3, 1) both;
+.pin-masonry:hover {
+  z-index: 20;
 }
+
 .pin-editor-overlay {
   position: absolute;
   z-index: 12;
