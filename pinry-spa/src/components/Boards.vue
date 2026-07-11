@@ -3,13 +3,17 @@
     <section class="section">
       <div id="boards-container" class="container" v-if="blocks">
         <div
+          ref="masonryGrid"
           v-masonry=""
           v-layout-ready="{ itemSelector: '.grid-item' }"
           :key="masonryKey"
+          :style="masonryGridStyle"
+          class="boards-masonry-grid"
           transition-duration="0.12s"
           item-selector=".grid-item"
           column-width=".grid-sizer"
           gutter=".gutter-sizer"
+          fit-width="true"
         >
           <template v-for="item in blocks">
             <div v-bind:key="item.id"
@@ -103,36 +107,28 @@ import BoardEditorUI from './editors/BoardEditUI.vue';
 import bus from './utils/bus';
 import imageVariant from './utils/imageVariant';
 
-function getResponsiveCardWidth(viewportWidth) {
-  if (viewportWidth >= 2328) {
-    return 320;
-  }
-  if (viewportWidth >= 2073) {
-    return 300;
-  }
-  if (viewportWidth >= 1563) {
-    return 270;
-  }
-  return 240;
+function getResponsiveCardWidth(containerWidth) {
+  if (containerWidth >= 1240) return 224;
+  if (containerWidth >= 980) return 220;
+  if (containerWidth >= 720) return 216;
+  return Math.max(240, containerWidth);
 }
 
-function getResponsiveGridSignature() {
-  if (typeof window === 'undefined') {
-    return '240-1';
+function getResponsiveGridMetrics(containerWidth) {
+  const safeWidth = Math.max(0, containerWidth || 0);
+  if (safeWidth <= 540) {
+    return { columns: 1, gutterWidth: 0, itemWidth: safeWidth };
   }
-  const viewportWidth = window.innerWidth
-    || document.documentElement.clientWidth
-    || 0;
-  const itemWidth = getResponsiveCardWidth(viewportWidth);
-  const gutterWidth = viewportWidth >= 1563 ? 18 : 15;
-  const sidePadding = 48;
+  const gutterWidth = safeWidth >= 980 ? 16 : 14;
+  const preferredWidth = getResponsiveCardWidth(safeWidth);
   const columns = Math.max(
     1,
-    Math.floor(
-      (viewportWidth - sidePadding + gutterWidth) / (itemWidth + gutterWidth),
-    ),
+    Math.floor((safeWidth + gutterWidth) / (preferredWidth + gutterWidth)),
   );
-  return `${itemWidth}-${columns}`;
+  const itemWidth = Math.floor(
+    (safeWidth - ((columns - 1) * gutterWidth)) / columns,
+  );
+  return { columns, gutterWidth, itemWidth };
 }
 
 function isDocumentScrollable() {
@@ -191,7 +187,11 @@ function initialData() {
     currentEditBoard: null,
     blocks: [],
     blocksMap: {},
-    gridSignature: getResponsiveGridSignature(),
+    gridMetrics: getResponsiveGridMetrics(240),
+    gridSignature: '240-0-1',
+    gridMeasureAttempts: 0,
+    gridMeasureTimer: null,
+    gridResizeObserver: null,
     fillViewportTimer: null,
     masonryKey: 0,
     resizeTimer: null,
@@ -219,6 +219,12 @@ export default {
   data: initialData,
   props: ['filters'],
   computed: {
+    masonryGridStyle() {
+      return {
+        '--pin-card-width': `${this.gridMetrics.itemWidth}px`,
+        '--pin-grid-gutter': `${this.gridMetrics.gutterWidth}px`,
+      };
+    },
     showInitialSkeleton() {
       return this.status.loading && this.blocks.length === 0;
     },
@@ -245,6 +251,55 @@ export default {
     this.queueMasonryLayout();
   },
   methods: {
+    measureGridWhenReady() {
+      this.$nextTick(() => {
+        const requestFrame = window.requestAnimationFrame
+          || (callback => window.setTimeout(callback, 16));
+        requestFrame(() => {
+          if (this.updateGridMetrics()) {
+            this.gridMeasureAttempts = 0;
+            this.masonryKey += 1;
+            this.$nextTick(() => this.redrawMasonryLayout());
+            return;
+          }
+          const container = this.$el && this.$el.querySelector('#boards-container');
+          if (container && container.clientWidth > 0) {
+            this.gridMeasureAttempts = 0;
+            this.redrawMasonryLayout();
+            return;
+          }
+          if (this.gridMeasureAttempts >= 8) return;
+          this.gridMeasureAttempts += 1;
+          this.gridMeasureTimer = window.setTimeout(
+            this.measureGridWhenReady,
+            Math.min(40 * this.gridMeasureAttempts, 240),
+          );
+        });
+      });
+    },
+    observeGridContainer() {
+      if (!window.ResizeObserver || this.gridResizeObserver) return;
+      const container = this.$el && this.$el.querySelector('#boards-container');
+      if (!container) return;
+      this.gridResizeObserver = new ResizeObserver(() => {
+        if (this.updateGridMetrics()) {
+          this.masonryKey += 1;
+          this.$nextTick(() => this.redrawMasonryLayout());
+        }
+      });
+      this.gridResizeObserver.observe(container);
+    },
+    updateGridMetrics() {
+      const container = this.$el && this.$el.querySelector('#boards-container');
+      const containerWidth = container ? container.clientWidth : 0;
+      if (!containerWidth) return false;
+      const metrics = getResponsiveGridMetrics(containerWidth);
+      const signature = `${metrics.itemWidth}-${metrics.gutterWidth}-${metrics.columns}`;
+      if (signature === this.gridSignature) return false;
+      this.gridMetrics = metrics;
+      this.gridSignature = signature;
+      return true;
+    },
     bindMasonryMediaEvents() {
       if (this.$el && this.$el.addEventListener) {
         this.$el.addEventListener('load', this.handleMasonryMediaEvent, true);
@@ -402,6 +457,7 @@ export default {
       this.scheduleViewportFillCheck();
     },
     refreshMasonryLayout() {
+      this.updateGridMetrics();
       this.masonryKey += 1;
       this.$nextTick(() => {
         this.observeLazyImages();
@@ -415,12 +471,9 @@ export default {
         window.clearTimeout(this.resizeTimer);
       }
       this.resizeTimer = window.setTimeout(() => {
-        const signature = getResponsiveGridSignature();
-        if (signature === this.gridSignature) {
-          return;
-        }
-        this.gridSignature = signature;
-        this.refreshMasonryLayout();
+        if (!this.updateGridMetrics()) return;
+        this.masonryKey += 1;
+        this.$nextTick(() => this.redrawMasonryLayout());
         this.scheduleViewportFillCheck();
       }, 120);
     },
@@ -507,6 +560,7 @@ export default {
           this.status.error = false;
           this.status.loading = false;
           this.$nextTick(() => {
+            this.measureGridWhenReady();
             this.observeLazyImages();
             this.scheduleViewportFillCheck();
           });
@@ -525,9 +579,22 @@ export default {
     window.addEventListener('resize', this.handleResize);
     this.initialize();
   },
+  mounted() {
+    this.bindMasonryMediaEvents();
+    this.observeGridContainer();
+    this.measureGridWhenReady();
+  },
   beforeDestroy() {
     this.unbindMasonryMediaEvents();
     this.clearMasonryTimers();
+    if (this.gridResizeObserver) {
+      this.gridResizeObserver.disconnect();
+      this.gridResizeObserver = null;
+    }
+    if (this.gridMeasureTimer) {
+      window.clearTimeout(this.gridMeasureTimer);
+      this.gridMeasureTimer = null;
+    }
     if (this.lazyObserver) {
       this.lazyObserver.disconnect();
     }
@@ -546,6 +613,11 @@ export default {
 /* grid */
 @import 'utils/pin';
 @import './utils/motion-mixins';
+
+.boards-masonry-grid {
+  margin-right: auto;
+  margin-left: auto;
+}
 
 .grid-sizer,
 .grid-item { width: var(--pin-card-width, #{$pin-preview-width}); }

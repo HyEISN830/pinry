@@ -47,7 +47,7 @@ export default {
 
 /* R6 profile collection alignment */
 .user-collection-page {
-  --user-profile-content-width: min(1040px, calc(100vw - 32px));
+  --user-profile-content-width: min(1120px, calc(100vw - 32px));
 }
 .user-collection-page .container,
 .user-collection-page .section > .container {
