@@ -2,8 +2,10 @@
 docker/data/
 .github/
 
-# static
+# static / frontend production artifacts generated in frontend-build stage
 static
+pinry/static/spa
+pinry/templates/index.html
 .idea
 pinry-spa/node_modules
 pinry-spa/dist
