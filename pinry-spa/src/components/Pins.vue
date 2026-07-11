@@ -298,8 +298,11 @@ function initialData() {
   return {
     blocks: [],
     blocksMap: {},
-    gridMetrics: getResponsiveGridMetrics(0),
-    gridSignature: '0-0-0',
+    gridMetrics: getResponsiveGridMetrics(240),
+    gridSignature: '240-0-1',
+    gridMeasureAttempts: 0,
+    gridMeasureTimer: null,
+    gridResizeObserver: null,
     fillViewportTimer: null,
     masonryKey: 0,
     resizeTimer: null,
@@ -526,6 +529,50 @@ export default {
       this.blocksMap[itemId].style.height = 'auto';
       this.scheduleViewportFillCheck();
     },
+    measureGridWhenReady() {
+      this.$nextTick(() => {
+        const requestFrame = window.requestAnimationFrame
+          || (callback => window.setTimeout(callback, 16));
+        requestFrame(() => {
+          if (this.updateGridMetrics()) {
+            this.gridMeasureAttempts = 0;
+            this.masonryKey += 1;
+            this.$nextTick(() => this.redrawMasonryLayout());
+            return;
+          }
+          const container = this.$el && this.$el.querySelector('#pins-container');
+          if (container && container.clientWidth > 0) {
+            this.gridMeasureAttempts = 0;
+            this.redrawMasonryLayout();
+            return;
+          }
+          if (this.gridMeasureAttempts >= 8) {
+            return;
+          }
+          this.gridMeasureAttempts += 1;
+          this.gridMeasureTimer = window.setTimeout(
+            this.measureGridWhenReady,
+            Math.min(40 * this.gridMeasureAttempts, 240),
+          );
+        });
+      });
+    },
+    observeGridContainer() {
+      if (!window.ResizeObserver || this.gridResizeObserver) {
+        return;
+      }
+      const container = this.$el && this.$el.querySelector('#pins-container');
+      if (!container) {
+        return;
+      }
+      this.gridResizeObserver = new ResizeObserver(() => {
+        if (this.updateGridMetrics()) {
+          this.masonryKey += 1;
+          this.$nextTick(() => this.redrawMasonryLayout());
+        }
+      });
+      this.gridResizeObserver.observe(container);
+    },
     updateGridMetrics() {
       const container = this.$el && this.$el.querySelector('#pins-container');
       const containerWidth = container ? container.clientWidth : 0;
@@ -720,6 +767,7 @@ export default {
           this.status.error = false;
           this.status.loading = false;
           this.$nextTick(() => {
+            this.measureGridWhenReady();
             this.observeLazyImages();
             this.scheduleViewportFillCheck();
           });
@@ -758,9 +806,22 @@ export default {
     window.addEventListener('resize', this.handleResize);
     this.initialize();
   },
+  mounted() {
+    this.bindMasonryMediaEvents();
+    this.observeGridContainer();
+    this.measureGridWhenReady();
+  },
   beforeDestroy() {
     this.unbindMasonryMediaEvents();
     this.clearMasonryTimers();
+    if (this.gridResizeObserver) {
+      this.gridResizeObserver.disconnect();
+      this.gridResizeObserver = null;
+    }
+    if (this.gridMeasureTimer) {
+      window.clearTimeout(this.gridMeasureTimer);
+      this.gridMeasureTimer = null;
+    }
     if (this.lazyObserver) {
       this.lazyObserver.disconnect();
     }
