@@ -9,7 +9,7 @@ function nextFrame(callback) {
 function masonryHasLayout(element, itemSelector) {
   const items = Array.from(element.querySelectorAll(itemSelector));
   if (items.length === 0) {
-    return true;
+    return false;
   }
   return Boolean(element.style.height)
     && items.every(item => item.style.position === 'absolute');

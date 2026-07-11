@@ -1,0 +1,46 @@
+:root {
+  --user-profile-shell-width: min(1120px, calc(100vw - 32px));
+}
+
+.pins-for-user,
+.boards-for-user,
+.comics-for-user,
+.profile-for-user {
+  min-height: 100vh;
+  background: transparent !important;
+}
+
+.pins-for-user > #user-home-container,
+.boards-for-user > #user-home-container,
+.comics-for-user > #user-home-container,
+.profile-for-user > #user-home-container,
+.user-collection-page > .section,
+.profile-for-user > .profile-container {
+  width: var(--user-profile-shell-width);
+  max-width: var(--user-profile-shell-width);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.user-collection-page > .section {
+  padding-right: 0;
+  padding-left: 0;
+  background: transparent;
+}
+
+.user-collection-page > .section > .container,
+.user-collection-page #pins-container,
+.user-collection-page #boards-container,
+.user-collection-page .comics-section,
+.user-collection-page .comics-grid {
+  width: 100%;
+  max-width: none;
+  margin-right: 0;
+  margin-left: 0;
+}
+
+@media screen and (max-width: 760px) {
+  :root {
+    --user-profile-shell-width: calc(100vw - 20px);
+  }
+}
