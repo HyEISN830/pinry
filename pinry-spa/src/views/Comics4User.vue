@@ -2,7 +2,7 @@
   <div class="comics-for-user user-collection-page">
     <UserProfileCard
       :username="username"
-      :active-tab="'comics'">
+      :in-comics="true">
     </UserProfileCard>
     <div id="user-home-container" class="container">
       <div class="personal-comics-meta">作品数量: {{ comicCount }}</div>
