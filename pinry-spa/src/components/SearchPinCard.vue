@@ -87,68 +87,43 @@ export default {
 .search-card-like:disabled { opacity: 0.72; cursor: wait; }
 
 @media (hover: hover) and (pointer: fine) {
-  html[data-motion="full"] .search-pin-card {
-    position: relative;
-    z-index: 0;
-    isolation: isolate;
-  }
-
-  html[data-motion="full"] .search-pin-card::after {
-    position: absolute;
-    z-index: 0;
-    top: 12px;
-    right: -7px;
-    bottom: -14px;
-    left: -7px;
-    border-radius: inherit;
-    background: radial-gradient(
-      ellipse at 50% 18%,
-      var(--theme-glow, rgba(101, 105, 255, 0.5)) 0%,
-      transparent 68%
-    );
-    content: "";
-    filter: blur(18px);
-    opacity: 0;
-    pointer-events: none;
-    transform: translate3d(0, 8px, 0) scale(0.88);
-    transition: opacity 220ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  html[data-motion="full"] .search-pin-card:hover {
-    z-index: 5;
-  }
-
-  html[data-motion="full"] .search-pin-card:hover::after {
-    opacity: 0.92;
-    transform: translate3d(0, 1px, 0) scale(1.04);
-  }
-
   html[data-motion="full"] .search-pin-card .pin-card {
     position: relative;
     isolation: isolate;
+    overflow: hidden;
   }
 
   html[data-motion="full"] .search-pin-card .pin-card::after {
     position: absolute;
-    z-index: 3;
-    inset: 0;
-    border-radius: inherit;
+    z-index: 4;
+    top: -34%;
+    bottom: -34%;
+    left: -46%;
+    width: 42%;
+    border-radius: 42%;
     background: linear-gradient(
       112deg,
-      transparent 25%,
-      rgba(255, 255, 255, 0.2) 47%,
-      transparent 68%
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.08) 22%,
+      rgba(255, 255, 255, 0.62) 48%,
+      rgba(255, 255, 255, 0.12) 72%,
+      rgba(255, 255, 255, 0) 100%
     );
     content: "";
     opacity: 0;
     pointer-events: none;
-    transform: translate3d(-118%, 0, 0);
-    transition: opacity 160ms ease, transform 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    transform: translate3d(-140%, 0, 0) skewX(-18deg);
+    transition:
+      opacity 110ms ease-out,
+      transform 0ms linear 420ms;
   }
 
   html[data-motion="full"] .search-pin-card:hover .pin-card::after {
-    opacity: 0.7;
-    transform: translate3d(118%, 0, 0);
+    opacity: 0.88;
+    transform: translate3d(560%, 0, 0) skewX(-18deg);
+    transition:
+      opacity 100ms ease-out,
+      transform 640ms cubic-bezier(0.16, 0.82, 0.25, 1);
   }
 }
 </style>
