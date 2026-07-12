@@ -1,43 +1,46 @@
 <template>
-  <article class="search-pin-card motion-card-enter">
-    <div class="search-pin-card__surface pin-card motion-hover-scale">
-      <router-link
-        class="search-pin-card__media"
-        :style="coverStyle"
-        :to="{ name: 'pin', params: { pinId: pin.id } }">
-        <img :src="imageUrl" :alt="pin.description || $t('pinLink')">
-        <span class="search-result-kind">{{ $t('pinLink') }}</span>
-      </router-link>
-      <div class="search-pin-card__body">
+  <article class="search-pin-card">
+    <div class="pin-card-frame motion-card-enter">
+      <div class="search-pin-card__surface pin-card motion-hover-scale">
+        <span class="pin-card-glare" aria-hidden="true"></span>
         <router-link
-          v-if="pin.description"
-          class="search-pin-card__title"
+          class="search-pin-card__media"
+          :style="coverStyle"
           :to="{ name: 'pin', params: { pinId: pin.id } }">
-          {{ pin.description }}
+          <img :src="imageUrl" :alt="pin.description || $t('pinLink')">
+          <span class="search-result-kind">{{ $t('pinLink') }}</span>
         </router-link>
-        <p class="search-pin-card__author" v-if="submitter">
-          {{ $t('pinnedByInfo') }}
-          <router-link :to="{ name: 'user', params: { user: submitter.username } }">
-            {{ submitter.username }}
-          </router-link>
-        </p>
-        <div v-if="pin.tags && pin.tags.length" class="search-card-tags">
+        <div class="search-pin-card__body">
           <router-link
-            v-for="tag in pin.tags.slice(0, 6)"
-            :key="`${pin.id}-${tag}`"
-            :to="{ name: 'tag', params: { tag } }">
-            {{ tag }}
+            v-if="pin.description"
+            class="search-pin-card__title"
+            :to="{ name: 'pin', params: { pinId: pin.id } }">
+            {{ pin.description }}
           </router-link>
+          <p v-if="submitter" class="search-pin-card__author">
+            {{ $t('pinnedByInfo') }}
+            <router-link :to="{ name: 'user', params: { user: submitter.username } }">
+              {{ submitter.username }}
+            </router-link>
+          </p>
+          <div v-if="pin.tags && pin.tags.length" class="search-card-tags">
+            <router-link
+              v-for="tag in pin.tags.slice(0, 6)"
+              :key="`${pin.id}-${tag}`"
+              :to="{ name: 'tag', params: { tag } }">
+              {{ tag }}
+            </router-link>
+          </div>
+          <button
+            class="search-card-like"
+            type="button"
+            :class="{ 'is-liked': pin.viewer_liked }"
+            :disabled="likeBusy"
+            @click="$emit('toggle-like', pin)">
+            <b-icon :icon="pin.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
+            <span>{{ formattedLikes }}</span>
+          </button>
         </div>
-        <button
-          class="search-card-like"
-          type="button"
-          :class="{ 'is-liked': pin.viewer_liked }"
-          :disabled="likeBusy"
-          @click="$emit('toggle-like', pin)">
-          <b-icon :icon="pin.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
-          <span>{{ formattedLikes }}</span>
-        </button>
       </div>
     </div>
   </article>
@@ -86,44 +89,4 @@ export default {
 .search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .search-card-like:disabled { opacity: 0.72; cursor: wait; }
 
-@media (hover: hover) and (pointer: fine) {
-  html[data-motion="full"] .search-pin-card .pin-card {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-  }
-
-  html[data-motion="full"] .search-pin-card .pin-card::after {
-    position: absolute;
-    z-index: 4;
-    top: -34%;
-    bottom: -34%;
-    left: -46%;
-    width: 42%;
-    border-radius: 42%;
-    background: linear-gradient(
-      112deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.08) 22%,
-      rgba(255, 255, 255, 0.62) 48%,
-      rgba(255, 255, 255, 0.12) 72%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    content: "";
-    opacity: 0;
-    pointer-events: none;
-    transform: translate3d(-140%, 0, 0) skewX(-18deg);
-    transition:
-      opacity 110ms ease-out,
-      transform 0ms linear 420ms;
-  }
-
-  html[data-motion="full"] .search-pin-card:hover .pin-card::after {
-    opacity: 0.88;
-    transform: translate3d(560%, 0, 0) skewX(-18deg);
-    transition:
-      opacity 100ms ease-out,
-      transform 640ms cubic-bezier(0.16, 0.82, 0.25, 1);
-  }
-}
 </style>

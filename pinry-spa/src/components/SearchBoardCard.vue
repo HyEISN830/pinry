@@ -1,21 +1,24 @@
 <template>
-  <article class="search-board-card motion-card-enter">
-    <router-link
-      class="search-board-card__surface board-card motion-hover-scale"
-      :to="{ name: 'board', params: { boardId: board.id } }">
-      <div class="search-board-card__media" :style="coverStyle">
-        <img v-if="coverImageUrl" :src="coverImageUrl" :alt="board.name">
-        <div v-else class="search-board-card__placeholder" aria-hidden="true">
-          <b-icon icon="image" size="is-medium"></b-icon>
+  <article class="search-board-card">
+    <div class="board-card-frame motion-card-enter">
+      <router-link
+        class="search-board-card__surface board-card motion-hover-scale"
+        :to="{ name: 'board', params: { boardId: board.id } }">
+        <span class="board-card-glare" aria-hidden="true"></span>
+        <div class="search-board-card__media" :style="coverStyle">
+          <img v-if="coverImageUrl" :src="coverImageUrl" :alt="board.name">
+          <div v-else class="search-board-card__placeholder" aria-hidden="true">
+            <b-icon icon="image" size="is-medium"></b-icon>
+          </div>
+          <span class="search-result-kind">{{ $t('boardLink') }}</span>
         </div>
-        <span class="search-result-kind">{{ $t('boardLink') }}</span>
-      </div>
-      <div class="search-board-card__body">
-        <h3>{{ board.name }}</h3>
-        <p v-if="board.description">{{ board.description }}</p>
-        <span v-if="board.submitter" class="search-board-card__owner">{{ board.submitter.username }}</span>
-      </div>
-    </router-link>
+        <div class="search-board-card__body">
+          <h3>{{ board.name }}</h3>
+          <p v-if="board.description">{{ board.description }}</p>
+          <span v-if="board.submitter" class="search-board-card__owner">{{ board.submitter.username }}</span>
+        </div>
+      </router-link>
+    </div>
   </article>
 </template>
 
@@ -52,44 +55,4 @@ export default {
 .search-board-card__body p { display: -webkit-box; overflow: hidden; margin: var(--space-xs) 0 0; color: var(--color-text-muted); font-size: 0.9rem; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .search-board-card__owner { display: block; margin-top: var(--space-sm); overflow: hidden; color: var(--color-accent-strong); font-size: 0.82rem; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
 
-@media (hover: hover) and (pointer: fine) {
-  html[data-motion="full"] .search-board-card .board-card {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-  }
-
-  html[data-motion="full"] .search-board-card .board-card::after {
-    position: absolute;
-    z-index: 4;
-    top: -34%;
-    bottom: -34%;
-    left: -46%;
-    width: 42%;
-    border-radius: 42%;
-    background: linear-gradient(
-      112deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.08) 22%,
-      rgba(255, 255, 255, 0.62) 48%,
-      rgba(255, 255, 255, 0.12) 72%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    content: "";
-    opacity: 0;
-    pointer-events: none;
-    transform: translate3d(-140%, 0, 0) skewX(-18deg);
-    transition:
-      opacity 110ms ease-out,
-      transform 0ms linear 420ms;
-  }
-
-  html[data-motion="full"] .search-board-card:hover .board-card::after {
-    opacity: 0.88;
-    transform: translate3d(560%, 0, 0) skewX(-18deg);
-    transition:
-      opacity 100ms ease-out,
-      transform 640ms cubic-bezier(0.16, 0.82, 0.25, 1);
-  }
-}
 </style>
