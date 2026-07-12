@@ -108,16 +108,7 @@ function comicGridCapacity(viewportWidth) {
   if (viewportWidth < 1308) {
     return 4;
   }
-  if (viewportWidth < 1818) {
-    return 5;
-  }
-  if (viewportWidth < 2583) {
-    return 6;
-  }
-  if (viewportWidth < 2838) {
-    return 7;
-  }
-  return 8;
+  return 5;
 }
 
 function comicPageLimit(largeCards = false) {
@@ -200,7 +191,7 @@ export default {
     },
     gridStyle() {
       return {
-        '--comic-page-limit': this.pageLimit,
+        '--comic-grid-columns': Math.max(1, Math.min(this.pageLimit, this.comics.length || this.pageLimit)),
       };
     },
   },
@@ -488,11 +479,11 @@ export default {
 .comic-grid {
   display: grid;
   grid-template-columns: repeat(
-    var(--comic-page-limit),
+    var(--comic-grid-columns),
     minmax(0, var(--comic-card-width, var(--pin-card-width, 240px)))
   );
   gap: var(--space-md, var(--pin-grid-gutter, 15px));
-  justify-content: start;
+  justify-content: center;
   perspective: 1200px;
 }
 

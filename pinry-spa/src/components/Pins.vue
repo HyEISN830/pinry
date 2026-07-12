@@ -216,7 +216,7 @@ function getResponsiveCardWidth(containerWidth) {
   return Math.max(240, containerWidth);
 }
 
-function getResponsiveGridMetrics(containerWidth) {
+function getResponsiveGridMetrics(containerWidth, maxColumns = null) {
   const safeWidth = Math.max(0, containerWidth || 0);
   if (safeWidth <= 540) {
     return {
@@ -227,13 +227,18 @@ function getResponsiveGridMetrics(containerWidth) {
   }
   const gutterWidth = safeWidth >= 980 ? 16 : 14;
   const preferredWidth = getResponsiveCardWidth(safeWidth);
-  const columns = Math.max(
+  const naturalColumns = Math.max(
     1,
     Math.floor((safeWidth + gutterWidth) / (preferredWidth + gutterWidth)),
   );
-  const itemWidth = Math.floor(
-    (safeWidth - ((columns - 1) * gutterWidth)) / columns,
-  );
+  const columns = Number.isFinite(maxColumns)
+    ? Math.min(naturalColumns, Math.max(1, maxColumns))
+    : naturalColumns;
+  const itemWidth = columns < naturalColumns
+    ? preferredWidth
+    : Math.floor(
+      (safeWidth - ((columns - 1) * gutterWidth)) / columns,
+    );
   return { columns, gutterWidth, itemWidth };
 }
 
@@ -338,6 +343,10 @@ export default {
     return initialData();
   },
   props: {
+    maxColumns: {
+      type: Number,
+      default: null,
+    },
     pinFilters: {
       type: Object,
       default() {
@@ -579,7 +588,7 @@ export default {
       if (!containerWidth) {
         return false;
       }
-      const metrics = getResponsiveGridMetrics(containerWidth);
+      const metrics = getResponsiveGridMetrics(containerWidth, this.maxColumns);
       const signature = `${metrics.itemWidth}-${metrics.gutterWidth}-${metrics.columns}`;
       if (signature === this.gridSignature) {
         return false;
