@@ -34,9 +34,9 @@
           </div>
           <a
             v-if="sourceHref"
+            v-source-tooltip
             class="search-pin-card__source content-source-link"
             :href="sourceHref"
-            :title="sourceTip"
             :data-source-tip="sourceTip"
             target="_blank"
             rel="noopener"
@@ -45,9 +45,9 @@
           </a>
           <span
             v-else-if="sourceTip"
+            v-source-tooltip
             class="search-pin-card__source content-source-link"
             tabindex="0"
-            :title="sourceTip"
             :data-source-tip="sourceTip">
             {{ sourceTip }}
           </span>

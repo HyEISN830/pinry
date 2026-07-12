@@ -9,6 +9,7 @@ import setUpAxiosCsrfConfig from './components/utils/csrf';
 import setUpAxiosFeedback from './components/utils/apiFeedback';
 import motionPreference from './components/utils/motionPreference';
 import layoutReady from './components/utils/layoutReady';
+import sourceTooltip from './components/utils/sourceTooltip';
 import './components/utils/motion-system.scss';
 import './components/utils/grid-layout.scss';
 import './components/utils/search-tag-pills.scss';
@@ -24,6 +25,7 @@ Vue.use(Buefy, {
 });
 Vue.use(VueMasonryPlugin);
 Vue.directive('layout-ready', layoutReady);
+Vue.directive('source-tooltip', sourceTooltip);
 Vue.use(VueI18n);
 motionPreference.applySavedMotionPreference();
 setUpAxiosCsrfConfig();

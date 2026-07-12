@@ -59,9 +59,8 @@
                 <div class="is-pulled-right">
                   <a
                     v-if="isWebUrl(pinItem.referer)"
-                    class="content-source-link"
+                    v-source-tooltip
                     :href="pinItem.referer"
-                    :title="sourceText(pinItem.referer)"
                     :data-source-tip="sourceText(pinItem.referer)"
                     target="_blank"
                     rel="noopener">
@@ -73,9 +72,9 @@
                   </a>
                   <span
                     v-else-if="hasSource(pinItem.referer)"
-                    class="meta-link source-text-button content-source-link"
+                    v-source-tooltip
+                    class="meta-link source-text-button"
                     tabindex="0"
-                    :title="sourceText(pinItem.referer)"
                     :data-source-tip="sourceText(pinItem.referer)">
                     {{ sourceText(pinItem.referer) }}
                   </span>

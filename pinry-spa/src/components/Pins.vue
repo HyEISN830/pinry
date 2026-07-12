@@ -117,17 +117,17 @@
                           &middot;
                           <a
                             v-if="isWebUrl(item.referer)"
+                            v-source-tooltip
                             class="content-source-link"
                             :href="item.referer"
-                            :title="sourceText(item.referer)"
                             :data-source-tip="sourceText(item.referer)"
                             target="_blank"
                             rel="noopener">{{ $t("sourceLink") }}</a>
                           <span
                             v-else
+                            v-source-tooltip
                             class="source-text content-source-link"
                             tabindex="0"
-                            :title="sourceText(item.referer)"
                             :data-source-tip="sourceText(item.referer)">
                             {{ sourceText(item.referer) }}
                           </span>

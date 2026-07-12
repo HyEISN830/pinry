@@ -44,18 +44,18 @@
         <div v-if="hasSource" class="comic-source">
           <a
             v-if="isWebSource"
+            v-source-tooltip
             class="content-source-link"
             :href="comic.referer"
-            :title="sourceText"
             :data-source-tip="sourceText"
             target="_blank"
             rel="noopener"
             @click.stop>{{ $t('sourceLink') }}</a>
           <span
             v-else
+            v-source-tooltip
             class="content-source-link"
             tabindex="0"
-            :title="sourceText"
             :data-source-tip="sourceText"
             @click.stop>{{ sourceText }}</span>
         </div>
