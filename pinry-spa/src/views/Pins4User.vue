@@ -3,8 +3,14 @@
     <PHeader></PHeader>
     <UserProfileCard :in-pins="true" :username="filters.userFilter"></UserProfileCard>
     <div class="pin-collection-container">
+      <div class="user-collection-heading">
+        <span class="user-collection-count" aria-live="polite">
+          <span class="user-collection-count__label">{{ $t('pinsLink') }}</span>
+          <strong>{{ pinsCount }}</strong>
+        </span>
+      </div>
       <div class="pin-collection-surface">
-        <Pins :pin-filters="filters"></Pins>
+        <Pins :pin-filters="filters" @pins-meta-loaded="onPinsMetaLoaded"></Pins>
       </div>
     </div>
   </div>
@@ -20,6 +26,7 @@ export default {
   data() {
     return {
       filters: { userFilter: null },
+      pinsCount: 0,
     };
   },
   components: {
@@ -31,12 +38,16 @@ export default {
     this.initializeBoard();
   },
   beforeRouteUpdate(to, from, next) {
+    this.pinsCount = 0;
     this.filters = { userFilter: to.params.user };
     next();
   },
   methods: {
     initializeBoard() {
       this.filters = { userFilter: this.$route.params.user };
+    },
+    onPinsMetaLoaded(meta) {
+      this.pinsCount = meta && Number.isFinite(meta.count) ? meta.count : 0;
     },
   },
 };

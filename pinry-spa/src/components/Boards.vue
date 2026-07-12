@@ -557,6 +557,7 @@ export default {
           this.blocks = newBlocks;
           this.status.offset = newBlocks.length;
           this.status.hasNext = !(next === null);
+          this.$emit('boards-meta-loaded', { count: Number.isFinite(resp.data.count) ? resp.data.count : newBlocks.length });
           this.status.error = false;
           this.status.loading = false;
           this.$nextTick(() => {

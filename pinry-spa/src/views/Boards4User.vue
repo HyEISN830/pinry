@@ -3,8 +3,14 @@
     <PHeader></PHeader>
     <UserProfileCard :in-board="true" :username="filters.boardUsername"></UserProfileCard>
     <div class="board-collection-container">
+      <div class="user-collection-heading">
+        <span class="user-collection-count" aria-live="polite">
+          <span class="user-collection-count__label">{{ $t('boardsLink') }}</span>
+          <strong>{{ boardsCount }}</strong>
+        </span>
+      </div>
       <div class="board-collection-surface">
-        <Boards :filters="filters"></Boards>
+        <Boards :filters="filters" @boards-meta-loaded="onBoardsMetaLoaded"></Boards>
       </div>
     </div>
   </div>
@@ -20,6 +26,7 @@ export default {
   data() {
     return {
       filters: { boardUsername: null },
+      boardsCount: 0,
     };
   },
   components: {
@@ -31,12 +38,16 @@ export default {
     this.initialize();
   },
   beforeRouteUpdate(to, from, next) {
+    this.boardsCount = 0;
     this.filters = { boardUsername: to.params.username };
     next();
   },
   methods: {
     initialize() {
       this.filters = { boardUsername: this.$route.params.username };
+    },
+    onBoardsMetaLoaded(meta) {
+      this.boardsCount = meta && Number.isFinite(meta.count) ? meta.count : 0;
     },
   },
 };

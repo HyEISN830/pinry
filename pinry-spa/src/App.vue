@@ -65,6 +65,7 @@ export default {
   @import "./components/utils/design-tokens";
   @import "./components/utils/motion-system";
   @import "./components/utils/user-shell";
+  @import "./components/utils/collection-count-pill";
 
   :root {
     --app-bg: #f6f7fb;
