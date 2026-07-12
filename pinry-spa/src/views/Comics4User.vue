@@ -22,7 +22,7 @@ export default {
     return { comicCount: 0 };
   },
   computed: {
-    username() { return this.$route.params.user; },
+    username() { return this.$route.params.username; },
   },
   methods: {
     updateMeta(meta) { this.comicCount = meta && meta.count ? meta.count : 0; },

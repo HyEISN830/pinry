@@ -149,7 +149,15 @@ export default {
     },
     resetTilt() { this.cancelTiltFrame(); this.resetTiltState(this.$refs.shell); },
     handlePointerExit(event) {
-      if ((event.type === 'pointerout' || event.type === 'focusout') && event.relatedTarget && this.$refs.shell.contains(event.relatedTarget)) return;
+      // Vue may deliver a queued pointer/focus event after this card has been
+      // removed by a route/list update.  Never dereference a cleared ref.
+      const { shell } = this.$refs;
+      if (!shell) {
+        this.cancelTiltFrame();
+        this.tilting = false;
+        return;
+      }
+      if ((event.type === 'pointerout' || event.type === 'focusout') && event.relatedTarget && shell.contains(event.relatedTarget)) return;
       this.resetTilt();
     },
     handleLeave(event) { this.menuVisible = false; this.handlePointerExit(event); },
