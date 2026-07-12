@@ -32,10 +32,30 @@
               {{ tag }}
             </router-link>
           </div>
+          <a
+            v-if="sourceHref"
+            class="search-pin-card__source content-source-link"
+            :href="sourceHref"
+            :title="sourceTip"
+            :data-source-tip="sourceTip"
+            target="_blank"
+            rel="noopener"
+            @click.stop>
+            {{ $t('sourceLink') }}
+          </a>
+          <span
+            v-else-if="sourceTip"
+            class="search-pin-card__source content-source-link"
+            tabindex="0"
+            :title="sourceTip"
+            :data-source-tip="sourceTip">
+            {{ sourceTip }}
+          </span>
           <button
-            class="search-card-like"
+            class="search-card-like content-like-pill"
             type="button"
             :class="{ 'is-liked': pin.viewer_liked }"
+            :aria-pressed="pin.viewer_liked ? 'true' : 'false'"
             :disabled="likeBusy"
             @click="$emit('toggle-like', pin)">
             <b-icon :icon="pin.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
@@ -66,6 +86,12 @@ export default {
     coverStyle() {
       return { '--search-card-image': this.imageUrl ? `url("${this.imageUrl}")` : 'none' };
     },
+    sourceTip() {
+      return typeof this.pin.referer === 'string' ? this.pin.referer.trim() : '';
+    },
+    sourceHref() {
+      return /^https?:\/\//i.test(this.sourceTip) ? this.sourceTip : '';
+    },
     formattedLikes() { return format.formatCount(this.pin.likes_count); },
   },
 };
@@ -85,6 +111,7 @@ export default {
 .search-pin-card__author { margin: var(--space-xs) 0 0; color: var(--color-text-muted); font-size: 0.9rem; }
 .search-pin-card__author a { color: var(--color-accent-strong); font-weight: 800; }
 .search-card-tags { margin-top: var(--space-xs); }
+.search-pin-card__source { margin-top: var(--space-sm); }
 .search-card-like { display: inline-flex; align-items: center; gap: 0.28rem; min-height: 30px; margin-top: var(--space-sm); padding: 0 0.58rem; border: 1px solid var(--color-line-soft); border-radius: var(--radius-pill); color: var(--color-text-muted); background: var(--color-surface-2); cursor: pointer; font-size: 13px; font-weight: 900; }
 .search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .search-card-like:disabled { opacity: 0.72; cursor: wait; }

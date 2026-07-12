@@ -117,9 +117,20 @@
                           &middot;
                           <a
                             v-if="isWebUrl(item.referer)"
+                            class="content-source-link"
                             :href="item.referer"
-                            target="_blank">{{ $t("sourceLink") }}</a>
-                          <span v-else class="source-text">{{ sourceText(item.referer) }}</span>
+                            :title="sourceText(item.referer)"
+                            :data-source-tip="sourceText(item.referer)"
+                            target="_blank"
+                            rel="noopener">{{ $t("sourceLink") }}</a>
+                          <span
+                            v-else
+                            class="source-text content-source-link"
+                            tabindex="0"
+                            :title="sourceText(item.referer)"
+                            :data-source-tip="sourceText(item.referer)">
+                            {{ sourceText(item.referer) }}
+                          </span>
                         </span>
                       </span>
                     </div>
@@ -129,9 +140,10 @@
                     {{ $t("missingSourceNotice") }}
                   </div>
                   <button
-                    class="like-button"
+                    class="like-button content-like-pill"
                     type="button"
                     :class="{ 'is-liked': item.viewer_liked }"
+                    :aria-pressed="item.viewer_liked ? 'true' : 'false'"
                     :disabled="item.likeBusy"
                     :title="item.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
                     @click.stop="togglePinLike(item)">
@@ -216,7 +228,7 @@ function getResponsiveCardWidth(containerWidth) {
   return Math.max(240, containerWidth);
 }
 
-function getResponsiveGridMetrics(containerWidth, maxColumns = null) {
+function getResponsiveGridMetrics(containerWidth) {
   const safeWidth = Math.max(0, containerWidth || 0);
   if (safeWidth <= 540) {
     return {
@@ -227,18 +239,13 @@ function getResponsiveGridMetrics(containerWidth, maxColumns = null) {
   }
   const gutterWidth = safeWidth >= 980 ? 16 : 14;
   const preferredWidth = getResponsiveCardWidth(safeWidth);
-  const naturalColumns = Math.max(
+  const columns = Math.max(
     1,
     Math.floor((safeWidth + gutterWidth) / (preferredWidth + gutterWidth)),
   );
-  const columns = Number.isFinite(maxColumns)
-    ? Math.min(naturalColumns, Math.max(1, maxColumns))
-    : naturalColumns;
-  const itemWidth = columns < naturalColumns
-    ? preferredWidth
-    : Math.floor(
-      (safeWidth - ((columns - 1) * gutterWidth)) / columns,
-    );
+  const itemWidth = Math.floor(
+    (safeWidth - ((columns - 1) * gutterWidth)) / columns,
+  );
   return { columns, gutterWidth, itemWidth };
 }
 
@@ -343,10 +350,6 @@ export default {
     return initialData();
   },
   props: {
-    maxColumns: {
-      type: Number,
-      default: null,
-    },
     pinFilters: {
       type: Object,
       default() {
@@ -588,7 +591,7 @@ export default {
       if (!containerWidth) {
         return false;
       }
-      const metrics = getResponsiveGridMetrics(containerWidth, this.maxColumns);
+      const metrics = getResponsiveGridMetrics(containerWidth);
       const signature = `${metrics.itemWidth}-${metrics.gutterWidth}-${metrics.columns}`;
       if (signature === this.gridSignature) {
         return false;

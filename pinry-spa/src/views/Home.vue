@@ -10,7 +10,7 @@
         </p>
       </div>
     </section>
-    <Pins :max-columns="6" v-on:pins-meta-loaded="onPinsMetaLoaded"></Pins>
+    <Pins v-on:pins-meta-loaded="onPinsMetaLoaded"></Pins>
   </div>
 </template>
 

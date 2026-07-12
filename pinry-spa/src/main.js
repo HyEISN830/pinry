@@ -13,6 +13,7 @@ import './components/utils/motion-system.scss';
 import './components/utils/grid-layout.scss';
 import './components/utils/search-tag-pills.scss';
 import './components/utils/home-theme-background.scss';
+import './components/utils/content-card-actions.scss';
 import './components/utils/user-shell.scss';
 // import './registerServiceWorker';
 

@@ -42,11 +42,26 @@
           <span>{{ comic.total_pages }} {{ $t('comicPagesUnit') }}</span>
         </div>
         <div v-if="hasSource" class="comic-source">
-          <a v-if="isWebSource" :href="comic.referer" target="_blank" rel="noopener" @click.stop>{{ $t('sourceLink') }}</a>
-          <span v-else>{{ sourceText }}</span>
+          <a
+            v-if="isWebSource"
+            class="content-source-link"
+            :href="comic.referer"
+            :title="sourceText"
+            :data-source-tip="sourceText"
+            target="_blank"
+            rel="noopener"
+            @click.stop>{{ $t('sourceLink') }}</a>
+          <span
+            v-else
+            class="content-source-link"
+            tabindex="0"
+            :title="sourceText"
+            :data-source-tip="sourceText"
+            @click.stop>{{ sourceText }}</span>
         </div>
         <div v-else class="comic-source is-warning">{{ $t('missingSourceNotice') }}</div>
-        <button class="comic-like" type="button" :class="{ 'is-liked': comic.viewer_liked }" :disabled="likeBusy" :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')" @click.stop="$emit('toggle-like', comic)">
+        <button class="comic-like content-like-pill" type="button" :class="{ 'is-liked': comic.viewer_liked }" :aria-pressed="comic.viewer_liked ? 'true' : 'false'"
+          :disabled="likeBusy" :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')" @click.stop="$emit('toggle-like', comic)">
           <b-icon :icon="comic.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
           <span>{{ formattedLikes }}</span>
         </button>

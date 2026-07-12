@@ -59,8 +59,12 @@
                 <div class="is-pulled-right">
                   <a
                     v-if="isWebUrl(pinItem.referer)"
+                    class="content-source-link"
                     :href="pinItem.referer"
-                    target="_blank">
+                    :title="sourceText(pinItem.referer)"
+                    :data-source-tip="sourceText(pinItem.referer)"
+                    target="_blank"
+                    rel="noopener">
                     <b-button
                         class="meta-link"
                         type="is-warning">
@@ -69,8 +73,10 @@
                   </a>
                   <span
                     v-else-if="hasSource(pinItem.referer)"
-                    class="meta-link source-text-button"
-                    :title="sourceText(pinItem.referer)">
+                    class="meta-link source-text-button content-source-link"
+                    tabindex="0"
+                    :title="sourceText(pinItem.referer)"
+                    :data-source-tip="sourceText(pinItem.referer)">
                     {{ sourceText(pinItem.referer) }}
                   </span>
                   <span v-else class="meta-link source-missing-pill">
