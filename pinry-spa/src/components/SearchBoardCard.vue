@@ -38,10 +38,10 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .search-board-card { position: relative; min-width: 0; z-index: 1; }
 .search-board-card:hover { z-index: 2; }
-.search-board-card__surface { display: block; overflow: hidden; border: 1px solid var(--color-line-soft); border-radius: var(--radius-md); color: inherit; background: var(--color-surface-1); box-shadow: var(--shadow-card); text-decoration: none; }
+.search-board-card__surface { position: relative; z-index: 1; display: block; overflow: hidden; border: 1px solid var(--color-line-soft); border-radius: var(--radius-md); color: inherit; background: var(--color-surface-1); box-shadow: var(--shadow-card); text-decoration: none; }
 .search-board-card__media { position: relative; isolation: isolate; aspect-ratio: 16 / 10; overflow: hidden; background: var(--color-surface-2); }
 .search-board-card__media::before { position: absolute; z-index: 0; inset: -18px; background-image: var(--search-card-image); background-position: center; background-size: cover; content: ''; filter: blur(18px) saturate(1.14); opacity: 0.38; }
 .search-board-card__media img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: cover; }
@@ -51,4 +51,70 @@ export default {
 .search-board-card__body h3 { display: -webkit-box; overflow: hidden; margin: 0; color: var(--color-text-strong); font-size: 1rem; font-weight: 900; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .search-board-card__body p { display: -webkit-box; overflow: hidden; margin: var(--space-xs) 0 0; color: var(--color-text-muted); font-size: 0.9rem; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .search-board-card__owner { display: block; margin-top: var(--space-sm); overflow: hidden; color: var(--color-accent-strong); font-size: 0.82rem; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-motion="full"] .search-board-card {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+  }
+
+  html[data-motion="full"] .search-board-card::after {
+    position: absolute;
+    z-index: 0;
+    top: 12px;
+    right: -7px;
+    bottom: -14px;
+    left: -7px;
+    border-radius: inherit;
+    background: radial-gradient(
+      ellipse at 50% 18%,
+      var(--theme-glow, rgba(101, 105, 255, 0.5)) 0%,
+      transparent 68%
+    );
+    content: "";
+    filter: blur(18px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(0, 8px, 0) scale(0.88);
+    transition: opacity 220ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  html[data-motion="full"] .search-board-card:hover {
+    z-index: 5;
+  }
+
+  html[data-motion="full"] .search-board-card:hover::after {
+    opacity: 0.92;
+    transform: translate3d(0, 1px, 0) scale(1.04);
+  }
+
+  html[data-motion="full"] .search-board-card .board-card {
+    position: relative;
+    isolation: isolate;
+  }
+
+  html[data-motion="full"] .search-board-card .board-card::after {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      112deg,
+      transparent 25%,
+      rgba(255, 255, 255, 0.2) 47%,
+      transparent 68%
+    );
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(-118%, 0, 0);
+    transition: opacity 160ms ease, transform 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  html[data-motion="full"] .search-board-card:hover .board-card::after {
+    opacity: 0.7;
+    transform: translate3d(118%, 0, 0);
+  }
+}
 </style>

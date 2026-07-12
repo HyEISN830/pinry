@@ -67,10 +67,10 @@ export default {
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .search-pin-card { position: relative; min-width: 0; z-index: 1; }
 .search-pin-card:hover { z-index: 2; }
-.search-pin-card__surface { display: block; overflow: hidden; border: 1px solid var(--color-line-soft); border-radius: var(--radius-md); color: inherit; background: var(--color-surface-1); box-shadow: var(--shadow-card); }
+.search-pin-card__surface { position: relative; z-index: 1; display: block; overflow: hidden; border: 1px solid var(--color-line-soft); border-radius: var(--radius-md); color: inherit; background: var(--color-surface-1); box-shadow: var(--shadow-card); }
 .search-pin-card__media { position: relative; isolation: isolate; display: block; min-height: 180px; overflow: hidden; background: var(--color-surface-2); }
 .search-pin-card__media::before { position: absolute; z-index: 0; inset: -18px; background-image: var(--search-card-image); background-position: center; background-size: cover; content: ''; filter: blur(18px) saturate(1.14); opacity: 0.38; }
 .search-pin-card__media img { position: relative; z-index: 1; display: block; width: 100%; min-height: 180px; max-height: 400px; object-fit: cover; }
@@ -85,4 +85,70 @@ export default {
 .search-card-like { display: inline-flex; align-items: center; gap: 0.28rem; min-height: 30px; margin-top: var(--space-sm); padding: 0 0.58rem; border: 1px solid var(--color-line-soft); border-radius: var(--radius-pill); color: var(--color-text-muted); background: var(--color-surface-2); cursor: pointer; font-size: 13px; font-weight: 900; }
 .search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .search-card-like:disabled { opacity: 0.72; cursor: wait; }
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-motion="full"] .search-pin-card {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+  }
+
+  html[data-motion="full"] .search-pin-card::after {
+    position: absolute;
+    z-index: 0;
+    top: 12px;
+    right: -7px;
+    bottom: -14px;
+    left: -7px;
+    border-radius: inherit;
+    background: radial-gradient(
+      ellipse at 50% 18%,
+      var(--theme-glow, rgba(101, 105, 255, 0.5)) 0%,
+      transparent 68%
+    );
+    content: "";
+    filter: blur(18px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(0, 8px, 0) scale(0.88);
+    transition: opacity 220ms ease, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  html[data-motion="full"] .search-pin-card:hover {
+    z-index: 5;
+  }
+
+  html[data-motion="full"] .search-pin-card:hover::after {
+    opacity: 0.92;
+    transform: translate3d(0, 1px, 0) scale(1.04);
+  }
+
+  html[data-motion="full"] .search-pin-card .pin-card {
+    position: relative;
+    isolation: isolate;
+  }
+
+  html[data-motion="full"] .search-pin-card .pin-card::after {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      112deg,
+      transparent 25%,
+      rgba(255, 255, 255, 0.2) 47%,
+      transparent 68%
+    );
+    content: "";
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(-118%, 0, 0);
+    transition: opacity 160ms ease, transform 480ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  html[data-motion="full"] .search-pin-card:hover .pin-card::after {
+    opacity: 0.7;
+    transform: translate3d(118%, 0, 0);
+  }
+}
 </style>
