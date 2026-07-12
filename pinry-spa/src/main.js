@@ -11,6 +11,7 @@ import motionPreference from './components/utils/motionPreference';
 import layoutReady from './components/utils/layoutReady';
 import './components/utils/motion-system.scss';
 import './components/utils/grid-layout.scss';
+import './components/utils/search-tag-pills.scss';
 import './components/utils/user-shell.scss';
 // import './registerServiceWorker';
 

@@ -83,8 +83,7 @@ export default {
 .search-pin-card__title:hover { color: var(--color-accent-strong); }
 .search-pin-card__author { margin: var(--space-xs) 0 0; color: var(--color-text-muted); font-size: 0.9rem; }
 .search-pin-card__author a { color: var(--color-accent-strong); font-weight: 800; }
-.search-card-tags { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-xs); }
-.search-card-tags a { display: inline-flex; max-width: 100%; padding: 0.18rem 0.5rem; overflow: hidden; border-radius: var(--radius-pill); color: var(--color-accent-strong); background: var(--color-accent-soft); font-size: 12px; font-weight: 900; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.search-card-tags { margin-top: var(--space-xs); }
 .search-card-like { display: inline-flex; align-items: center; gap: 0.28rem; min-height: 30px; margin-top: var(--space-sm); padding: 0 0.58rem; border: 1px solid var(--color-line-soft); border-radius: var(--radius-pill); color: var(--color-text-muted); background: var(--color-surface-2); cursor: pointer; font-size: 13px; font-weight: 900; }
 .search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-strong); background: var(--color-accent-soft); }
 .search-card-like:disabled { opacity: 0.72; cursor: wait; }
