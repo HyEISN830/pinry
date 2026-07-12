@@ -1,6 +1,6 @@
 <template>
   <div class="pin-preview-modal">
-    <section>
+    <section class="pin-preview-surface">
         <div class="card motion-card-enter">
           <div class="card-image">
             <figure class="image preview-frame" :style="previewFrameStyle">
@@ -440,9 +440,20 @@ export default {
 @import './utils/motion-mixins';
 
 .pin-preview-modal {
+  --pin-preview-viewport-gap: clamp(12px, 2.4vw, 32px);
   display: flex;
+  align-items: center;
   justify-content: center;
   width: 100%;
+  min-height: 0;
+  max-height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
+}
+.pin-preview-surface {
+  display: flex;
+  width: min(100%, 1680px);
+  min-width: 0;
+  min-height: 0;
+  max-height: inherit;
 }
 .meta-link {
   margin-left: 0.45rem;
@@ -483,18 +494,24 @@ export default {
 .card {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  width: fit-content;
-  max-width: calc(100vw - 36px);
-  max-height: calc(100vh - 36px);
+  width: 100%;
+  min-width: 0;
+  height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
+  max-width: 100%;
+  max-height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
   margin: 0 auto;
   overflow: hidden;
-  border-radius: 8px;
-  background-color: rgba(12, 16, 24, 0.94);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-md, 18px);
+  background:
+    radial-gradient(circle at top left, var(--theme-glow, rgba(126, 87, 194, 0.2)), transparent 42%),
+    var(--surface-card, rgba(12, 16, 24, 0.94));
+  box-shadow: var(--shadow-floating, 0 24px 70px rgba(0, 0, 0, 0.45));
   .card-image {
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 0;
     min-height: 0;
     overflow: hidden;
   }
@@ -504,10 +521,10 @@ export default {
   .card-content {
     position: relative;
     z-index: 4;
-    max-height: min(34vh, 260px);
+    max-height: min(30vh, 240px);
     overflow: auto;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(12, 16, 24, 0.96);
+    border-top: 1px solid var(--line-soft, rgba(255, 255, 255, 0.1));
+    background: var(--surface-card, rgba(12, 16, 24, 0.96));
     .author {
       @include title-font-color-in-dark;
     }
@@ -553,19 +570,19 @@ export default {
 }
 .preview-frame {
   position: relative;
-  display: inline-grid;
+  display: grid;
   place-items: center;
   box-sizing: border-box;
-  width: fit-content;
-  max-width: calc(100vw - 36px);
-  max-height: calc(100vh - 176px);
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: clamp(12px, 1.8vw, 24px);
   overflow: hidden;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  border-radius: 8px 8px 0 0;
 }
 .preview-frame::before {
   content: "";
@@ -584,11 +601,12 @@ export default {
   display: block;
   width: auto;
   height: auto;
-  max-width: calc(100vw - 76px);
-  max-height: calc(100vh - 216px);
+  max-width: 100%;
+  max-height: 100%;
   margin: 0 auto;
   padding: 0;
   object-fit: contain;
+  object-position: center;
   transition: filter .3s ease, opacity .3s ease;
 }
 .preview-frame img.is-loading-preview {
@@ -662,23 +680,19 @@ export default {
   box-shadow: 0 18px 54px rgba(0, 0, 0, 0.45);
 }
 @media screen and (max-width: 542px) {
-  .card {
-    max-width: calc(100vw - 18px);
-    max-height: calc(100vh - 18px);
+  .pin-preview-modal {
+    --pin-preview-viewport-gap: 9px;
+  }
+  .card-content {
+    max-height: min(38vh, 280px);
   }
   .preview-frame {
-    max-width: calc(100vw - 18px);
-    max-height: calc(100vh - 210px);
-    padding: 12px;
-  }
-  .preview-frame img {
-    max-width: calc(100vw - 42px);
-    max-height: calc(100vh - 234px);
+    padding: 10px;
   }
   .motion-preview-video {
-    inset: 12px;
-    width: calc(100% - 24px);
-    height: calc(100% - 24px);
+    inset: 10px;
+    width: calc(100% - 20px);
+    height: calc(100% - 20px);
   }
   .full-image-stage {
     padding: 0.8rem;

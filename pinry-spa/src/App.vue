@@ -300,8 +300,12 @@ export default {
     background-color: var(--accent-strong);
   }
   .pin-preview-at-home .modal-content {
+    display: flex;
+    align-items: center;
     width: min(96vw, 1600px);
-    max-height: 96vh;
+    min-width: 0;
+    max-height: calc(100vh - 24px);
+    margin: 12px auto;
     overflow: visible;
   }
   .pin-preview-at-home {
