@@ -989,7 +989,6 @@ $avatar-height: 30px;
       font-size: 13px;
       font-weight: 800;
       line-height: 1.35;
-      transition: background .16s ease, color .16s ease;
     }
     a:hover {
       color: var(--accent-strong, #0f4fb8);

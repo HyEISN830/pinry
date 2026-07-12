@@ -95,12 +95,26 @@ export default {
     sourceText() { return (this.comic.referer || '').trim(); },
     formattedLikes() { return format.formatCount(this.comic.likes_count); },
   },
+  mounted() {
+    this.notifyLayoutSettled();
+  },
+  watch: {
+    'comic.tags': {
+      deep: true,
+      handler() {
+        this.notifyLayoutSettled();
+      },
+    },
+  },
   beforeDestroy() {
     this.cancelTiltFrame();
     if (this.suppressTimer) window.clearTimeout(this.suppressTimer);
     this.resetTiltState(this.$refs.shell);
   },
   methods: {
+    notifyLayoutSettled() {
+      this.$nextTick(() => this.$emit('layout-settled'));
+    },
     showMenu() { if (this.isOwner) this.menuVisible = true; },
     readComic(event) {
       if (this.suppressRead) { if (event) event.preventDefault(); return; }

@@ -8,6 +8,14 @@
   gap: var(--space-xs, 8px);
 }
 
+// Comic cards can now carry more than one row of themed tags. Do not retain
+// the compact one-line clipping behavior from the pre-pill card treatment.
+.comic-card-shell .comic-tags {
+  align-content: flex-start;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
 html body .content-tag-pill.content-tag-pill {
   position: relative;
   isolation: isolate;
@@ -33,12 +41,16 @@ html body .content-tag-pill.content-tag-pill {
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  transform-origin: center center;
+  will-change: transform;
   transition:
     color 180ms var(--motion-ease-standard, ease),
     border-color 180ms var(--motion-ease-standard, ease),
     background-color 180ms var(--motion-ease-standard, ease),
     box-shadow 220ms var(--motion-ease-spring, cubic-bezier(0.2, 0.8, 0.2, 1)),
-    transform 220ms var(--motion-ease-spring, cubic-bezier(0.2, 0.8, 0.2, 1));
+    transform 260ms cubic-bezier(0.16, 0.82, 0.25, 1) !important;
 }
 
 html body .content-tag-pill.content-tag-pill::before {
@@ -72,8 +84,8 @@ html body .content-tag-pill.content-tag-pill::after {
   pointer-events: none;
   transform: translate3d(-120%, 0, 0) skewX(-20deg);
   transition:
-    opacity 100ms ease-out,
-    transform 0ms linear 400ms;
+    opacity 90ms ease-out,
+    transform 0ms linear;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -88,7 +100,7 @@ html body .content-tag-pill.content-tag-pill::after {
     box-shadow:
       0 0 0 3px var(--accent-soft, var(--color-accent-soft, rgba(126, 87, 194, 0.12))),
       0 10px 18px var(--theme-glow, var(--color-theme-glow, rgba(126, 87, 194, 0.36)));
-    transform: translate3d(0, -3px, 0) scale(1.055);
+    transform: translate3d(0, -2px, 0) scale(1.035) !important;
   }
 
   html[data-motion='full'] .content-tag-pill:hover::before,

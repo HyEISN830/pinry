@@ -24,7 +24,8 @@
         @read="$emit('read', $event)"
         @delete="$emit('delete', $event)"
         @toggle-like="$emit('toggle-like', $event)"
-        @image-settled="queueLayout">
+        @image-settled="queueLayout"
+        @layout-settled="queueLayout">
       </ComicCard>
     </div>
   </div>

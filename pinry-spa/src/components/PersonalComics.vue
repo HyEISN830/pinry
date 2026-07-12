@@ -27,7 +27,8 @@
           @read="readComic"
           @delete="deleteComic"
           @toggle-like="toggleLike"
-          @image-settled="queueLayout">
+          @image-settled="queueLayout"
+          @layout-settled="queueLayout">
         </ComicCard>
       </div>
     </div>
