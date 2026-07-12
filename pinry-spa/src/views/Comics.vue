@@ -357,6 +357,11 @@ export default {
   background: var(--color-page-bg, var(--app-bg, #f6f7fb));
 }
 
+.comics-page.is-embedded {
+  min-height: 0;
+  background: transparent;
+}
+
 .comics-page.is-embedded .comics-section {
   padding-top: var(--space-md, 16px);
 }
@@ -424,6 +429,22 @@ export default {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease);
+}
+
+.comics-page.is-embedded .comic-row-shell::before {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--app-bg, #f6f7fb) 72%, transparent),
+    transparent
+  );
+}
+
+.comics-page.is-embedded .comic-row-shell::after {
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--app-bg, #f6f7fb) 72%, transparent),
+    transparent
+  );
 }
 
 .comic-row-shell::before {

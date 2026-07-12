@@ -1,0 +1,12 @@
+// The Theme backdrop is rendered on #app. Homepage layout wrappers must remain
+// transparent so the backdrop continues below the navigation area. Content cards
+// deliberately keep their own surfaces for contrast and readability.
+#app .home,
+#app .home .comics-page.is-embedded {
+  background: transparent;
+}
+
+#app .home {
+  position: relative;
+  isolation: isolate;
+}
