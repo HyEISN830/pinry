@@ -27,6 +27,7 @@
             <router-link
               v-for="tag in pin.tags.slice(0, 6)"
               :key="`${pin.id}-${tag}`"
+              class="content-tag-pill"
               :to="{ name: 'tag', params: { tag } }">
               {{ tag }}
             </router-link>

@@ -33,8 +33,8 @@
       <div class="comic-info">
         <h2>{{ comic.title }}</h2>
         <div v-if="comic.tags && comic.tags.length" class="comic-tags">
-          <router-link v-for="tag in visibleTags" :key="tag" :to="{ name: 'tag', params: { tag } }" @click.stop>{{ tag }}</router-link>
-          <button v-if="hiddenTagCount" class="comic-tag-more" type="button" :title="comic.title" @click.stop="readComic">...</button>
+          <router-link v-for="tag in visibleTags" :key="tag" class="content-tag-pill" :to="{ name: 'tag', params: { tag } }" @click.stop>{{ tag }}</router-link>
+          <button v-if="hiddenTagCount" class="comic-tag-more content-tag-pill" type="button" :title="comic.title" @click.stop="readComic">...</button>
         </div>
         <div v-if="comic.submitter" class="comic-author">
           <img :src="avatarUrl" alt="">

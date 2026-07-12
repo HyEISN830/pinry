@@ -57,7 +57,7 @@
                           {{ $t("imageUnavailableText") }}
                         </span>
                       </div>
-                      <span class="board-kind-pill">
+                      <span class="board-kind-pill content-tag-pill">
                         {{ boardVisibilityLabel(item) }}
                       </span>
                     </div>

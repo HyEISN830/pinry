@@ -107,7 +107,7 @@
                           &nbsp;in&nbsp;
                           <template v-for="tag in item.tags">
                             <span v-bind:key="tag" class="pin-tag">
-                              <router-link :to="{ name: 'tag', params: { tag } }">
+                              <router-link class="content-tag-pill" :to="{ name: 'tag', params: { tag } }">
                                 {{ tag }}
                               </router-link>
                             </span>

@@ -176,7 +176,7 @@
               <router-link
                 v-for="tag in buckets.tags.results"
                 :key="`tag-${tag.name}`"
-                class="search-tag-pill"
+                class="search-tag-pill content-tag-pill"
                 :to="{ name: 'tag', params: { tag: tag.name } }">
                 {{ tag.name }}
               </router-link>
