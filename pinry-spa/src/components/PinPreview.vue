@@ -1,13 +1,17 @@
 <template>
   <div class="pin-preview-modal">
     <section class="pin-preview-surface">
-        <div class="card motion-card-enter">
+        <div
+          class="card motion-card-enter"
+          :class="{ 'has-image-geometry': hasPreviewGeometry }"
+          :style="previewCardStyle">
           <div class="card-image">
             <figure class="image preview-frame" :style="previewFrameStyle">
               <img
                 v-if="activePreviewUrl"
                 :src="activePreviewUrl"
                 alt="Image"
+                @load="onPreviewImageLoad"
                 @error="onPreviewImageError"
                 :class="{ 'is-loading-preview': imageLoading }">
               <video
@@ -36,7 +40,7 @@
               </div>
             </figure>
           </div>
-          <div class="card-content">
+          <div ref="previewContent" class="card-content">
             <div class="content">
                 <p class="description title" v-html="niceLinks(pinItem.description)"></p>
             </div>
@@ -186,6 +190,10 @@ export default {
       partialPreviewFailed: false,
       previewImageUrl: null,
       previewImageUrlFromCache: false,
+      previewLayoutFrame: null,
+      previewNaturalHeight: 0,
+      previewNaturalWidth: 0,
+      previewPopupGeometry: null,
       motionReplayTimer: null,
       motionVideoActive: false,
       motionVideoFailed: false,
@@ -222,14 +230,31 @@ export default {
         && !this.motionVideoFailed
       );
     },
+    hasPreviewGeometry() {
+      return !!this.previewPopupGeometry;
+    },
+    previewCardStyle() {
+      if (!this.previewPopupGeometry) {
+        return {};
+      }
+      return {
+        width: `${this.previewPopupGeometry.width}px`,
+        height: `${this.previewPopupGeometry.height}px`,
+      };
+    },
   },
   created() {
     this.loadOriginalImage();
   },
   mounted() {
     document.addEventListener('keydown', this.onKeydown);
+    window.addEventListener('resize', this.queuePreviewLayout);
   },
   beforeDestroy() {
+    window.removeEventListener('resize', this.queuePreviewLayout);
+    if (this.previewLayoutFrame) {
+      window.cancelAnimationFrame(this.previewLayoutFrame);
+    }
     if (this.imageRequestController) {
       this.imageRequestController.abort();
     }
@@ -296,10 +321,79 @@ export default {
       this.partialPreviewFailed = false;
     },
     onPreviewImageError() {
+      this.previewNaturalWidth = 0;
+      this.previewNaturalHeight = 0;
+      this.previewPopupGeometry = null;
       if (!this.imageLoading || !this.partialPreviewUrl) {
         return;
       }
       this.partialPreviewFailed = true;
+    },
+    onPreviewImageLoad(event) {
+      const image = event.target;
+      if (!image || !image.naturalWidth || !image.naturalHeight) {
+        return;
+      }
+      this.previewNaturalWidth = image.naturalWidth;
+      this.previewNaturalHeight = image.naturalHeight;
+      this.queuePreviewLayout();
+    },
+    queuePreviewLayout() {
+      if (!this.previewNaturalWidth || !this.previewNaturalHeight || this.previewLayoutFrame) {
+        return;
+      }
+      this.previewLayoutFrame = window.requestAnimationFrame(() => {
+        this.previewLayoutFrame = null;
+        this.updatePreviewPopupGeometry();
+      });
+    },
+    updatePreviewPopupGeometry() {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      if (!viewportWidth || !viewportHeight) {
+        return;
+      }
+
+      const viewportGap = Math.min(32, Math.max(9, viewportWidth * 0.024));
+      const framePadding = Math.min(24, Math.max(10, viewportWidth * 0.018));
+      const maxWidth = Math.max(1, viewportWidth - (viewportGap * 2));
+      const maxHeight = Math.max(1, viewportHeight - (viewportGap * 2));
+      const metaHeightLimit = Math.min(240, viewportHeight * 0.3);
+      const content = this.$refs.previewContent;
+      const contentHeight = Math.min(
+        metaHeightLimit,
+        Math.max(88, content ? content.scrollHeight : 112),
+      );
+      const imageWidthLimit = Math.max(1, maxWidth - (framePadding * 2));
+      const imageHeightLimit = Math.max(1, maxHeight - contentHeight - (framePadding * 2));
+      const scale = Math.min(
+        1,
+        imageWidthLimit / this.previewNaturalWidth,
+        imageHeightLimit / this.previewNaturalHeight,
+      );
+      const imageWidth = Math.max(1, Math.round(this.previewNaturalWidth * scale));
+      const imageHeight = Math.max(1, Math.round(this.previewNaturalHeight * scale));
+      const minimumCardWidth = Math.min(360, maxWidth);
+      const width = Math.round(Math.min(
+        maxWidth,
+        Math.max(minimumCardWidth, imageWidth + (framePadding * 2)),
+      ));
+      const height = Math.round(Math.min(
+        maxHeight,
+        imageHeight + (framePadding * 2) + contentHeight,
+      ));
+      const nextGeometry = {
+        width,
+        height,
+      };
+      const geometryChanged = !this.previewPopupGeometry
+        || this.previewPopupGeometry.width !== width
+        || this.previewPopupGeometry.height !== height;
+      this.previewPopupGeometry = nextGeometry;
+
+      if (geometryChanged) {
+        this.$nextTick(this.queuePreviewLayout);
+      }
     },
     readStream(reader, chunks) {
       return reader.read().then(
@@ -450,9 +544,12 @@ export default {
 }
 .pin-preview-surface {
   display: flex;
-  width: min(100%, 1680px);
+  align-items: center;
+  justify-content: center;
+  width: auto;
   min-width: 0;
   min-height: 0;
+  max-width: 100%;
   max-height: inherit;
 }
 .meta-link {
@@ -494,9 +591,9 @@ export default {
 .card {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  width: 100%;
-  min-width: 0;
-  height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
+  width: min(92vw, 680px);
+  min-width: min(92vw, 300px);
+  height: min(78vh, 560px);
   max-width: 100%;
   max-height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
   margin: 0 auto;
@@ -507,6 +604,9 @@ export default {
     radial-gradient(circle at top left, var(--theme-glow, rgba(126, 87, 194, 0.2)), transparent 42%),
     var(--surface-card, rgba(12, 16, 24, 0.94));
   box-shadow: var(--shadow-floating, 0 24px 70px rgba(0, 0, 0, 0.45));
+  transition:
+    width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    height 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
   .card-image {
     display: flex;
     align-items: center;
