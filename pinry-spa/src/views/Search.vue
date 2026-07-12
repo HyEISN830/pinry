@@ -103,47 +103,11 @@
                 {{ loadingMore.comics ? '...' : $t("loadMoreResults") }}
               </button>
             </div>
-            <div class="result-grid">
-              <article
-                class="result-card comic-result motion-card-enter motion-hover-scale"
-                v-for="comic in buckets.comics.results"
-                :key="`comic-${comic.id}`">
-                <router-link
-                  class="result-cover"
-                  :style="comicCoverStyle(comic)"
-                  :to="{ name: 'comic', params: { comicId: comic.id } }">
-                  <img
-                    v-if="comic.cover"
-                    :src="imageUrl(comic.cover.image)"
-                    :alt="comic.title">
-                  <span class="type-pill">{{ $t("comicLink") }}</span>
-                </router-link>
-                <div class="result-body">
-                  <h3>{{ comic.title }}</h3>
-                  <p>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</p>
-                  <div class="mini-tags" v-if="comic.tags && comic.tags.length > 0">
-                    <router-link
-                      v-for="tag in comic.tags.slice(0, 4)"
-                      :key="`comic-${comic.id}-${tag}`"
-                      :to="{ name: 'tag', params: { tag } }">
-                      {{ tag }}
-                    </router-link>
-                  </div>
-                  <button
-                    class="like-button"
-                    type="button"
-                    :class="{ 'is-liked': comic.viewer_liked }"
-                    :disabled="comic.likeBusy"
-                    @click="toggleComicLike(comic)">
-                    <b-icon
-                      :icon="comic.viewer_liked ? 'heart' : 'heart-outline'"
-                      size="is-small">
-                    </b-icon>
-                    <span>{{ formatCount(comic.likes_count) }}</span>
-                  </button>
-                </div>
-              </article>
-            </div>
+            <SearchComicMasonry
+              :comics="buckets.comics.results"
+              @read="readComic"
+              @toggle-like="toggleComicLike">
+            </SearchComicMasonry>
           </section>
 
           <section
@@ -161,47 +125,13 @@
               </button>
             </div>
             <div class="result-grid pin-results">
-              <article
-                class="result-card pin-result motion-card-enter motion-hover-scale"
+              <SearchPinCard
                 v-for="pin in buckets.pins.results"
-                :key="`pin-${pin.id}`">
-                <router-link
-                  class="result-cover"
-                  :style="pinCoverStyle(pin)"
-                  :to="{ name: 'pin', params: { pinId: pin.id } }">
-                  <img :src="imageUrl(pin.image)" :alt="pin.description || $t('pinLink')">
-                  <span class="type-pill">{{ $t("pinLink") }}</span>
-                </router-link>
-                <div class="result-body">
-                  <h3 v-if="pin.description">{{ pin.description }}</h3>
-                  <p>
-                    {{ $t("pinnedByInfo") }}
-                    <router-link :to="{ name: 'user', params: { user: pin.submitter.username } }">
-                      {{ pin.submitter.username }}
-                    </router-link>
-                  </p>
-                  <div class="mini-tags" v-if="pin.tags && pin.tags.length > 0">
-                    <router-link
-                      v-for="tag in pin.tags.slice(0, 6)"
-                      :key="`pin-${pin.id}-${tag}`"
-                      :to="{ name: 'tag', params: { tag } }">
-                      {{ tag }}
-                    </router-link>
-                  </div>
-                  <button
-                    class="like-button"
-                    type="button"
-                    :class="{ 'is-liked': pin.viewer_liked }"
-                    :disabled="pin.likeBusy"
-                    @click="togglePinLike(pin)">
-                    <b-icon
-                      :icon="pin.viewer_liked ? 'heart' : 'heart-outline'"
-                      size="is-small">
-                    </b-icon>
-                    <span>{{ formatCount(pin.likes_count) }}</span>
-                  </button>
-                </div>
-              </article>
+                :key="`pin-${pin.id}`"
+                :pin="pin"
+                :like-busy="pin.likeBusy"
+                @toggle-like="togglePinLike">
+              </SearchPinCard>
             </div>
           </section>
 
@@ -220,25 +150,11 @@
               </button>
             </div>
             <div class="result-grid">
-              <router-link
-                class="result-card board-result motion-card-enter motion-hover-scale"
+              <SearchBoardCard
                 v-for="board in buckets.boards.results"
                 :key="`board-${board.id}`"
-                :to="{ name: 'board', params: { boardId: board.id } }">
-                <div
-                  class="result-cover"
-                  :style="boardCoverStyle(board)">
-                  <img
-                    v-if="board.cover"
-                    :src="imageUrl(board.cover.image)"
-                    :alt="board.name">
-                  <span class="type-pill">{{ $t("boardLink") }}</span>
-                </div>
-                <div class="result-body">
-                  <h3>{{ board.name }}</h3>
-                  <p>{{ board.total_pins }} {{ $t("pinsLink") }}</p>
-                </div>
-              </router-link>
+                :board="board">
+              </SearchBoardCard>
             </div>
           </section>
 
@@ -276,8 +192,9 @@
 import API from '../components/api';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
-import format from '../components/utils/format';
-import imageVariant from '../components/utils/imageVariant';
+import SearchPinCard from '../components/SearchPinCard.vue';
+import SearchBoardCard from '../components/SearchBoardCard.vue';
+import SearchComicMasonry from '../components/SearchComicMasonry.vue';
 
 function blankBucket() {
   return {
@@ -308,6 +225,9 @@ export default {
   components: {
     PHeader,
     loadingSpinner,
+    SearchPinCard,
+    SearchBoardCard,
+    SearchComicMasonry,
   },
   data() {
     return {
@@ -450,32 +370,8 @@ export default {
     shouldShowBucket(name) {
       return this.activeType === 'all' || bucketKeyForType(this.activeType) === name;
     },
-    imageUrl(image) {
-      const thumbnail = imageVariant.getCardThumbnail(image);
-      return thumbnail.image;
-    },
-    imageBackground(image) {
-      return {
-        '--result-cover-image': `url("${this.imageUrl(image)}")`,
-      };
-    },
-    comicCoverStyle(comic) {
-      if (!comic.cover) {
-        return {};
-      }
-      return this.imageBackground(comic.cover.image);
-    },
-    boardCoverStyle(board) {
-      if (!board.cover) {
-        return {};
-      }
-      return this.imageBackground(board.cover.image);
-    },
-    pinCoverStyle(pin) {
-      return this.imageBackground(pin.image);
-    },
-    formatCount(count) {
-      return format.formatCount(count);
+    readComic(comic) {
+      this.$router.push({ name: 'comic', params: { comicId: comic.id } });
     },
     togglePinLike(pin) {
       if (pin.likeBusy) {
@@ -528,7 +424,6 @@ export default {
 }
 .search-sidebar,
 .search-card,
-.result-card,
 .empty-results,
 .state-card {
   border: 1px solid var(--color-line-soft);
@@ -596,9 +491,6 @@ export default {
 .search-card .input:focus,
 .search-submit:focus-visible,
 .section-head .button:focus-visible,
-.result-card:focus-visible,
-.result-cover:focus-visible,
-.like-button:focus-visible,
 .tag-result-list a:focus-visible,
 .state-card .button:focus-visible {
   @include focus-ring;
@@ -727,115 +619,6 @@ export default {
 }
 .pin-results {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-}
-.result-card {
-  overflow: hidden;
-  color: inherit;
-  text-decoration: none;
-}
-.result-cover {
-  position: relative;
-  isolation: isolate;
-  display: block;
-  aspect-ratio: 3 / 4;
-  overflow: hidden;
-  background: var(--color-surface-2);
-}
-.board-result .result-cover {
-  aspect-ratio: 16 / 10;
-}
-.result-cover::before {
-  content: "";
-  position: absolute;
-  inset: -18px;
-  z-index: 0;
-  background-image: var(--result-cover-image);
-  background-position: center;
-  background-size: cover;
-  filter: blur(18px) saturate(1.14);
-  opacity: 0.38;
-}
-.result-cover img {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.type-pill {
-  position: absolute;
-  z-index: 2;
-  top: var(--space-xs);
-  left: var(--space-xs);
-  padding: 0.22rem 0.52rem;
-  border-radius: var(--radius-pill);
-  color: var(--color-accent-text);
-  background: var(--color-accent-strong);
-  font-size: 12px;
-  font-weight: 950;
-}
-.result-body {
-  padding: var(--space-sm);
-}
-.result-body h3 {
-  display: -webkit-box;
-  overflow: hidden;
-  margin: 0;
-  color: var(--color-text-strong);
-  font-size: 1rem;
-  font-weight: 950;
-  line-height: 1.35;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-.result-body p {
-  margin: var(--space-xs) 0 0;
-  font-size: 0.9rem;
-}
-.mini-tags,
-.tag-result-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-  margin-top: var(--space-xs);
-}
-.mini-tags a,
-.tag-result-list a {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.18rem 0.5rem;
-  border-radius: var(--radius-pill);
-  color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
-  font-size: 12px;
-  font-weight: 950;
-  text-decoration: none;
-}
-.like-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-  min-height: 30px;
-  margin-top: var(--space-sm);
-  padding: 0 0.58rem;
-  border: 1px solid var(--color-line-soft);
-  border-radius: var(--radius-pill);
-  color: var(--color-text-muted);
-  background: var(--color-surface-2);
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 950;
-}
-.like-button.is-liked,
-.like-button:hover {
-  color: var(--color-accent-strong);
-  border-color: var(--color-accent);
-  background: var(--color-accent-soft);
-}
-.like-button:disabled {
-  opacity: 0.72;
-  cursor: wait;
 }
 @media screen and (max-width: 860px) {
   .search-shell {
