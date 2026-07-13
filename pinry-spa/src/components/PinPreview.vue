@@ -521,10 +521,7 @@ export default {
   justify-content: center;
   width: 100%;
   min-height: 0;
-  max-height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
   padding: var(--pin-preview-viewport-gap) 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
 }
 .pin-preview-surface {
   display: flex;
@@ -543,7 +540,7 @@ export default {
   min-width: 0;
   min-height: 0;
   max-width: 100%;
-  overflow: visible;
+  overflow: hidden;
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-md);
   background:
@@ -696,6 +693,9 @@ export default {
 }
 .pin-preview-tag {
   margin: 0 0.2rem 0.22rem 0 !important;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .pin-preview-actions {
   display: flex;
