@@ -893,12 +893,15 @@ $avatar-height: 30px;
   box-sizing: border-box;
   overflow: visible;
   background:
-    radial-gradient(circle at top left, var(--theme-glow), transparent 220px),
+    radial-gradient(circle at top left, var(--theme-glow, rgba(126, 87, 194, 0.14)), transparent 220px),
     var(--surface-card, #fff);
-  border: 1px solid var(--accent-border, #e8ebf0);
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  border: 1px solid var(--accent-border, var(--line-soft, #e8ebf0));
+  border-radius: var(--radius-md, 12px);
+  box-shadow: var(--shadow-soft, 0 1px 2px rgba(16, 24, 40, 0.06));
+  transition:
+    transform var(--motion-duration-standard, .18s) var(--motion-ease-standard, ease),
+    box-shadow var(--motion-duration-standard, .18s) var(--motion-ease-standard, ease),
+    border-color var(--motion-duration-fast, .18s) var(--motion-ease-standard, ease);
   will-change: transform;
   &:hover {
     transform: translateY(-4px);

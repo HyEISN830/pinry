@@ -49,11 +49,7 @@
               class="pin-preview-description"
               v-html="niceLinks(pinItem.description)"></p>
             <div class="pin-preview-footer">
-              <img class="pin-preview-avatar" :src="pinItem.avatar" alt="Image">
               <div class="pin-preview-meta">
-                <div class="pin-preview-identity">
-                  <p class="pin-preview-author"><span class="dim">{{ $t("pinnedByTitle") }}</span><span class="author">{{ pinItem.author }}</span></p>
-                </div>
                 <div class="pin-preview-actions">
                   <a
                     v-if="isWebUrl(pinItem.referer)"
@@ -96,9 +92,13 @@
                 <div v-if="pinItem.tags.length > 0" class="pin-preview-tag-container">
                   <div class="pin-preview-tags">
                     <template v-for="tag in pinItem.tags">
-                      <b-tag v-bind:key="tag" type="is-info" class="pin-preview-tag">{{ tag }}</b-tag>
+                      <b-tag v-bind:key="tag" type="is-info" class="content-tag-pill pin-preview-tag">{{ tag }}</b-tag>
                     </template>
                   </div>
+                </div>
+                <div class="pin-preview-identity">
+                  <img class="pin-preview-avatar" :src="pinItem.avatar" alt="Image">
+                  <p class="pin-preview-author"><span class="dim">{{ $t("pinnedByTitle") }}</span><span class="author">{{ pinItem.author }}</span></p>
                 </div>
               </div>
             </div>
@@ -228,10 +228,10 @@ export default {
       }
       return {
         '--pin-preview-details-height': `${this.previewPopupGeometry.detailsHeight}px`,
+        '--pin-preview-stage-height': `${this.previewPopupGeometry.stageHeight}px`,
         '--pin-preview-stage-padding-x': `${this.previewPopupGeometry.horizontalPadding}px`,
         '--pin-preview-stage-padding-y': `${this.previewPopupGeometry.verticalPadding}px`,
         width: `${this.previewPopupGeometry.width}px`,
-        height: `${this.previewPopupGeometry.height}px`,
       };
     },
   },
@@ -330,18 +330,20 @@ export default {
       const horizontalPadding = Math.min(24, Math.max(10, viewportWidth * 0.018));
       const isLandscape = this.previewNaturalWidth > this.previewNaturalHeight;
       const verticalPadding = isLandscape
-        ? Math.min(12, Math.max(6, viewportWidth * 0.008))
+        ? Math.min(16, Math.max(9, viewportWidth * 0.011))
         : horizontalPadding;
       const maxWidth = Math.max(1, viewportWidth - (viewportGap * 2));
       const maxHeight = Math.max(1, viewportHeight - (viewportGap * 2));
-      const detailsHeightLimit = Math.min(320, Math.max(136, viewportHeight * 0.38));
       const content = this.$refs.previewContent;
-      const detailsHeight = Math.min(
-        detailsHeightLimit,
-        Math.max(96, content ? content.scrollHeight + 2 : 136),
-      );
+      // Details remain a single natural-height information flow.  Reserve a
+      // sensible viewport share for it when sizing the image; if long metadata
+      // needs more than that, the *modal viewport* scrolls rather than clipping
+      // the details or creating an inner details scroller.
+      const naturalDetailsHeight = Math.max(96, content ? content.scrollHeight + 2 : 136);
+      const detailsBudget = Math.max(96, Math.floor(maxHeight * 0.42));
+      const allocatedDetailsHeight = Math.min(naturalDetailsHeight, detailsBudget);
       const availableImageWidth = Math.max(1, maxWidth - (horizontalPadding * 2));
-      const availableImageHeight = Math.max(1, maxHeight - detailsHeight - (verticalPadding * 2));
+      const availableImageHeight = Math.max(1, maxHeight - allocatedDetailsHeight - (verticalPadding * 2));
       // Standard contain geometry: one scale preserves the natural image ratio.
       // Do not cap at 1: thumbnails must grow to the available workspace too.
       const scale = Math.min(
@@ -355,27 +357,24 @@ export default {
         maxWidth,
         Math.max(minimumCardWidth, imageWidth + (horizontalPadding * 2)),
       ));
-      const height = Math.round(Math.min(
-        maxHeight,
-        imageHeight + (verticalPadding * 2) + detailsHeight,
-      ));
+      const stageHeight = imageHeight + (verticalPadding * 2);
       const nextGeometry = {
-        detailsHeight,
-        height,
+        detailsHeight: naturalDetailsHeight,
         horizontalPadding,
         imageHeight,
         imageWidth,
+        stageHeight,
         verticalPadding,
         width,
       };
       const geometryChanged = !this.previewPopupGeometry
-        || this.previewPopupGeometry.detailsHeight !== detailsHeight
+        || this.previewPopupGeometry.detailsHeight !== naturalDetailsHeight
         || this.previewPopupGeometry.horizontalPadding !== horizontalPadding
         || this.previewPopupGeometry.imageWidth !== imageWidth
         || this.previewPopupGeometry.imageHeight !== imageHeight
+        || this.previewPopupGeometry.stageHeight !== stageHeight
         || this.previewPopupGeometry.verticalPadding !== verticalPadding
-        || this.previewPopupGeometry.width !== width
-        || this.previewPopupGeometry.height !== height;
+        || this.previewPopupGeometry.width !== width;
       this.previewPopupGeometry = nextGeometry;
 
       if (geometryChanged) {
@@ -518,36 +517,41 @@ export default {
 .pin-preview-modal {
   --pin-preview-viewport-gap: clamp(12px, 2.4vw, 32px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   width: 100%;
   min-height: 0;
   max-height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
+  padding: var(--pin-preview-viewport-gap) 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .pin-preview-surface {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   width: auto;
   min-width: 0;
   min-height: 0;
   max-width: 100%;
-  max-height: inherit;
 }
 .pin-preview-card {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) var(--pin-preview-details-height, auto);
+  grid-template-rows: var(--pin-preview-stage-height, auto) auto;
   width: min(92vw, 680px);
-  height: min(78vh, 560px);
+  height: auto;
   min-width: 0;
   min-height: 0;
   max-width: 100%;
-  max-height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
-  overflow: hidden;
-  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-md, 18px);
-  background: var(--surface-card, rgba(12, 16, 24, 0.96));
-  box-shadow: var(--shadow-floating, 0 24px 70px rgba(0, 0, 0, 0.45));
+  overflow: visible;
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at top left, var(--color-theme-glow), transparent 44%),
+    var(--color-surface-card);
+  box-shadow:
+    0 0 0 1px var(--color-accent-soft),
+    var(--shadow-floating);
   transition: width 180ms cubic-bezier(0.2, 0.8, 0.2, 1), height 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 .pin-preview-stage {
@@ -559,7 +563,7 @@ export default {
   padding: var(--pin-preview-stage-padding-y, clamp(10px, 1.8vw, 24px)) var(--pin-preview-stage-padding-x, clamp(10px, 1.8vw, 24px));
   overflow: hidden;
   isolation: isolate;
-  background: var(--surface-2, rgba(15, 20, 31, 0.96));
+  background: var(--color-surface-2);
 }
 .pin-preview-backdrop {
   position: absolute;
@@ -577,8 +581,8 @@ export default {
   z-index: 0;
   inset: 0;
   background:
-    radial-gradient(ellipse at center, transparent 24%, rgba(8, 11, 18, 0.2) 70%, rgba(8, 11, 18, 0.52) 100%),
-    linear-gradient(180deg, rgba(7, 10, 17, 0.08), rgba(7, 10, 17, 0.28));
+    radial-gradient(ellipse at center, transparent 24%, color-mix(in srgb, var(--color-text-strong) 20%, transparent) 70%, color-mix(in srgb, var(--color-text-strong) 52%, transparent) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-text-strong) 8%, transparent), color-mix(in srgb, var(--color-text-strong) 28%, transparent));
   content: '';
   pointer-events: none;
 }
@@ -615,44 +619,44 @@ export default {
 .pin-preview-details {
   z-index: 4;
   box-sizing: border-box;
-  max-height: min(38vh, 320px);
-  overflow-x: hidden;
-  overflow-y: auto;
-  border-top: 1px solid var(--line-soft, rgba(255, 255, 255, 0.1));
-  background: var(--surface-card, rgba(12, 16, 24, 0.98));
+  max-height: none;
+  overflow: visible;
+  border-top: 1px solid var(--color-line-soft);
+  background: var(--color-surface-card);
   overscroll-behavior: contain;
 }
 .pin-preview-description {
   margin: 0;
   padding: 0.7rem clamp(0.85rem, 1.8vw, 1.2rem);
-  border-bottom: 1px solid var(--line-soft, rgba(255, 255, 255, 0.08));
-  color: var(--text-strong, #f3f6fb);
+  border-bottom: 1px solid var(--color-line-soft);
+  color: var(--color-text-strong);
   font-family: var(--font-display, inherit);
   font-size: 0.98rem;
   line-height: 1.45;
 }
 .pin-preview-footer {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.72rem;
+  display: block;
   padding: 0.78rem clamp(0.85rem, 1.8vw, 1.2rem);
 }
 .pin-preview-avatar {
-  width: 42px;
-  height: 42px;
-  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.16));
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-accent-border);
   border-radius: 50%;
   object-fit: cover;
 }
 .pin-preview-meta {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.8rem;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
   min-width: 0;
 }
 .pin-preview-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.52rem;
   min-width: 0;
+  order: 3;
 }
 .pin-preview-author,
 .pin-preview-tags {
@@ -668,7 +672,7 @@ export default {
 }
 .pin-preview-author .author {
   overflow: hidden;
-  color: var(--text-strong, #f3f6fb);
+  color: var(--color-text-strong);
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -678,32 +682,75 @@ export default {
 }
 .pin-preview-tags {
   margin-top: 0.32rem;
-  color: var(--text-muted, #97a3b8);
+  color: var(--color-text-muted);
   font-size: 0.76rem;
   line-height: 1.55;
 }
 .pin-preview-tag-container {
-  grid-column: 1 / -1;
-  padding-top: 0.1rem;
+  order: 2;
+  min-width: 0;
+  padding-top: 0.08rem;
 }
 .pin-preview-tags {
   margin-top: 0;
 }
 .pin-preview-tag {
-  margin: 0 0.2rem 0.22rem 0;
+  margin: 0 0.2rem 0.22rem 0 !important;
 }
 .pin-preview-actions {
   display: flex;
+  order: 1;
   flex: 0 0 auto;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.38rem;
+  justify-content: flex-start;
+  gap: 0.42rem;
   min-width: 0;
 }
 .pin-preview-actions > a,
 .pin-preview-actions > span {
   display: inline-flex;
   min-width: 0;
+}
+.pin-preview-actions .button,
+.pin-preview-actions .source-text-button,
+.pin-preview-actions .source-missing-pill {
+  min-height: 32px;
+  border: 1px solid var(--color-accent-border) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--color-accent-strong) !important;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-surface-card) 32%, transparent), transparent 46%),
+    var(--color-accent-soft) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-surface-card) 36%, transparent);
+  font-weight: 750;
+  transition:
+    color var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease),
+    border-color var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease),
+    background-color var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease),
+    box-shadow var(--motion-duration-standard, 240ms) var(--motion-ease-standard, ease),
+    transform var(--motion-duration-fast, 160ms) var(--motion-ease-standard, ease);
+}
+.pin-preview-actions .button:hover:not([disabled]),
+.pin-preview-actions .button:focus-visible,
+.pin-preview-actions .source-text-button:hover,
+.pin-preview-actions .source-text-button:focus-visible {
+  border-color: var(--color-accent) !important;
+  color: var(--color-accent-text) !important;
+  background: var(--color-accent-strong) !important;
+  box-shadow: 0 7px 18px var(--color-theme-glow);
+  transform: translate3d(0, -1px, 0);
+}
+.pin-preview-actions .button:focus-visible,
+.pin-preview-actions .source-text-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring), 0 7px 18px var(--color-theme-glow);
+}
+.pin-preview-actions .button:disabled {
+  opacity: 0.54;
+}
+.pin-preview-actions .source-missing-pill {
+  color: var(--color-text-muted) !important;
+  background: var(--color-surface-2) !important;
 }
 .meta-link {
   margin: 0 !important;
@@ -721,17 +768,11 @@ export default {
 }
 .source-text-button {
   overflow: hidden;
-  color: var(--accent-soft-text, #8fb8ff);
-  border: 1px solid var(--accent-border, rgba(143, 184, 255, 0.22));
-  background: var(--accent-soft, rgba(31, 111, 235, 0.1));
-  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .source-missing-pill {
-  color: #d7bd75;
-  border: 1px solid rgba(215, 189, 117, 0.25);
-  background: rgba(215, 189, 117, 0.1);
+  color: var(--color-text-muted);
 }
 .preview-loading {
   position: absolute;
@@ -741,13 +782,13 @@ export default {
   width: min(420px, calc(100% - 32px));
   padding: 0.8rem 1rem;
   transform: translateX(-50%);
-  color: white;
+  color: var(--color-accent-text);
   text-align: center;
-  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.16));
-  border-radius: var(--radius-sm, 8px);
-  background: rgba(9, 12, 18, 0.64);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-text-primary) 64%, transparent);
   backdrop-filter: blur(10px);
-  box-shadow: var(--shadow-soft, 0 10px 24px rgba(0, 0, 0, 0.28));
+  box-shadow: var(--shadow-soft);
 }
 .preview-loading .progress {
   margin: 0.65rem auto 0;
@@ -819,9 +860,6 @@ export default {
   }
   .pin-preview-card {
     max-width: 96vw;
-  }
-  .pin-preview-details {
-    max-height: min(42vh, 320px);
   }
   .pin-preview-footer {
     gap: 0.58rem;
