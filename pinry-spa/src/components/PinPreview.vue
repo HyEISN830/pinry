@@ -2,10 +2,12 @@
   <div class="pin-preview-modal">
     <section class="pin-preview-surface">
         <article class="pin-preview-card motion-card-enter" :style="previewCardStyle">
-          <section class="pin-preview-stage">
+          <section
+            class="pin-preview-stage"
+            :class="{ 'is-landscape-preview': isLandscapePreview }">
             <div
               class="pin-preview-backdrop"
-              :style="previewFrameStyle"
+              :style="previewBackdropStyle"
               aria-hidden="true"></div>
             <img
               v-if="activePreviewUrl"
@@ -51,12 +53,6 @@
               <div class="pin-preview-meta">
                 <div class="pin-preview-identity">
                   <p class="pin-preview-author"><span class="dim">{{ $t("pinnedByTitle") }}</span><span class="author">{{ pinItem.author }}</span></p>
-                  <p v-show="pinItem.tags.length > 0" class="pin-preview-tags">
-                    <span class="dim">in&nbsp;</span>
-                    <template v-for="tag in pinItem.tags">
-                      <b-tag v-bind:key="tag" type="is-info" class="pin-preview-tag">{{ tag }}</b-tag>
-                    </template>
-                  </p>
                 </div>
                 <div class="pin-preview-actions">
                   <a
@@ -96,6 +92,13 @@
                     type="is-info">
                     {{ $t("downloadButton") }}
                   </b-button>
+                </div>
+                <div v-if="pinItem.tags.length > 0" class="pin-preview-tag-container">
+                  <div class="pin-preview-tags">
+                    <template v-for="tag in pinItem.tags">
+                      <b-tag v-bind:key="tag" type="is-info" class="pin-preview-tag">{{ tag }}</b-tag>
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>
@@ -167,9 +170,6 @@ export default {
       imageLoadFailed: false,
       imageLoading: true,
       imageRequestController: null,
-      lastPartialPreviewAt: 0,
-      partialPreviewUrl: null,
-      partialPreviewFailed: false,
       previewImageUrl: null,
       previewImageUrlFromCache: false,
       previewLayoutFrame: null,
@@ -183,13 +183,11 @@ export default {
   },
   computed: {
     activePreviewUrl() {
-      if (this.previewImageUrl) {
-        return this.previewImageUrl;
-      }
-      if (this.partialPreviewUrl && !this.partialPreviewFailed) {
-        return this.partialPreviewUrl;
-      }
-      return this.pinItem.url;
+      return this.previewImageUrl || this.pinItem.url;
+    },
+    previewBackdropStyle() {
+      const source = this.pinItem.url || this.previewImageUrl;
+      return source ? { backgroundImage: `url("${source}")` } : {};
     },
     downloadPercent() {
       if (!this.downloadTotal) {
@@ -212,6 +210,9 @@ export default {
         && !this.motionVideoFailed
       );
     },
+    isLandscapePreview() {
+      return this.previewNaturalWidth > this.previewNaturalHeight;
+    },
     previewImageStyle() {
       if (!this.previewPopupGeometry) {
         return {};
@@ -227,6 +228,8 @@ export default {
       }
       return {
         '--pin-preview-details-height': `${this.previewPopupGeometry.detailsHeight}px`,
+        '--pin-preview-stage-padding-x': `${this.previewPopupGeometry.horizontalPadding}px`,
+        '--pin-preview-stage-padding-y': `${this.previewPopupGeometry.verticalPadding}px`,
         width: `${this.previewPopupGeometry.width}px`,
         height: `${this.previewPopupGeometry.height}px`,
       };
@@ -246,9 +249,6 @@ export default {
     }
     if (this.imageRequestController) {
       this.imageRequestController.abort();
-    }
-    if (this.partialPreviewUrl) {
-      URL.revokeObjectURL(this.partialPreviewUrl);
     }
     if (this.previewImageUrl && !this.previewImageUrlFromCache) {
       URL.revokeObjectURL(this.previewImageUrl);
@@ -295,28 +295,11 @@ export default {
         this.closeFullView();
       }
     },
-    updatePartialPreview(chunks) {
-      const now = Date.now();
-      if (now - this.lastPartialPreviewAt < 1000 || chunks.length === 0) {
-        return;
-      }
-      this.lastPartialPreviewAt = now;
-      if (this.partialPreviewUrl) {
-        URL.revokeObjectURL(this.partialPreviewUrl);
-      }
-      this.partialPreviewUrl = URL.createObjectURL(
-        new Blob(chunks, { type: this.imageContentType }),
-      );
-      this.partialPreviewFailed = false;
-    },
     onPreviewImageError() {
       this.previewNaturalWidth = 0;
       this.previewNaturalHeight = 0;
       this.previewPopupGeometry = null;
-      if (!this.imageLoading || !this.partialPreviewUrl) {
-        return;
-      }
-      this.partialPreviewFailed = true;
+      this.imageLoadFailed = !this.pinItem.url;
     },
     onPreviewImageLoad(event) {
       const image = event.target;
@@ -344,17 +327,21 @@ export default {
       }
 
       const viewportGap = Math.min(32, Math.max(9, viewportWidth * 0.024));
-      const framePadding = Math.min(24, Math.max(10, viewportWidth * 0.018));
+      const horizontalPadding = Math.min(24, Math.max(10, viewportWidth * 0.018));
+      const isLandscape = this.previewNaturalWidth > this.previewNaturalHeight;
+      const verticalPadding = isLandscape
+        ? Math.min(12, Math.max(6, viewportWidth * 0.008))
+        : horizontalPadding;
       const maxWidth = Math.max(1, viewportWidth - (viewportGap * 2));
       const maxHeight = Math.max(1, viewportHeight - (viewportGap * 2));
-      const detailsHeightLimit = Math.min(240, Math.max(112, viewportHeight * 0.3));
+      const detailsHeightLimit = Math.min(320, Math.max(136, viewportHeight * 0.38));
       const content = this.$refs.previewContent;
       const detailsHeight = Math.min(
         detailsHeightLimit,
-        Math.max(88, content ? content.scrollHeight : 112),
+        Math.max(96, content ? content.scrollHeight + 2 : 136),
       );
-      const availableImageWidth = Math.max(1, maxWidth - (framePadding * 2));
-      const availableImageHeight = Math.max(1, maxHeight - detailsHeight - (framePadding * 2));
+      const availableImageWidth = Math.max(1, maxWidth - (horizontalPadding * 2));
+      const availableImageHeight = Math.max(1, maxHeight - detailsHeight - (verticalPadding * 2));
       // Standard contain geometry: one scale preserves the natural image ratio.
       // Do not cap at 1: thumbnails must grow to the available workspace too.
       const scale = Math.min(
@@ -366,23 +353,27 @@ export default {
       const minimumCardWidth = Math.min(360, maxWidth);
       const width = Math.round(Math.min(
         maxWidth,
-        Math.max(minimumCardWidth, imageWidth + (framePadding * 2)),
+        Math.max(minimumCardWidth, imageWidth + (horizontalPadding * 2)),
       ));
       const height = Math.round(Math.min(
         maxHeight,
-        imageHeight + (framePadding * 2) + detailsHeight,
+        imageHeight + (verticalPadding * 2) + detailsHeight,
       ));
       const nextGeometry = {
         detailsHeight,
         height,
+        horizontalPadding,
         imageHeight,
         imageWidth,
+        verticalPadding,
         width,
       };
       const geometryChanged = !this.previewPopupGeometry
         || this.previewPopupGeometry.detailsHeight !== detailsHeight
+        || this.previewPopupGeometry.horizontalPadding !== horizontalPadding
         || this.previewPopupGeometry.imageWidth !== imageWidth
         || this.previewPopupGeometry.imageHeight !== imageHeight
+        || this.previewPopupGeometry.verticalPadding !== verticalPadding
         || this.previewPopupGeometry.width !== width
         || this.previewPopupGeometry.height !== height;
       this.previewPopupGeometry = nextGeometry;
@@ -399,7 +390,6 @@ export default {
           }
           chunks.push(value);
           this.downloadLoaded += value.length;
-          this.updatePartialPreview(chunks);
           return this.readStream(reader, chunks);
         },
       );
@@ -443,10 +433,6 @@ export default {
       ).then(
         (blob) => {
           this.imageBlob = blob;
-          if (this.partialPreviewUrl) {
-            URL.revokeObjectURL(this.partialPreviewUrl);
-            this.partialPreviewUrl = null;
-          }
           const cachedImage = cacheImage(this.pinItem.image_id, blob);
           if (cachedImage) {
             this.previewImageUrl = cachedImage.objectUrl;
@@ -570,7 +556,7 @@ export default {
   place-items: center;
   min-width: 0;
   min-height: 0;
-  padding: clamp(10px, 1.8vw, 24px);
+  padding: var(--pin-preview-stage-padding-y, clamp(10px, 1.8vw, 24px)) var(--pin-preview-stage-padding-x, clamp(10px, 1.8vw, 24px));
   overflow: hidden;
   isolation: isolate;
   background: var(--surface-2, rgba(15, 20, 31, 0.96));
@@ -582,8 +568,8 @@ export default {
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  filter: blur(32px) saturate(0.72) brightness(0.62);
-  opacity: 0.56;
+  filter: blur(22px) saturate(0.84) brightness(0.72);
+  opacity: 0.5;
   transform: scale(1.08);
 }
 .pin-preview-stage::after {
@@ -629,8 +615,9 @@ export default {
 .pin-preview-details {
   z-index: 4;
   box-sizing: border-box;
-  max-height: min(30vh, 240px);
-  overflow: auto;
+  max-height: min(38vh, 320px);
+  overflow-x: hidden;
+  overflow-y: auto;
   border-top: 1px solid var(--line-soft, rgba(255, 255, 255, 0.1));
   background: var(--surface-card, rgba(12, 16, 24, 0.98));
   overscroll-behavior: contain;
@@ -694,6 +681,13 @@ export default {
   color: var(--text-muted, #97a3b8);
   font-size: 0.76rem;
   line-height: 1.55;
+}
+.pin-preview-tag-container {
+  grid-column: 1 / -1;
+  padding-top: 0.1rem;
+}
+.pin-preview-tags {
+  margin-top: 0;
 }
 .pin-preview-tag {
   margin: 0 0.2rem 0.22rem 0;
@@ -827,7 +821,7 @@ export default {
     max-width: 96vw;
   }
   .pin-preview-details {
-    max-height: min(38vh, 280px);
+    max-height: min(42vh, 320px);
   }
   .pin-preview-footer {
     gap: 0.58rem;
