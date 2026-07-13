@@ -4,7 +4,7 @@
         <header class="modal-card-head create-modal-head">
           <div class="create-modal-title-block">
             <span class="create-modal-icon" aria-hidden="true">
-              <b-icon icon="folder-plus-outline" custom-size="mdi-22px"></b-icon>
+              <b-icon icon="folder-multiple-image" custom-size="mdi-22px"></b-icon>
             </span>
             <div>
               <span class="create-modal-kicker">{{ $t('boardLink') }}</span>

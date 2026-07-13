@@ -4,7 +4,7 @@
       <header class="modal-card-head create-modal-head">
         <div class="create-modal-title-block">
           <span class="create-modal-icon" aria-hidden="true">
-            <b-icon icon="book-plus-outline" custom-size="mdi-22px"></b-icon>
+            <b-icon icon="book-open-page-variant-outline" custom-size="mdi-22px"></b-icon>
           </span>
           <div>
             <span class="create-modal-kicker">{{ $t('comicLink') }}</span>

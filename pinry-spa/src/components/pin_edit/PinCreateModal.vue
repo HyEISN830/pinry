@@ -96,19 +96,19 @@
                 </b-input>
               </b-field>
             </div>
-            <div class="column" v-if="!isEdit && defaultBoard">
+            <div class="column create-pin-board-column" v-if="!isEdit && defaultBoard">
               <div class="fixed-board-card">
                 <span class="fixed-board-label">{{ $t("fixedBoardLabel") }}</span>
                 <strong>{{ defaultBoard.name }}</strong>
               </div>
             </div>
-            <div class="column" v-if="!isEdit && !defaultBoard">
+            <div class="column create-pin-board-column" v-if="!isEdit && !defaultBoard">
               <FilterSelect
                 :allOptions="boardOptions"
                 v-on:selected="onSelectBoard"
               ></FilterSelect>
             </div>
-            <div class="column" v-if="isEdit">
+            <div class="column create-pin-board-column" v-if="isEdit">
               <FilterSelect
                 :allOptions="boardOptions"
                 :selected-values="boardIds"
@@ -474,11 +474,20 @@ export default {
 
 <style lang="scss" scoped>
 .create-pin-card { --create-modal-width: 1180px; }
-.create-pin-layout { align-items: flex-start; }
-.create-pin-media-column,
-.create-pin-fields-column { min-width: 0; }
-.create-pin-media-column { flex-basis: min(100%, 320px); }
-.create-pin-fields-column { flex: 1 1 360px; }
+.create-pin-layout {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 260px)
+    minmax(330px, 1fr)
+    minmax(290px, 340px);
+  gap: var(--space-md);
+  align-items: start;
+  margin: 0;
+}
+.create-pin-layout > .column {
+  min-width: 0;
+  padding: 0;
+}
 .description {
   margin-top: var(--space-sm);
   padding: var(--space-sm);
@@ -504,9 +513,20 @@ export default {
   font-size: 0.78rem;
   font-weight: 850;
 }
+@media screen and (max-width: 960px) {
+  .create-pin-layout {
+    grid-template-columns: minmax(220px, 260px) minmax(320px, 1fr);
+  }
+  .create-pin-board-column {
+    grid-column: 1 / -1;
+  }
+}
 @media screen and (max-width: 768px) {
-  .create-pin-media-column {
-    flex-basis: 100%;
+  .create-pin-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .create-pin-board-column {
+    grid-column: auto;
   }
 }
 </style>
