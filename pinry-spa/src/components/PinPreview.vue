@@ -239,6 +239,7 @@ export default {
     this.loadOriginalImage();
   },
   mounted() {
+    this.lockBodyScroll();
     document.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.queuePreviewLayout);
   },
@@ -281,14 +282,12 @@ export default {
         return;
       }
       this.fullViewOpen = true;
-      this.lockBodyScroll();
     },
     closeFullView() {
       if (!this.fullViewOpen) {
         return;
       }
       this.fullViewOpen = false;
-      this.unlockBodyScroll();
     },
     onKeydown(event) {
       if (event.key === 'Escape') {
@@ -332,13 +331,18 @@ export default {
       const verticalPadding = isLandscape
         ? Math.min(16, Math.max(9, viewportWidth * 0.011))
         : horizontalPadding;
-      const maxWidth = Math.max(1, viewportWidth - (viewportGap * 2));
-      const maxHeight = Math.max(1, viewportHeight - (viewportGap * 2));
+      const cardBorderSize = 2;
+      const maxWidth = Math.max(
+        1,
+        viewportWidth - (viewportGap * 2) - cardBorderSize,
+      );
+      const maxHeight = Math.max(
+        1,
+        viewportHeight - (viewportGap * 2) - cardBorderSize,
+      );
       const content = this.$refs.previewContent;
-      // Details remain a single natural-height information flow.  Reserve a
-      // sensible viewport share for it when sizing the image; if long metadata
-      // needs more than that, the *modal viewport* scrolls rather than clipping
-      // the details or creating an inner details scroller.
+      // Keep the complete card inside the viewport. Long metadata stays
+      // accessible through the details area's own contained scroll region.
       const naturalDetailsHeight = Math.max(96, content ? content.scrollHeight + 2 : 136);
       const detailsBudget = Math.max(96, Math.floor(maxHeight * 0.42));
       const allocatedDetailsHeight = Math.min(naturalDetailsHeight, detailsBudget);
@@ -359,7 +363,7 @@ export default {
       ));
       const stageHeight = imageHeight + (verticalPadding * 2);
       const nextGeometry = {
-        detailsHeight: naturalDetailsHeight,
+        detailsHeight: allocatedDetailsHeight,
         horizontalPadding,
         imageHeight,
         imageWidth,
@@ -368,7 +372,7 @@ export default {
         width,
       };
       const geometryChanged = !this.previewPopupGeometry
-        || this.previewPopupGeometry.detailsHeight !== naturalDetailsHeight
+        || this.previewPopupGeometry.detailsHeight !== allocatedDetailsHeight
         || this.previewPopupGeometry.horizontalPadding !== horizontalPadding
         || this.previewPopupGeometry.imageWidth !== imageWidth
         || this.previewPopupGeometry.imageHeight !== imageHeight
@@ -516,30 +520,41 @@ export default {
 
 .pin-preview-modal {
   --pin-preview-viewport-gap: clamp(12px, 2.4vw, 32px);
+  box-sizing: border-box;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   width: 100%;
+  height: 100%;
   min-height: 0;
+  max-height: 100%;
   padding: var(--pin-preview-viewport-gap) 0;
+  overflow: hidden;
 }
 .pin-preview-surface {
+  box-sizing: border-box;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   width: auto;
   min-width: 0;
   min-height: 0;
+  max-height: 100%;
   max-width: 100%;
+  overflow: hidden;
 }
 .pin-preview-card {
+  box-sizing: border-box;
   display: grid;
-  grid-template-rows: var(--pin-preview-stage-height, auto) auto;
+  grid-template-rows:
+    minmax(0, var(--pin-preview-stage-height, auto))
+    minmax(0, var(--pin-preview-details-height, auto));
   width: min(92vw, 680px);
   height: auto;
   min-width: 0;
   min-height: 0;
   max-width: 100%;
+  max-height: 100%;
   overflow: hidden;
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-md);
@@ -614,10 +629,13 @@ export default {
   opacity: 1;
 }
 .pin-preview-details {
+  position: relative;
   z-index: 4;
   box-sizing: border-box;
-  max-height: none;
-  overflow: visible;
+  min-height: 0;
+  max-height: var(--pin-preview-details-height, none);
+  overflow-x: hidden;
+  overflow-y: auto;
   border-top: 1px solid var(--color-line-soft);
   background: var(--color-surface-card);
   overscroll-behavior: contain;
@@ -687,6 +705,9 @@ export default {
   order: 2;
   min-width: 0;
   padding-top: 0.08rem;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .pin-preview-tags {
   margin-top: 0;
@@ -694,8 +715,15 @@ export default {
 .pin-preview-tag {
   margin: 0 0.2rem 0.22rem 0 !important;
   cursor: default;
+  pointer-events: none;
   user-select: none;
   -webkit-user-select: none;
+}
+.pin-preview-tag-container *,
+.pin-preview-tag * {
+  cursor: default !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 .pin-preview-actions {
   display: flex;

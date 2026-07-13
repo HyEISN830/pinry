@@ -304,12 +304,16 @@ export default {
     align-items: center;
     width: min(96vw, 1600px);
     min-width: 0;
-    max-height: calc(100vh - 24px);
-    margin: 12px auto;
-    overflow: visible;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    margin: 0 auto;
+    overflow: hidden;
   }
   .pin-preview-at-home {
     z-index: 140;
+    overflow: hidden;
   }
   .pin-preview-at-home .modal-close {
     z-index: 150;
