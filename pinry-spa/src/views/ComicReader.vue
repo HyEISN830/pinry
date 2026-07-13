@@ -144,16 +144,10 @@
               :src="pageUrl(page)"
               :alt="`${comic.title} ${page.order}`"
               :class="{ 'is-original': loadedPages[page.id] }">
-            <div class="page-progress" v-if="pageLoading[page.id]">
-              <span>{{ pageProgressText(page) }}</span>
-              <progress
-                v-if="pageProgress[page.id] !== null"
-                class="progress is-info"
-                :value="pageProgress[page.id]"
-                max="100">
-                {{ pageProgress[page.id] }}%
-              </progress>
-            </div>
+            <ComicImageLoadProgress
+              v-if="pageLoading[page.id]"
+              :progress="pageProgress[page.id]">
+            </ComicImageLoadProgress>
             <figcaption v-if="page.caption">{{ page.caption }}</figcaption>
           </figure>
         </div>
@@ -177,7 +171,9 @@
       tabindex="0"
       @keydown.left.prevent="goFullPage(-1)"
       @keydown.right.prevent="goFullPage(1)"
-      @keydown.esc.prevent="closeFullReader">
+      @keydown.esc.prevent="closeFullReader"
+      @wheel.stop
+      @touchmove.stop>
       <div class="full-reader-bar">
         <strong>{{ comic.title }}</strong>
         <div class="full-reader-actions">
@@ -203,16 +199,10 @@
             :alt="`${comic.title} ${page.order}`"
             :class="{ 'is-original': loadedPages[page.id] }"
             @load="scheduleFullPageMeasure">
-          <div class="page-progress" v-if="pageLoading[page.id]">
-            <span>{{ pageProgressText(page) }}</span>
-            <progress
-              v-if="pageProgress[page.id] !== null"
-              class="progress is-info"
-              :value="pageProgress[page.id]"
-              max="100">
-              {{ pageProgress[page.id] }}%
-            </progress>
-          </div>
+          <ComicImageLoadProgress
+            v-if="pageLoading[page.id]"
+            :progress="pageProgress[page.id]">
+          </ComicImageLoadProgress>
         </figure>
       </div>
     </div>
@@ -221,6 +211,7 @@
 
 <script>
 import API from '../components/api';
+import ComicImageLoadProgress from '../components/comic/ComicImageLoadProgress.vue';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import {
@@ -253,6 +244,7 @@ function uniqueTags(tags) {
 export default {
   name: 'ComicReader',
   components: {
+    ComicImageLoadProgress,
     PHeader,
     loadingSpinner,
   },
@@ -271,6 +263,7 @@ export default {
       filteredTagOptions: [],
       fullPageObserver: null,
       fullPageMeasureFrame: null,
+      fullReaderBodyOverflowSnapshot: null,
       fullReaderScrollElement: null,
       fullReaderOpen: false,
       currentFullPageOrder: 1,
@@ -331,6 +324,7 @@ export default {
   },
   beforeDestroy() {
     this.disconnectFullPageObserver();
+    this.unlockFullReaderScroll();
   },
   methods: {
     fetchUser() {
@@ -480,6 +474,10 @@ export default {
       );
     },
     openFullReader() {
+      if (this.fullReaderOpen) {
+        return;
+      }
+      this.lockFullReaderScroll();
       this.fullReaderOpen = true;
       this.currentFullPageOrder = 1;
       this.$nextTick(
@@ -498,6 +496,23 @@ export default {
     closeFullReader() {
       this.fullReaderOpen = false;
       this.disconnectFullPageObserver();
+      this.unlockFullReaderScroll();
+    },
+    lockFullReaderScroll() {
+      if (this.fullReaderBodyOverflowSnapshot !== null) {
+        return;
+      }
+      const { body } = document;
+      this.fullReaderBodyOverflowSnapshot = body.style.overflow;
+      body.style.overflow = 'hidden';
+    },
+    unlockFullReaderScroll() {
+      if (this.fullReaderBodyOverflowSnapshot === null) {
+        return;
+      }
+      const { body } = document;
+      body.style.overflow = this.fullReaderBodyOverflowSnapshot;
+      this.fullReaderBodyOverflowSnapshot = null;
     },
     disconnectFullPageObserver() {
       if (this.fullPageObserver) {
@@ -627,12 +642,6 @@ export default {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       this.currentFullPageOrder = nextOrder;
-    },
-    pageProgressText(page) {
-      if (this.pageProgress[page.id] === null) {
-        return this.$t('imageLoadingText');
-      }
-      return `${this.pageProgress[page.id]}%`;
     },
     fetchTagList() {
       API.Tag.fetchList().then(
@@ -964,37 +973,17 @@ export default {
   transform: translate(-50%, -50%);
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.24);
 }
-.page-progress {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  left: 12px;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 8px;
-  color: #fff;
-  background: rgba(15, 23, 42, 0.58);
-  backdrop-filter: blur(8px);
-  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.24);
-  text-align: left;
-}
-.page-progress span {
-  display: block;
-  margin-bottom: 0.4rem;
-  font-size: 0.85rem;
-  font-weight: 800;
-}
-.page-progress .progress {
-  height: 0.45rem;
-  margin-bottom: 0;
-}
 .comic-full-reader {
   position: fixed;
-  z-index: 80;
+  z-index: calc(var(--z-modal, 140) + 80);
   inset: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   color: #f8fafc;
   background: #080b12;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 .full-reader-bar {
   position: sticky;
@@ -1079,11 +1068,6 @@ export default {
   .full-reader-pages {
     gap: 0.8rem;
     padding: 0.75rem;
-  }
-  .page-progress {
-    right: 8px;
-    bottom: 8px;
-    left: 8px;
   }
 }
 
