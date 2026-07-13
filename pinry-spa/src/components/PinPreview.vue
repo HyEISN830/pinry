@@ -1,66 +1,59 @@
 <template>
   <div class="pin-preview-modal">
     <section class="pin-preview-surface">
-        <div
-          class="card motion-card-enter"
-          :class="{ 'has-image-geometry': hasPreviewGeometry }"
-          :style="previewCardStyle">
-          <div class="card-image">
-            <figure class="image preview-frame" :style="previewFrameStyle">
-              <img
-                v-if="activePreviewUrl"
-                :src="activePreviewUrl"
-                alt="Image"
-                @load="onPreviewImageLoad"
-                @error="onPreviewImageError"
-                :class="{ 'is-loading-preview': imageLoading }">
-              <video
-                v-if="hasMotionPhoto"
-                ref="motionVideo"
-                class="motion-preview-video"
-                :class="{ 'is-active': motionVideoActive }"
-                :src="pinItem.motion_photo.video"
-                muted
-                playsinline
-                preload="metadata"
-                @play="motionVideoActive = true"
-                @ended="onMotionVideoEnded"
-                @error="motionVideoFailed = true">
-              </video>
-              <div v-if="imageLoading || imageLoadFailed" class="preview-loading">
-                <p v-if="imageLoadFailed">{{ $t("imageLoadFailedText") }}</p>
-                <p v-else>{{ $t("imageLoadingText") }}</p>
-                <progress
-                  v-if="imageLoading && downloadPercent !== null"
-                  class="progress is-info"
-                  :value="downloadPercent"
-                  max="100">
-                  {{ downloadPercent }}%
-                </progress>
-              </div>
-            </figure>
-          </div>
-          <div ref="previewContent" class="card-content">
-            <div class="content">
-                <p class="description title" v-html="niceLinks(pinItem.description)"></p>
+        <article class="pin-preview-card motion-card-enter" :style="previewCardStyle">
+          <section class="pin-preview-stage" :style="previewFrameStyle">
+            <img
+              v-if="activePreviewUrl"
+              class="pin-preview-image"
+              :src="activePreviewUrl"
+              alt="Image"
+              @load="onPreviewImageLoad"
+              @error="onPreviewImageError"
+              :class="{ 'is-loading-preview': imageLoading }">
+            <video
+              v-if="hasMotionPhoto"
+              ref="motionVideo"
+              class="motion-preview-video"
+              :class="{ 'is-active': motionVideoActive }"
+              :src="pinItem.motion_photo.video"
+              muted
+              playsinline
+              preload="metadata"
+              @play="motionVideoActive = true"
+              @ended="onMotionVideoEnded"
+              @error="motionVideoFailed = true">
+            </video>
+            <div v-if="imageLoading || imageLoadFailed" class="preview-loading">
+              <p v-if="imageLoadFailed">{{ $t("imageLoadFailedText") }}</p>
+              <p v-else>{{ $t("imageLoadingText") }}</p>
+              <progress
+                v-if="imageLoading && downloadPercent !== null"
+                class="progress is-info"
+                :value="downloadPercent"
+                max="100">
+                {{ downloadPercent }}%
+              </progress>
             </div>
-            <div class="media">
-              <div class="media-left">
-                <figure class="image is-48x48">
-                  <img :src="pinItem.avatar" alt="Image">
-                </figure>
-              </div>
-              <div class="media-content">
-                <div class="is-pulled-left">
-                  <p class="title is-4 pin-meta-info"><span class="dim">{{ $t("pinnedByTitle") }}</span><span class="author">{{ pinItem.author }}</span></p>
-                  <p class="subtitle is-6" v-show="pinItem.tags.length > 0">
-                    <span class="subtitle dim">in&nbsp;</span>
+          </section>
+          <section ref="previewContent" class="pin-preview-details">
+            <p
+              v-if="pinItem.description"
+              class="pin-preview-description"
+              v-html="niceLinks(pinItem.description)"></p>
+            <div class="pin-preview-footer">
+              <img class="pin-preview-avatar" :src="pinItem.avatar" alt="Image">
+              <div class="pin-preview-meta">
+                <div class="pin-preview-identity">
+                  <p class="pin-preview-author"><span class="dim">{{ $t("pinnedByTitle") }}</span><span class="author">{{ pinItem.author }}</span></p>
+                  <p v-show="pinItem.tags.length > 0" class="pin-preview-tags">
+                    <span class="dim">in&nbsp;</span>
                     <template v-for="tag in pinItem.tags">
                       <b-tag v-bind:key="tag" type="is-info" class="pin-preview-tag">{{ tag }}</b-tag>
                     </template>
                   </p>
                 </div>
-                <div class="is-pulled-right">
+                <div class="pin-preview-actions">
                   <a
                     v-if="isWebUrl(pinItem.referer)"
                     v-source-tooltip
@@ -68,11 +61,7 @@
                     :data-source-tip="sourceText(pinItem.referer)"
                     target="_blank"
                     rel="noopener">
-                    <b-button
-                        class="meta-link"
-                        type="is-warning">
-                      {{ $t("sourceButton") }}
-                    </b-button>
+                    <b-button class="meta-link" type="is-warning">{{ $t("sourceButton") }}</b-button>
                   </a>
                   <span
                     v-else-if="hasSource(pinItem.referer)"
@@ -82,43 +71,31 @@
                     :data-source-tip="sourceText(pinItem.referer)">
                     {{ sourceText(pinItem.referer) }}
                   </span>
-                  <span v-else class="meta-link source-missing-pill">
-                    {{ $t("missingSourceNotice") }}
-                  </span>
-                  <a :href="pinItem.original_image_url" target="_blank">
-                    <b-button
-                        v-show="pinItem.original_image_url !== null"
-                        class="meta-link"
-                        type="is-link">
-                        {{ $t("originalImageButton") }}
-                    </b-button>
+                  <span v-else class="meta-link source-missing-pill">{{ $t("missingSourceNotice") }}</span>
+                  <a v-if="pinItem.original_image_url" :href="pinItem.original_image_url" target="_blank" rel="noopener">
+                    <b-button class="meta-link" type="is-link">{{ $t("originalImageButton") }}</b-button>
                   </a>
+                  <b-button @click="closeAndGoTo" class="meta-link" type="is-success">{{ $t("permalinkButton") }}</b-button>
                   <b-button
-                      @click="closeAndGoTo"
-                      class="meta-link"
-                      type="is-success">
-                      {{ $t("permalinkButton") }}
+                    @click="openFullView"
+                    :disabled="!previewImageUrl || imageLoading"
+                    class="meta-link"
+                    type="is-primary">
+                    {{ $t("viewFullImageButton") }}
                   </b-button>
                   <b-button
-                      @click="openFullView"
-                      :disabled="!previewImageUrl || imageLoading"
-                      class="meta-link"
-                      type="is-primary">
-                      {{ $t("viewFullImageButton") }}
-                  </b-button>
-                  <b-button
-                      @click="downloadImage"
-                      :disabled="!imageBlob"
-                      :loading="imageLoading"
-                      class="meta-link"
-                      type="is-info">
-                      {{ $t("downloadButton") }}
+                    @click="downloadImage"
+                    :disabled="!imageBlob"
+                    :loading="imageLoading"
+                    class="meta-link"
+                    type="is-info">
+                    {{ $t("downloadButton") }}
                   </b-button>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </section>
+        </article>
     </section>
     <div
       v-if="fullViewOpen"
@@ -229,9 +206,6 @@ export default {
         && this.pinItem.motion_photo.video
         && !this.motionVideoFailed
       );
-    },
-    hasPreviewGeometry() {
-      return !!this.previewPopupGeometry;
     },
     previewCardStyle() {
       if (!this.previewPopupGeometry) {
@@ -552,9 +526,163 @@ export default {
   max-width: 100%;
   max-height: inherit;
 }
+.pin-preview-card {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: min(92vw, 680px);
+  height: min(78vh, 560px);
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
+  overflow: hidden;
+  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-md, 18px);
+  background: var(--surface-card, rgba(12, 16, 24, 0.96));
+  box-shadow: var(--shadow-floating, 0 24px 70px rgba(0, 0, 0, 0.45));
+  transition: width 180ms cubic-bezier(0.2, 0.8, 0.2, 1), height 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.pin-preview-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(10px, 1.8vw, 24px);
+  overflow: hidden;
+  background-color: var(--surface-2, rgba(15, 20, 31, 0.96));
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+.pin-preview-stage::before {
+  position: absolute;
+  inset: -16px;
+  z-index: 0;
+  background: inherit;
+  background-size: cover;
+  content: '';
+  filter: blur(22px) saturate(1.08);
+  opacity: 0.3;
+  transform: scale(1.08);
+}
+.pin-preview-image {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  transition: filter 180ms ease, opacity 180ms ease;
+}
+.pin-preview-image.is-loading-preview {
+  filter: blur(1.5px);
+  opacity: 0.78;
+}
+.motion-preview-video {
+  position: absolute;
+  z-index: 2;
+  inset: clamp(10px, 1.8vw, 24px);
+  width: calc(100% - clamp(20px, 3.6vw, 48px));
+  height: calc(100% - clamp(20px, 3.6vw, 48px));
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+}
+.motion-preview-video.is-active {
+  opacity: 1;
+}
+.pin-preview-details {
+  z-index: 4;
+  box-sizing: border-box;
+  max-height: min(30vh, 240px);
+  overflow: auto;
+  border-top: 1px solid var(--line-soft, rgba(255, 255, 255, 0.1));
+  background: var(--surface-card, rgba(12, 16, 24, 0.98));
+  overscroll-behavior: contain;
+}
+.pin-preview-description {
+  margin: 0;
+  padding: 0.7rem clamp(0.85rem, 1.8vw, 1.2rem);
+  border-bottom: 1px solid var(--line-soft, rgba(255, 255, 255, 0.08));
+  color: var(--text-strong, #f3f6fb);
+  font-family: var(--font-display, inherit);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+.pin-preview-footer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.72rem;
+  padding: 0.78rem clamp(0.85rem, 1.8vw, 1.2rem);
+}
+.pin-preview-avatar {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.16));
+  border-radius: 50%;
+  object-fit: cover;
+}
+.pin-preview-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: start;
+  min-width: 0;
+}
+.pin-preview-identity {
+  min-width: 0;
+}
+.pin-preview-author,
+.pin-preview-tags {
+  margin: 0;
+}
+.pin-preview-author {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: baseline;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+.pin-preview-author .author {
+  overflow: hidden;
+  color: var(--text-strong, #f3f6fb);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dim {
+  @include secondary-font-color-in-dark;
+}
+.pin-preview-tags {
+  margin-top: 0.32rem;
+  color: var(--text-muted, #97a3b8);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+.pin-preview-tag {
+  margin: 0 0.2rem 0.22rem 0;
+}
+.pin-preview-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.38rem;
+  min-width: 0;
+}
+.pin-preview-actions > a,
+.pin-preview-actions > span {
+  display: inline-flex;
+  min-width: 0;
+}
 .meta-link {
-  margin-left: 0.45rem;
-  margin-bottom: 0.35rem;
+  margin: 0 !important;
 }
 .source-text-button,
 .source-missing-pill {
@@ -563,17 +691,16 @@ export default {
   min-height: 2.25em;
   max-width: 220px;
   padding: 0 0.75em;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  border-radius: var(--radius-sm, 8px);
+  font-size: 0.8125rem;
   line-height: 1.5;
-  vertical-align: top;
 }
 .source-text-button {
   overflow: hidden;
-  color: #8fb8ff;
-  border: 1px solid rgba(143, 184, 255, 0.22);
-  background: rgba(31, 111, 235, 0.1);
-  font-weight: 600;
+  color: var(--accent-soft-text, #8fb8ff);
+  border: 1px solid var(--accent-border, rgba(143, 184, 255, 0.22));
+  background: var(--accent-soft, rgba(31, 111, 235, 0.1));
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -582,150 +709,24 @@ export default {
   border: 1px solid rgba(215, 189, 117, 0.25);
   background: rgba(215, 189, 117, 0.1);
 }
-.dim {
-  @include secondary-font-color-in-dark;
-}
-.pin-meta-info {
-  line-height: 16px;
-}
-.card {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-  width: min(92vw, 680px);
-  min-width: min(92vw, 300px);
-  height: min(78vh, 560px);
-  max-width: 100%;
-  max-height: calc(100vh - (var(--pin-preview-viewport-gap) * 2));
-  margin: 0 auto;
-  overflow: hidden;
-  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.12));
-  border-radius: var(--radius-md, 18px);
-  background:
-    radial-gradient(circle at top left, var(--theme-glow, rgba(126, 87, 194, 0.2)), transparent 42%),
-    var(--surface-card, rgba(12, 16, 24, 0.94));
-  box-shadow: var(--shadow-floating, 0 24px 70px rgba(0, 0, 0, 0.45));
-  transition:
-    width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    height 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  .card-image {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-  }
-  .content {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-  .card-content {
-    position: relative;
-    z-index: 4;
-    max-height: min(30vh, 240px);
-    overflow: auto;
-    border-top: 1px solid var(--line-soft, rgba(255, 255, 255, 0.1));
-    background: var(--surface-card, rgba(12, 16, 24, 0.96));
-    .author {
-      @include title-font-color-in-dark;
-    }
-    padding: 0;
-    .content {
-      padding: 0.75rem 0.9rem;
-      margin-bottom: 0;
-    }
-    .media {
-      padding: 0.85rem 0.9rem;
-    }
-  }
-  .description {
-    @include title-font;
-    @include title-font-color-in-dark;
-    font-size: 17px;
-    line-height: 1.45;
-    padding: 0;
-  }
-}
-.pin-preview-tag {
-  margin-right: 0.2rem;
-  margin-bottom: 2px;
-}
 .preview-loading {
   position: absolute;
   z-index: 3;
   left: 50%;
-  bottom: 24px;
-  width: min(420px, calc(100% - 40px));
-  padding: 1rem;
+  bottom: clamp(10px, 2vw, 24px);
+  width: min(420px, calc(100% - 32px));
+  padding: 0.8rem 1rem;
   transform: translateX(-50%);
   color: white;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 8px;
-  background: rgba(9, 12, 18, 0.56);
+  border: 1px solid var(--line-soft, rgba(255, 255, 255, 0.16));
+  border-radius: var(--radius-sm, 8px);
+  background: rgba(9, 12, 18, 0.64);
   backdrop-filter: blur(10px);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--shadow-soft, 0 10px 24px rgba(0, 0, 0, 0.28));
 }
 .preview-loading .progress {
-  margin: 0.75rem auto 0;
-}
-.preview-frame {
-  position: relative;
-  display: grid;
-  place-items: center;
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  margin: 0;
-  padding: clamp(12px, 1.8vw, 24px);
-  overflow: hidden;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-.preview-frame::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  background: inherit;
-  background-size: cover;
-  filter: blur(18px) saturate(1.08);
-  opacity: 0.34;
-  transform: scale(1.06);
-}
-.preview-frame img {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  margin: 0 auto;
-  padding: 0;
-  object-fit: contain;
-  object-position: center;
-  transition: filter .3s ease, opacity .3s ease;
-}
-.preview-frame img.is-loading-preview {
-  filter: blur(1.5px);
-  opacity: 0.78;
-}
-.motion-preview-video {
-  position: absolute;
-  z-index: 2;
-  inset: 20px;
-  width: calc(100% - 40px);
-  height: calc(100% - 40px);
-  object-fit: contain;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s ease;
-}
-.motion-preview-video.is-active {
-  opacity: 1;
+  margin: 0.65rem auto 0;
 }
 .full-image-viewer {
   position: fixed;
@@ -779,23 +780,40 @@ export default {
   margin: 0 auto;
   box-shadow: 0 18px 54px rgba(0, 0, 0, 0.45);
 }
+@media screen and (max-width: 720px) {
+  .pin-preview-meta {
+    grid-template-columns: 1fr;
+    gap: 0.62rem;
+  }
+  .pin-preview-actions {
+    justify-content: flex-start;
+  }
+}
 @media screen and (max-width: 542px) {
   .pin-preview-modal {
     --pin-preview-viewport-gap: 9px;
   }
-  .card-content {
+  .pin-preview-card {
+    width: min(96vw, 520px) !important;
+    min-height: min(72vh, 520px);
+  }
+  .pin-preview-details {
     max-height: min(38vh, 280px);
   }
-  .preview-frame {
-    padding: 10px;
+  .pin-preview-footer {
+    gap: 0.58rem;
+    padding: 0.7rem 0.8rem;
   }
-  .motion-preview-video {
-    inset: 10px;
-    width: calc(100% - 20px);
-    height: calc(100% - 20px);
+  .pin-preview-avatar {
+    width: 36px;
+    height: 36px;
   }
   .full-image-stage {
     padding: 0.8rem;
   }
+}
+
+html[data-motion='reduce'] .pin-preview-card {
+  transition: none;
 }
 </style>
