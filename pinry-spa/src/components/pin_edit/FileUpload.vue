@@ -90,24 +90,37 @@ export default {
 @import '../utils/loader';
 
 .preview > img {
-  width: $pin-preview-width;
+  width: min(100%, $pin-preview-width);
   height: auto;
-  border-radius: 8px;
-  box-shadow: 0 10px 26px rgba(16, 24, 40, 0.14);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
   @include loader();
 }
 .image-upload {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
 }
 .image-upload ::v-deep .upload-draggable {
-  border-color: #d8e0eb;
-  border-radius: 8px;
-  background: #f8fafc;
-  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+  width: 100%;
+  border-color: var(--color-line-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background:
+    radial-gradient(circle at top left, var(--color-theme-glow), transparent 180px),
+    var(--color-surface-2);
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+.image-upload ::v-deep .upload-draggable .section {
+  padding: var(--space-xl) var(--space-md);
 }
 .image-upload ::v-deep .upload-draggable:hover {
-  border-color: #1f6feb;
-  box-shadow: 0 10px 26px rgba(16, 24, 40, 0.12);
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+  box-shadow: var(--shadow-xs);
   transform: translateY(-2px);
 }
 

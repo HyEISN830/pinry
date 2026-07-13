@@ -1,10 +1,27 @@
 <template>
   <div class="comic-create-modal">
-    <div class="modal-card">
-      <header class="modal-card-head">
-        <p class="modal-card-title">{{ $t("NewComicTitle") }}</p>
+    <div class="modal-card create-modal-card create-comic-card">
+      <header class="modal-card-head create-modal-head">
+        <div class="create-modal-title-block">
+          <span class="create-modal-icon" aria-hidden="true">
+            <b-icon icon="book-plus-outline" custom-size="mdi-22px"></b-icon>
+          </span>
+          <div>
+            <span class="create-modal-kicker">{{ $t('comicLink') }}</span>
+            <p class="modal-card-title">{{ $t("NewComicTitle") }}</p>
+          </div>
+        </div>
+        <button
+          class="create-modal-close"
+          type="button"
+          :title="$t('closeButton')"
+          :aria-label="$t('closeButton')"
+          @click="$parent.close()">
+          <b-icon icon="close" custom-size="mdi-20px"></b-icon>
+        </button>
       </header>
-      <section class="modal-card-body">
+      <section class="modal-card-body create-modal-body">
+        <div class="create-comic-form">
         <b-field :label="$t('comicTitleLabel')">
           <b-input
             v-model="form.title"
@@ -61,16 +78,17 @@
             <strong>{{ file.name }}</strong>
           </div>
         </div>
+        </div>
       </section>
-      <footer class="modal-card-foot">
+      <footer class="modal-card-foot create-modal-foot">
         <button
-          class="button"
+          class="button create-modal-cancel"
           type="button"
           @click="$parent.close()">
           {{ $t("closeButton") }}
         </button>
         <button
-          class="button is-primary"
+          class="button is-primary create-modal-submit"
           :class="{ 'is-loading': saving }"
           :disabled="!canSave"
           @click="createComic">
@@ -247,37 +265,42 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.modal-card {
-  width: min(94vw, 760px);
-  max-height: 92vh;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.modal-card-body {
-  overflow: auto;
-}
+.create-comic-card { --create-modal-width: 760px; }
+.create-comic-form { display: grid; gap: var(--space-2xs); }
 .page-list {
-  max-height: 220px;
+  max-height: 240px;
   overflow: auto;
-  border: 1px solid #edf1f6;
-  border-radius: 8px;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
 }
 .page-row {
   display: flex;
-  gap: 0.6rem;
+  gap: var(--space-sm);
   align-items: center;
-  padding: 0.55rem 0.7rem;
-  border-bottom: 1px solid #edf1f6;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-line-soft);
 }
 .page-row:last-child {
   border-bottom: 0;
 }
 .page-row span {
+  display: inline-grid;
+  flex: 0 0 auto;
   width: 28px;
-  color: #64748b;
+  height: 28px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  font-size: 0.8rem;
+  font-weight: 900;
 }
-.button {
-  border-radius: 6px;
-  font-weight: 600;
+.page-row strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-text-strong);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

@@ -17,6 +17,7 @@ import './components/utils/home-theme-background.scss';
 import './components/utils/content-card-actions.scss';
 import './components/utils/user-shell.scss';
 import './components/utils/loading-system.scss';
+import './components/utils/create-modal-system.scss';
 // import './registerServiceWorker';
 
 

@@ -1,13 +1,28 @@
 <template>
   <div class="pin-create-modal">
-    <div>
-      <div class="modal-card">
-        <header class="modal-card-head">
-          <p class="modal-card-title">{{ $t(editorMeta.title) }}</p>
+      <div class="modal-card create-modal-card create-pin-card">
+        <header class="modal-card-head create-modal-head">
+          <div class="create-modal-title-block">
+            <span class="create-modal-icon" aria-hidden="true">
+              <b-icon icon="image-plus" custom-size="mdi-22px"></b-icon>
+            </span>
+            <div>
+              <span class="create-modal-kicker">{{ $t('pinLink') }}</span>
+              <p class="modal-card-title">{{ $t(editorMeta.title) }}</p>
+            </div>
+          </div>
+          <button
+            class="create-modal-close"
+            type="button"
+            :title="$t('closeButton')"
+            :aria-label="$t('closeButton')"
+            @click="$parent.close()">
+            <b-icon icon="close" custom-size="mdi-20px"></b-icon>
+          </button>
         </header>
-        <section class="modal-card-body">
-          <div class="columns">
-            <div class="column">
+        <section class="modal-card-body create-modal-body">
+          <div class="columns create-pin-layout">
+            <div class="column create-pin-media-column">
               <FileUpload
                 :previewImageURL="pinModel.form.url.value"
                 v-on:imageUploadSucceed="onUploadDone"
@@ -19,7 +34,7 @@
                 v-html="niceLinks(pinModel.form.description.value)">
               </div>
             </div>
-            <div class="column">
+            <div class="column create-pin-fields-column">
               <b-field v-bind:label="$t('imageUrlLabel')"
                        v-show="!disableUrlField && !isEdit"
                        :type="pinModel.form.url.type"
@@ -102,9 +117,9 @@
             </div>
           </div>
         </section>
-        <footer class="modal-card-foot">
+        <footer class="modal-card-foot create-modal-foot">
           <button
-            class="button"
+            class="button create-modal-cancel"
             type="button"
             @click="$parent.close()">
             {{ $t("closeButton") }}
@@ -112,16 +127,15 @@
           <button
             v-if="!isEdit"
             @click="createPin"
-            class="button is-primary">{{ $t("pinCreateModalCreatePinButton") }}
+            class="button is-primary create-modal-submit">{{ $t("pinCreateModalCreatePinButton") }}
           </button>
           <button
             v-if="isEdit"
             @click="savePin"
-            class="button is-primary">{{ $t("pinCreateModalSaveChangesButton") }}
+            class="button is-primary create-modal-submit">{{ $t("pinCreateModalSaveChangesButton") }}
           </button>
         </footer>
       </div>
-    </div>
   </div>
 </template>
 
@@ -408,12 +422,12 @@ export default {
       );
     },
     createPin() {
-      const loading = Loading.open(this);
-      const self = this;
-      let promise;
       if (isURLBlank(this.pinModel.form.url.value) && this.formUpload.imageId === null) {
         return;
       }
+      const loading = Loading.open(this);
+      const self = this;
+      let promise;
       if (this.formUpload.imageId === null) {
         this.normalizeTags();
         const data = this.pinModel.asDataByFields(fields);
@@ -431,7 +445,7 @@ export default {
           const promises = [];
           function done() {
             bus.bus.$emit(bus.events.refreshPin);
-            self.$emit('pinCreated', resp);
+            self.$emit('pinCreated', resp.data);
             self.$parent.close();
             loading.close();
           }
@@ -459,63 +473,40 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.modal-card {
-  width: min(96vw, 1180px);
-  max-height: 92vh;
-  overflow: hidden;
-  border: 1px solid #e7ebf2;
-  border-radius: 8px;
-  box-shadow: 0 24px 70px rgba(16, 24, 40, 0.22);
-}
-.modal-card-head,
-.modal-card-foot {
-  border-color: #edf1f6;
-  background: #f8fafc;
-}
-.modal-card-title {
-  color: #22313f;
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-.modal-card-body {
-  max-height: calc(92vh - 132px);
-  overflow: auto;
-  background: #fff;
-}
+.create-pin-card { --create-modal-width: 1180px; }
+.create-pin-layout { align-items: flex-start; }
+.create-pin-media-column,
+.create-pin-fields-column { min-width: 0; }
+.create-pin-media-column { flex-basis: min(100%, 320px); }
+.create-pin-fields-column { flex: 1 1 360px; }
 .description {
-  margin-top: 0.75rem;
-  padding: 0.8rem;
-  border: 1px solid #edf1f6;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #263238;
-  font-size: 14px;
+  margin-top: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  font-size: 0.9rem;
   line-height: 1.45;
 }
 .fixed-board-card {
-  padding: 0.9rem;
-  border: 1px solid #d7e6ff;
-  border-radius: 8px;
-  background: #f4f8ff;
-  color: #22313f;
+  padding: var(--space-md);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-strong);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-xs);
 }
 .fixed-board-label {
   display: block;
-  margin-bottom: 0.35rem;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 700;
-}
-.button {
-  border-radius: 6px;
-  font-weight: 600;
+  margin-bottom: var(--space-2xs);
+  color: var(--color-text-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 @media screen and (max-width: 768px) {
-  .modal-card {
-    width: 96vw;
-  }
-  .modal-card-body {
-    max-height: calc(92vh - 128px);
+  .create-pin-media-column {
+    flex-basis: 100%;
   }
 }
 </style>

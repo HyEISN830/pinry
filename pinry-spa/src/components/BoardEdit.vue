@@ -1,12 +1,27 @@
 <template>
   <div class="board-modal">
-    <div>
-      <div class="modal-card" style="width: auto">
-        <header class="modal-card-head">
-          <p class="modal-card-title">{{ $t(UIMeta.title) }}</p>
+      <div class="modal-card create-modal-card create-board-card">
+        <header class="modal-card-head create-modal-head">
+          <div class="create-modal-title-block">
+            <span class="create-modal-icon" aria-hidden="true">
+              <b-icon icon="folder-plus-outline" custom-size="mdi-22px"></b-icon>
+            </span>
+            <div>
+              <span class="create-modal-kicker">{{ $t('boardLink') }}</span>
+              <p class="modal-card-title">{{ $t(UIMeta.title) }}</p>
+            </div>
+          </div>
+          <button
+            class="create-modal-close"
+            type="button"
+            :title="$t('closeButton')"
+            :aria-label="$t('closeButton')"
+            @click="$parent.close()">
+            <b-icon icon="close" custom-size="mdi-20px"></b-icon>
+          </button>
         </header>
-        <section class="modal-card-body">
-          <div v-if="!isEdit">
+        <section class="modal-card-body create-modal-body">
+          <div class="create-board-form" v-if="!isEdit">
             <b-field v-bind:label="$t('nameLabel')"
                        :type="createModel.form.name.type"
                        :message="createModel.form.name.error">
@@ -26,7 +41,7 @@
                 </b-checkbox>
               </b-field>
           </div>
-          <div v-if="isEdit">
+          <div class="create-board-form" v-if="isEdit">
             <b-field v-bind:label="$t('nameLabel')"
                        :type="editModel.form.name.type"
                        :message="editModel.form.name.error">
@@ -47,21 +62,20 @@
               </b-field>
           </div>
         </section>
-        <footer class="modal-card-foot">
-          <button class="button" type="button" @click="$parent.close()">{{ $t("closeButton") }}</button>
+        <footer class="modal-card-foot create-modal-foot">
+          <button class="button create-modal-cancel" type="button" @click="$parent.close()">{{ $t("closeButton") }}</button>
           <button
             v-if="!isEdit"
             @click="createBoard"
-            class="button is-primary">{{ $t("createBoardButton") }}
+            class="button is-primary create-modal-submit">{{ $t("createBoardButton") }}
           </button>
           <button
             v-if="isEdit"
             @click="saveBoardChanges"
-            class="button is-primary">{{ $t("saveChangesButton") }}
+            class="button is-primary create-modal-submit">{{ $t("saveChangesButton") }}
           </button>
         </footer>
       </div>
-    </div>
   </div>
 </template>
 
@@ -144,27 +158,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.modal-card {
-  overflow: hidden;
-  border: 1px solid #e7ebf2;
-  border-radius: 8px;
-  box-shadow: 0 24px 70px rgba(16, 24, 40, 0.22);
-}
-.modal-card-head,
-.modal-card-foot {
-  border-color: #edf1f6;
-  background: #f8fafc;
-}
-.modal-card-title {
-  color: #22313f;
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-.modal-card-body {
-  background: #fff;
-}
-.button {
-  border-radius: 6px;
-  font-weight: 600;
-}
+.create-board-card { --create-modal-width: 560px; }
+.create-board-form { display: grid; gap: var(--space-xs); }
 </style>

@@ -1,0 +1,198 @@
+// Shared presentation and stacking rules for creation flows opened from the global navigation.
+.modal.pinry-create-modal {
+  z-index: calc(var(--z-modal) + 20) !important;
+  padding: var(--space-md);
+}
+
+.pinry-create-modal .modal-background {
+  background: color-mix(in srgb, var(--color-app-bg) 64%, transparent);
+  backdrop-filter: blur(10px) saturate(1.06);
+}
+
+.pinry-create-modal .modal-content {
+  width: auto;
+  max-width: none;
+  max-height: none;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.pinry-create-modal .create-modal-card {
+  width: min(94vw, var(--create-modal-width, 760px));
+  max-height: calc(100vh - var(--space-xl) - var(--space-xl));
+  max-height: calc(100dvh - var(--space-xl) - var(--space-xl));
+  overflow: hidden;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-strong);
+  background:
+    radial-gradient(circle at top left, var(--color-theme-glow), transparent 42%),
+    var(--color-surface-card);
+  box-shadow: var(--shadow-floating);
+}
+
+.pinry-create-modal .create-modal-head {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  min-height: 76px;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-line-soft);
+  background: color-mix(in srgb, var(--color-surface-2) 86%, transparent);
+}
+
+.pinry-create-modal .create-modal-title-block {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.pinry-create-modal .create-modal-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-xs);
+}
+
+.pinry-create-modal .create-modal-kicker {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-accent-strong);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pinry-create-modal .modal-card-title {
+  overflow: hidden;
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: clamp(1.05rem, 2vw, 1.28rem);
+  font-weight: 950;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pinry-create-modal .create-modal-close {
+  display: inline-grid;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  background: var(--color-surface-1);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.pinry-create-modal .create-modal-close:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  transform: translateY(-1px);
+}
+
+.pinry-create-modal .create-modal-close:focus-visible,
+.pinry-create-modal .create-modal-foot .button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.pinry-create-modal .create-modal-body {
+  max-height: calc(100vh - 190px);
+  max-height: calc(100dvh - 190px);
+  padding: var(--space-lg);
+  overflow: auto;
+  color: var(--color-text-strong);
+  background: transparent;
+}
+
+.pinry-create-modal .create-modal-foot {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-lg);
+  border-top: 1px solid var(--color-line-soft);
+  background: color-mix(in srgb, var(--color-surface-2) 86%, transparent);
+}
+
+.pinry-create-modal .create-modal-foot .button {
+  min-height: 40px;
+  margin: 0;
+  border-radius: var(--radius-md);
+  font-weight: 900;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.pinry-create-modal .create-modal-foot .button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-xs);
+}
+
+.pinry-create-modal .create-modal-cancel {
+  border-color: var(--color-line-soft);
+  color: var(--color-text-muted);
+  background: var(--color-surface-1);
+}
+
+.pinry-create-modal .create-modal-submit {
+  min-width: 118px;
+  box-shadow: 0 10px 22px var(--color-theme-glow);
+}
+
+html[data-motion='reduce'] .pinry-create-modal .create-modal-close,
+html[data-motion='reduce'] .pinry-create-modal .create-modal-foot .button {
+  transition: none;
+}
+
+@media screen and (max-width: 640px) {
+  .modal.pinry-create-modal {
+    padding: var(--space-xs);
+  }
+
+  .pinry-create-modal .create-modal-card {
+    width: calc(100vw - var(--space-md));
+    max-height: calc(100vh - var(--space-md) - var(--space-md));
+    max-height: calc(100dvh - var(--space-md) - var(--space-md));
+  }
+
+  .pinry-create-modal .create-modal-head,
+  .pinry-create-modal .create-modal-body,
+  .pinry-create-modal .create-modal-foot {
+    padding-right: var(--space-md);
+    padding-left: var(--space-md);
+  }
+
+  .pinry-create-modal .create-modal-foot {
+    flex-direction: column-reverse;
+  }
+
+  .pinry-create-modal .create-modal-foot .button {
+    width: 100%;
+  }
+}

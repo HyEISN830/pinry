@@ -551,18 +551,22 @@ export default {
       modals.openPinEdit(
         this,
         { username: this.user.meta.username },
+        pin => this.$router.push({ name: 'pin', params: { pinId: pin.id } }),
       );
     },
     createBoard() {
       this.closeMenu();
-      modals.openBoardCreate(this);
+      modals.openBoardCreate(
+        this,
+        board => this.$router.push({ name: 'board', params: { boardId: board.id } }),
+      );
     },
     createComic() {
       this.closeMenu();
       modals.openComicCreate(
         this,
         this.user.meta.username,
-        () => this.$router.push({ name: 'comics' }),
+        comic => this.$router.push({ name: 'comic', params: { comicId: comic.id } }),
       );
     },
     signUp() {

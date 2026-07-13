@@ -5,6 +5,12 @@ import BoardEdit from './BoardEdit.vue';
 import Add2Board from './pin_edit/Add2Board.vue';
 import ComicCreateModal from './comic/ComicCreateModal.vue';
 
+function runCreatedCallback(vm, callback, item) {
+  if (typeof callback !== 'function') {
+    return;
+  }
+  vm.$nextTick(() => callback(item));
+}
 
 function openPinEdit(vm, props = null, onCreated = null) {
   vm.$buefy.modal.open(
@@ -13,11 +19,11 @@ function openPinEdit(vm, props = null, onCreated = null) {
       component: PinCreateModal,
       props,
       hasModalCard: true,
+      canCancel: ['escape', 'outside'],
+      customClass: 'pinry-create-modal pinry-create-pin-modal',
       events: {
-        pinCreated() {
-          if (onCreated !== null) {
-            onCreated();
-          }
+        pinCreated(pin) {
+          runCreatedCallback(vm, onCreated, pin);
         },
       },
     },
@@ -35,25 +41,36 @@ function openAdd2Board(vm, pin, username) {
   );
 }
 
-function openBoardCreate(vm) {
+function openBoardCreate(vm, onCreated = null) {
   vm.$buefy.modal.open(
     {
       parent: vm,
       component: BoardEdit,
       hasModalCard: true,
+      canCancel: ['escape', 'outside'],
+      customClass: 'pinry-create-modal pinry-create-board-modal',
+      events: {
+        boardCreated(board) {
+          runCreatedCallback(vm, onCreated, board);
+        },
+      },
     },
   );
 }
 
-function openComicCreate(vm, username, onCreated) {
+function openComicCreate(vm, username, onCreated = null) {
   vm.$buefy.modal.open(
     {
       parent: vm,
       component: ComicCreateModal,
       props: { username },
       hasModalCard: true,
+      canCancel: ['escape', 'outside'],
+      customClass: 'pinry-create-modal pinry-create-comic-modal',
       events: {
-        comicCreated: onCreated,
+        comicCreated(comic) {
+          runCreatedCallback(vm, onCreated, comic);
+        },
       },
     },
   );
@@ -72,6 +89,8 @@ function openBoardEdit(vm, board, onSaved) {
         boardSaved: onSaved,
       },
       hasModalCard: true,
+      canCancel: ['escape', 'outside'],
+      customClass: 'pinry-create-modal pinry-create-board-modal',
     },
   );
 }
