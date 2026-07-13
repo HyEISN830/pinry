@@ -40,9 +40,9 @@
               <button
                 class="button is-primary search-submit"
                 type="submit"
+                :class="{ 'is-loading': loading }"
                 :disabled="normalizedQuery.length === 0 || loading">
-                <span v-if="loading">...</span>
-                <span v-else>{{ $t("searchButton") }}</span>
+                <span>{{ $t("searchButton") }}</span>
               </button>
             </div>
             <p class="search-helper">
@@ -57,7 +57,7 @@
           </section>
 
           <section class="state-card is-loading" v-if="loading">
-            <loadingSpinner :show="loading"></loadingSpinner>
+            <loadingSpinner :show="loading" size="regular"></loadingSpinner>
             <div class="skeleton-lines" aria-hidden="true">
               <span></span>
               <span></span>
@@ -98,9 +98,10 @@
                 v-if="buckets.comics.has_next"
                 class="button is-light"
                 type="button"
+                :class="{ 'is-loading': loadingMore.comics }"
                 :disabled="loadingMore.comics"
                 @click="loadMore('comics')">
-                {{ loadingMore.comics ? '...' : $t("loadMoreResults") }}
+                {{ $t("loadMoreResults") }}
               </button>
             </div>
             <SearchComicMasonry
@@ -119,9 +120,10 @@
                 v-if="buckets.pins.has_next"
                 class="button is-light"
                 type="button"
+                :class="{ 'is-loading': loadingMore.pins }"
                 :disabled="loadingMore.pins"
                 @click="loadMore('pins')">
-                {{ loadingMore.pins ? '...' : $t("loadMoreResults") }}
+                {{ $t("loadMoreResults") }}
               </button>
             </div>
             <div class="result-grid pin-results">
@@ -144,9 +146,10 @@
                 v-if="buckets.boards.has_next"
                 class="button is-light"
                 type="button"
+                :class="{ 'is-loading': loadingMore.boards }"
                 :disabled="loadingMore.boards"
                 @click="loadMore('boards')">
-                {{ loadingMore.boards ? '...' : $t("loadMoreResults") }}
+                {{ $t("loadMoreResults") }}
               </button>
             </div>
             <div class="result-grid">
@@ -167,9 +170,10 @@
                 v-if="buckets.tags.has_next"
                 class="button is-light"
                 type="button"
+                :class="{ 'is-loading': loadingMore.tags }"
                 :disabled="loadingMore.tags"
                 @click="loadMore('tags')">
-                {{ loadingMore.tags ? '...' : $t("loadMoreResults") }}
+                {{ $t("loadMoreResults") }}
               </button>
             </div>
             <div class="tag-result-list">

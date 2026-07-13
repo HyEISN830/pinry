@@ -160,7 +160,7 @@
           </template>
         </div>
       </div>
-      <loadingSpinner v-bind:show="status.loading"></loadingSpinner>
+      <loadingSpinner :show="status.loading" size="compact"></loadingSpinner>
       <div v-if="showInitialSkeleton" class="card-skeleton-grid" aria-hidden="true">
         <div v-for="index in 6" :key="index" class="card-skeleton">
           <div class="card-skeleton-image"></div>
@@ -983,7 +983,7 @@ $avatar-height: 30px;
     min-width: $pin-preview-width;
     background-color: var(--surface-card, white);
     border-radius: 3px 3px 0 0;
-    @include loader('../assets/loader.gif');
+    @include loader();
   }
   .avatar {
     height: $avatar-height;

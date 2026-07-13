@@ -24,7 +24,12 @@
           icon="magnify"
           @select="option => selected = option">
           <template slot="empty">
-            <span v-if="loadingTags">...</span>
+            <span
+              v-if="loadingTags"
+              class="tag-fetch-loader"
+              role="status"
+              aria-label="Loading">
+            </span>
             <span v-else>{{ $t("noResultsFound") }}</span>
           </template>
         </b-autocomplete>
@@ -190,6 +195,16 @@ export default {
 .panel-state.is-error {
   color: var(--color-accent-strong);
 }
+.tag-fetch-loader {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-accent-soft);
+  border-top-color: var(--color-accent);
+  border-right-color: var(--color-accent-strong);
+  border-radius: 50%;
+  animation: pinry-loading-orbit 0.78s linear infinite;
+}
 ::v-deep .select select,
 ::v-deep .input {
   min-height: 40px;
@@ -202,5 +217,8 @@ export default {
 ::v-deep .select select:focus,
 ::v-deep .input:focus {
   @include focus-ring;
+}
+html[data-motion='reduce'] .tag-fetch-loader {
+  animation: none;
 }
 </style>

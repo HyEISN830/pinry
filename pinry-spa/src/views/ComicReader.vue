@@ -162,7 +162,7 @@
             {{ $t("readFullComicButton") }}
           </button>
         </div>
-        <loadingSpinner :show="loading"></loadingSpinner>
+        <loadingSpinner :show="loading" size="large"></loadingSpinner>
       </div>
     </section>
     <div

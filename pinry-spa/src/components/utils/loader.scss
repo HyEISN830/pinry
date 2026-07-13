@@ -1,5 +1,15 @@
-@mixin loader($loaderGifURL) {
-  background: url(#{$loaderGifURL});
-  background-position: center center;
-  background-repeat: no-repeat;
+@mixin loader {
+  background:
+    linear-gradient(
+      102deg,
+      var(--skeleton-base, #eef2f7) 0%,
+      var(--skeleton-base, #eef2f7) 32%,
+      var(--accent-soft, rgba(126, 87, 194, 0.16)) 47%,
+      var(--skeleton-highlight, #fff) 53%,
+      var(--skeleton-base, #eef2f7) 68%,
+      var(--skeleton-base, #eef2f7) 100%
+    ),
+    var(--surface-2, #f8fafc);
+  background-size: 260% 100%;
+  animation: pinry-loading-skeleton-flow 1.55s var(--motion-ease-standard, ease) infinite;
 }

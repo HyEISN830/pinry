@@ -9,7 +9,8 @@
               v-show="!avatarLoading"
               :src="user.avatar"
               alt="avatar"
-              @load="onAvatarLoaded">
+              @load="onAvatarLoaded"
+              @error="onAvatarLoaded">
           </figure>
           <div class="profile-copy">
             <span class="profile-kicker">@{{ location }}</span>

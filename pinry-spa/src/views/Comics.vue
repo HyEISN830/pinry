@@ -82,7 +82,7 @@
         <div v-else-if="showEmptyState" class="comic-state is-empty">
           <p>{{ $t("comicsEmptyState") }}</p>
         </div>
-        <loadingSpinner :show="status.loading && comics.length > 0"></loadingSpinner>
+        <loadingSpinner :show="status.loading && comics.length > 0" size="compact"></loadingSpinner>
       </div>
     </section>
   </div>

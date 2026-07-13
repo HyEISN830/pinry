@@ -76,7 +76,7 @@
           </template>
         </div>
       </div>
-      <loadingSpinner v-bind:show="status.loading"></loadingSpinner>
+      <loadingSpinner :show="status.loading" size="compact"></loadingSpinner>
       <div v-if="showInitialSkeleton" class="card-skeleton-grid" aria-hidden="true">
         <div v-for="index in 6" :key="index" class="card-skeleton">
           <div class="card-skeleton-image"></div>
@@ -716,7 +716,7 @@ $avatar-height: 30px;
     height: 100%;
     object-fit: cover;
     background-color: var(--surface-1, white);
-    @include loader('../assets/loader.gif');
+    @include loader();
   }
   .board-kind-pill {
     position: absolute;

@@ -33,7 +33,7 @@
       </div>
     </div>
 
-    <loadingSpinner :show="status.loading"></loadingSpinner>
+    <loadingSpinner :show="status.loading" size="compact"></loadingSpinner>
     <div v-if="status.error" class="personal-comics-state">
       <p>{{ $t('cardLoadError') }}</p>
       <button type="button" @click="fetchNext">{{ $t('loadMoreResults') }}</button>

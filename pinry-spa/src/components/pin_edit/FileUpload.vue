@@ -94,7 +94,7 @@ export default {
   height: auto;
   border-radius: 8px;
   box-shadow: 0 10px 26px rgba(16, 24, 40, 0.14);
-  @include loader('../../assets/loader.gif');
+  @include loader();
 }
 .image-upload {
   border-radius: 8px;

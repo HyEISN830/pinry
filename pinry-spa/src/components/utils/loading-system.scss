@@ -1,0 +1,177 @@
+// Shared loading language for Buefy controls, full-page request overlays, and skeleton surfaces.
+@keyframes pinry-loading-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pinry-loading-orbit-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes pinry-loading-core {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scale(0.76);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pinry-loading-skeleton-flow {
+  from {
+    background-position: 200% 50%;
+  }
+  to {
+    background-position: -80% 50%;
+  }
+}
+
+@keyframes pinry-skeleton-sheen {
+  from {
+    transform: translateX(-130%);
+  }
+  to {
+    transform: translateX(130%);
+  }
+}
+
+.loading-overlay {
+  z-index: calc(var(--z-page-transition, 170) + 40) !important;
+}
+
+.loading-overlay .loading-background {
+  background:
+    linear-gradient(130deg, color-mix(in srgb, var(--color-app-bg) 76%, transparent), color-mix(in srgb, var(--color-accent-soft) 46%, transparent)) !important;
+  backdrop-filter: blur(12px) saturate(1.08);
+}
+
+.loading-overlay .loading-icon {
+  position: relative !important;
+  z-index: 1;
+  display: block;
+  width: 76px;
+  height: 76px;
+  filter: drop-shadow(0 16px 26px var(--color-theme-glow));
+}
+
+.loading-overlay .loading-icon::before,
+.loading-overlay .loading-icon::after {
+  position: absolute !important;
+  content: '';
+  box-sizing: border-box;
+  border-radius: 50%;
+}
+
+.loading-overlay .loading-icon::before {
+  inset: 28%;
+  background: var(--color-accent-strong);
+  box-shadow:
+    0 0 0 4px var(--color-accent-soft),
+    0 0 28px var(--color-theme-glow-strong);
+  animation: pinry-loading-core 1.35s var(--motion-ease-standard) infinite;
+}
+
+.loading-overlay .loading-icon::after {
+  top: 0 !important;
+  right: 0;
+  bottom: 0;
+  left: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  border: 3px solid var(--color-accent-soft) !important;
+  border-top-color: var(--color-accent) !important;
+  border-right-color: var(--color-accent-strong) !important;
+  background: transparent !important;
+  animation: pinry-loading-orbit 1.2s linear infinite !important;
+}
+
+.button.is-loading::after,
+.control.is-loading::after,
+.select.is-loading::after,
+.upload .upload-draggable.is-loading::after {
+  border-color: var(--color-accent-soft) !important;
+  border-top-color: var(--color-accent-strong) !important;
+  border-right-color: var(--color-accent) !important;
+  animation: pinry-loading-orbit 0.78s linear infinite !important;
+}
+
+.button.is-primary.is-loading::after,
+.button.is-link.is-loading::after,
+.button.is-info.is-loading::after,
+.button.is-success.is-loading::after,
+.button.is-warning.is-loading::after,
+.button.is-danger.is-loading::after {
+  border-color: color-mix(in srgb, var(--color-accent-text) 38%, transparent) !important;
+  border-top-color: var(--color-accent-text) !important;
+  border-right-color: var(--color-accent-text) !important;
+}
+
+.b-skeleton.is-animated > .b-skeleton-item {
+  background: linear-gradient(
+    102deg,
+    var(--skeleton-base) 0%,
+    var(--skeleton-base) 32%,
+    var(--color-accent-soft) 47%,
+    var(--skeleton-highlight) 53%,
+    var(--skeleton-base) 68%,
+    var(--skeleton-base) 100%
+  );
+  background-size: 260% 100%;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent-border) 42%, transparent);
+  animation: pinry-loading-skeleton-flow 1.55s var(--motion-ease-standard) infinite;
+}
+
+.card-skeleton,
+.comic-skeleton-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.card-skeleton::after,
+.comic-skeleton-card::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background: linear-gradient(108deg, transparent 25%, color-mix(in srgb, var(--color-accent-text) 38%, transparent) 48%, transparent 71%);
+  content: '';
+  opacity: 0.66;
+  pointer-events: none;
+  transform: translateX(-130%);
+  animation: pinry-skeleton-sheen 1.85s var(--motion-ease-standard) infinite;
+}
+
+.card-skeleton-image,
+.card-skeleton-line,
+.comic-skeleton-cover,
+.comic-skeleton-line,
+.skeleton-lines span,
+.lazy-image-placeholder:not(.is-unavailable) {
+  background-size: 260% 100% !important;
+  animation: pinry-loading-skeleton-flow 1.55s var(--motion-ease-standard) infinite !important;
+}
+
+html[data-motion='reduce'] .loading-overlay .loading-icon::before,
+html[data-motion='reduce'] .loading-overlay .loading-icon::after,
+html[data-motion='reduce'] .button.is-loading::after,
+html[data-motion='reduce'] .control.is-loading::after,
+html[data-motion='reduce'] .select.is-loading::after,
+html[data-motion='reduce'] .upload .upload-draggable.is-loading::after,
+html[data-motion='reduce'] .b-skeleton.is-animated > .b-skeleton-item,
+html[data-motion='reduce'] .card-skeleton::after,
+html[data-motion='reduce'] .comic-skeleton-card::after,
+html[data-motion='reduce'] .card-skeleton-image,
+html[data-motion='reduce'] .card-skeleton-line,
+html[data-motion='reduce'] .comic-skeleton-cover,
+html[data-motion='reduce'] .comic-skeleton-line,
+html[data-motion='reduce'] .skeleton-lines span,
+html[data-motion='reduce'] .lazy-image-placeholder:not(.is-unavailable) {
+  animation: none !important;
+}
