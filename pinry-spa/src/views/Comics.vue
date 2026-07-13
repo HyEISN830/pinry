@@ -354,7 +354,7 @@ export default {
 
 .comics-page {
   min-height: 100vh;
-  background: var(--color-page-bg, var(--app-bg, #f6f7fb));
+  background: transparent;
 }
 
 .comics-page.is-embedded {
@@ -449,12 +449,20 @@ export default {
 
 .comic-row-shell::before {
   left: 0;
-  background: linear-gradient(to right, var(--color-page-bg, var(--app-bg, #f6f7fb)), transparent);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--app-bg, #f6f7fb) 72%, transparent),
+    transparent
+  );
 }
 
 .comic-row-shell::after {
   right: 0;
-  background: linear-gradient(to left, var(--color-page-bg, var(--app-bg, #f6f7fb)), transparent);
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--app-bg, #f6f7fb) 72%, transparent),
+    transparent
+  );
 }
 
 .comic-row-shell.can-page-left::before,

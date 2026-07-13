@@ -1075,7 +1075,7 @@ export default {
 /* T6 reader actual toolbar and immersive polish */
 .comic-reader-page .section {
   padding-top: var(--space-lg, 24px);
-  background: radial-gradient(circle at top, var(--theme-glow, rgba(126, 87, 194, 0.14)), transparent 38%), var(--color-page-bg, var(--app-bg, #f6f7fb));
+  background: transparent;
 }
 
 .reader-head,
@@ -1150,7 +1150,7 @@ export default {
 .reader-container {
   min-height: 100vh;
   color: var(--color-text-primary, #111827);
-  background: radial-gradient(circle at top, var(--color-accent-soft, rgba(99, 102, 241, 0.12)), transparent 36%), var(--color-page-bg, #f8fafc);
+  background: transparent;
 }
 
 .reader-toolbar,
