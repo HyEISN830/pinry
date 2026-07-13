@@ -27,6 +27,7 @@
                 :previewImageURL="pinModel.form.url.value"
                 v-on:imageUploadSucceed="onUploadDone"
                 v-on:imageUploadProcessing="onUploadProcessing"
+                v-on:imageUploadFailed="onUploadFailed"
               ></FileUpload>
               <div
                 class="description"
@@ -127,7 +128,8 @@
           <button
             v-if="!isEdit"
             @click="createPin"
-            class="button is-primary create-modal-submit">{{ $t("pinCreateModalCreatePinButton") }}
+            class="button is-primary create-modal-submit"
+            :disabled="uploadingImage">{{ $t("pinCreateModalCreatePinButton") }}
           </button>
           <button
             v-if="isEdit"
@@ -227,6 +229,7 @@ export default {
     pinModel.form.tags.value = [];
     return {
       disableUrlField: false,
+      uploadingImage: false,
       pinModel,
       formUpload: {
         imageId: null,
@@ -383,9 +386,14 @@ export default {
     },
     onUploadProcessing() {
       this.disableUrlField = true;
+      this.uploadingImage = true;
     },
     onUploadDone(imageId) {
       this.formUpload.imageId = imageId;
+      this.uploadingImage = false;
+    },
+    onUploadFailed() {
+      this.uploadingImage = false;
     },
     savePin() {
       const self = this;
@@ -503,8 +511,8 @@ export default {
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-md);
   color: var(--color-text-strong);
-  background: var(--color-accent-soft);
-  box-shadow: var(--shadow-xs);
+  background: transparent;
+  box-shadow: none;
 }
 .fixed-board-label {
   display: block;

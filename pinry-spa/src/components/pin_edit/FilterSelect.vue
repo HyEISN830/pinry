@@ -13,48 +13,69 @@
     </b-field>
     <b-field>
       <div class="filter-select-actions">
-        <button
-          @click="toggleSearchPopup"
-          class="button is-info"
-          type="button">
-          {{ $t("searchBoardButton") }}
-        </button>
+        <b-dropdown
+          ref="searchDropdown"
+          class="board-search-dropdown"
+          position="is-bottom-right"
+          :mobile-modal="false"
+          :close-on-click="false"
+          append-to-body
+          aria-role="dialog"
+          @active-change="onSearchPopupActiveChange">
+          <button
+            slot="trigger"
+            class="button board-action board-action--search"
+            :class="{ 'is-active': searchPopupOpen }"
+            type="button">
+            <b-icon icon="magnify" custom-size="mdi-18px"></b-icon>
+            <span>{{ $t("searchBoardButton") }}</span>
+          </button>
+          <div class="board-search-popup">
+            <div class="board-search-popup__heading">
+              <b-icon icon="magnify" custom-size="mdi-18px"></b-icon>
+              <strong>{{ $t("searchBoardButton") }}</strong>
+            </div>
+            <b-input
+              ref="searchInput"
+              v-model="searchText"
+              icon="magnify"
+              expanded
+              v-bind:placeholder="$t('searchBoardPlaceholder')"
+              maxlength="128">
+            </b-input>
+            <div class="board-search-list">
+              <button
+                v-for="option in availableOptions"
+                :key="option.value"
+                class="board-search-option"
+                :class="{ 'is-selected': isSelected(option.value) }"
+                type="button"
+                @click="select(option)">
+                <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
+                <span>{{ option.name }}</span>
+              </button>
+              <div class="board-search-empty" v-if="availableOptions.length === 0">
+                {{ $t("pinCreateModalEmptySlot") }}
+              </div>
+            </div>
+          </div>
+        </b-dropdown>
         <button
           @click="createNewBoard"
-          class="button is-primary"
+          class="button board-action board-action--create"
           type="button">
-          {{ $t("filterSelectCreateNewBoardButton") }}
+          <b-icon icon="folder-plus" custom-size="mdi-18px"></b-icon>
+          <span>{{ $t("filterSelectCreateNewBoardButton") }}</span>
         </button>
         <button
           @click="clearSelection"
-          class="button is-light"
+          class="button board-action board-action--clear"
           type="button">
-          {{ $t("clearBoardSelectionButton") }}
+          <b-icon icon="close-circle-outline" custom-size="mdi-18px"></b-icon>
+          <span>{{ $t("clearBoardSelectionButton") }}</span>
         </button>
       </div>
     </b-field>
-    <div class="board-search-popup" v-if="searchPopupOpen">
-      <b-input
-        v-model="searchText"
-        icon="magnify"
-        expanded
-        v-bind:placeholder="$t('searchBoardPlaceholder')"
-        maxlength="128">
-      </b-input>
-      <div class="board-search-list">
-        <button
-          v-for="option in availableOptions"
-          :key="option.value"
-          class="board-search-option"
-          type="button"
-          @click="select(option)">
-          {{ option.name }}
-        </button>
-        <div class="board-search-empty" v-if="availableOptions.length === 0">
-          {{ $t("pinCreateModalEmptySlot") }}
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -119,12 +140,6 @@ export default {
       searchText: '',
     };
   },
-  mounted() {
-    document.addEventListener('click', this.onDocumentClick);
-  },
-  beforeDestroy() {
-    document.removeEventListener('click', this.onDocumentClick);
-  },
   methods: {
     getSelectedBoards() {
       const options = this.createdOptions.concat(this.allOptions);
@@ -154,20 +169,31 @@ export default {
       }
     },
     closeSearchPopup() {
+      const dropdown = this.$refs.searchDropdown;
+      if (dropdown) {
+        dropdown.isActive = false;
+      }
       this.searchPopupOpen = false;
     },
-    onDocumentClick(event) {
-      if (!this.searchPopupOpen || this.$el.contains(event.target)) {
-        return;
-      }
-      this.closeSearchPopup();
-    },
-    toggleSearchPopup() {
-      this.searchPopupOpen = !this.searchPopupOpen;
-      if (this.searchPopupOpen) {
+    onSearchPopupActiveChange(isActive) {
+      this.searchPopupOpen = isActive;
+      if (isActive) {
         this.searchText = '';
         this.syncAvailableOptions();
+        this.$nextTick(
+          () => {
+            const input = this.$refs.searchInput;
+            if (input && typeof input.focus === 'function') {
+              input.focus();
+            }
+          },
+        );
       }
+    },
+    isSelected(value) {
+      return this.selectedOptions.some(
+        selectedValue => String(selectedValue) === String(value),
+      );
     },
     select(board) {
       this.setSelectedOptions([board.value], true);
@@ -235,61 +261,197 @@ export default {
 <style lang="scss" scoped>
 .filter-select {
   position: relative;
-  padding: 0.75rem;
-  border: 1px solid #edf1f6;
-  border-radius: 8px;
-  background: #f8fafc;
+  min-width: 0;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-text-strong);
+  background: transparent;
+}
+.filter-select ::v-deep .label {
+  color: var(--color-text-strong);
+  font-weight: 850;
+}
+.filter-select ::v-deep .input {
+  border-color: var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-strong);
+  background: color-mix(in srgb, var(--color-surface-1) 76%, transparent);
+  box-shadow: none;
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+.filter-select ::v-deep .input:focus {
+  border-color: var(--color-accent-border);
+  background: var(--color-surface-1);
+  box-shadow: var(--focus-ring);
 }
 .filter-select-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem;
+  gap: var(--space-xs);
 }
-.button {
-  border-radius: 6px;
-  font-weight: 600;
+.board-search-dropdown,
+.board-action--create {
+  flex: 1 1 calc(50% - var(--space-xs));
+  min-width: 124px;
+}
+.board-search-dropdown ::v-deep .dropdown-trigger,
+.board-action--search {
+  width: 100%;
+}
+.board-action {
+  min-height: 40px;
+  gap: var(--space-2xs);
+  justify-content: center;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-strong);
+  background: var(--color-surface-1);
+  box-shadow: none;
+  font-size: 0.82rem;
+  font-weight: 850;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+.board-action:hover,
+.board-action:focus-visible,
+.board-action--search.is-active {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-1px);
+}
+.board-action:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.board-action--create {
+  border-color: var(--color-accent-strong);
+  color: var(--color-accent-text);
+  background: var(--color-accent-strong);
+  box-shadow: 0 8px 20px var(--color-theme-glow);
+}
+.board-action--create:hover,
+.board-action--create:focus-visible {
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+}
+.board-action--clear {
+  flex: 1 1 100%;
+  border-color: var(--color-accent-border);
+  color: var(--color-text-muted);
+  background: transparent;
+}
+.board-action--clear:hover,
+.board-action--clear:focus-visible {
+  color: var(--color-accent-strong);
+  background: transparent;
 }
 .board-search-popup {
-  position: absolute;
-  z-index: 30;
-  left: 0.75rem;
-  right: 0.75rem;
-  margin-top: 0.15rem;
-  padding: 0.75rem;
-  border: 1px solid #dbe4ef;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 18px 40px rgba(16, 24, 40, 0.18);
+  width: min(360px, calc(100vw - var(--space-lg)));
+  padding: var(--space-sm);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-strong);
+  background:
+    radial-gradient(circle at top left, var(--color-theme-glow), transparent 180px),
+    var(--color-surface-card);
+  box-shadow: var(--shadow-floating);
+}
+.board-search-popup__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+  color: var(--color-accent-strong);
+  font-size: 0.82rem;
+}
+.board-search-popup__heading strong {
+  color: inherit;
 }
 .board-search-popup ::v-deep .input {
-  border-color: #d8e0eb;
-  border-radius: 8px;
-  font-size: 14px;
+  border-color: var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-strong);
+  background: var(--color-surface-1);
+  box-shadow: none;
+  font-size: 0.88rem;
+}
+.board-search-popup ::v-deep .input:focus {
+  border-color: var(--color-accent-border);
+  box-shadow: var(--focus-ring);
 }
 .board-search-list {
-  max-height: 220px;
-  margin-top: 0.55rem;
+  max-height: min(280px, 42vh);
+  margin-top: var(--space-xs);
   overflow-y: auto;
+  scrollbar-color: var(--color-accent-border) transparent;
 }
 .board-search-option {
-  display: block;
+  display: flex;
   width: 100%;
-  padding: 0.5rem 0.6rem;
-  border: 0;
-  border-radius: 6px;
+  min-height: 42px;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: #22313f;
+  color: var(--color-text-strong);
   text-align: left;
   cursor: pointer;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
 }
-.board-search-option:hover {
-  background: #eef5ff;
-  color: #1f6feb;
+.board-search-option:hover,
+.board-search-option:focus-visible,
+.board-search-option.is-selected {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  transform: translateX(2px);
+}
+.board-search-option:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.board-search-option span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .board-search-empty {
-  padding: 0.7rem 0.4rem;
-  color: #8a94a6;
-  font-size: 14px;
+  padding: var(--space-md) var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: 0.86rem;
+  text-align: center;
+}
+</style>
+
+<style lang="scss">
+.board-search-dropdown.dropdown .dropdown-menu {
+  z-index: calc(var(--z-modal, 140) + 40) !important;
+  min-width: 0;
+  padding-top: var(--space-xs);
+}
+.board-search-dropdown.dropdown .dropdown-content {
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  box-shadow: none;
 }
 </style>

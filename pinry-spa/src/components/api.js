@@ -131,18 +131,22 @@ const Pin = {
   createFromUploaded(jsonData) {
     return this.create(jsonData);
   },
-  uploadImage(fileObject) {
+  uploadImage(fileObject, progressHandler) {
     const url = `${API_PREFIX}images/`;
     const data = new FormData();
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    };
     data.append('image', fileObject);
+    if (typeof progressHandler === 'function') {
+      config.onUploadProgress = progressHandler;
+    }
     return axios.post(
       url,
       data,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      },
+      config,
     );
   },
   deleteById(pinId) {
