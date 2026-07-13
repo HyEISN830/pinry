@@ -203,6 +203,7 @@ import SearchComicMasonry from '../components/SearchComicMasonry.vue';
 import PinPreview from '../components/PinPreview.vue';
 import createPinDisplayItem from '../components/utils/pinDisplayItem';
 import scroll from '../components/utils/scroll';
+import { loadSearchState, saveSearchState } from '../components/utils/searchStateCache';
 
 function blankBucket() {
   return {
@@ -226,6 +227,26 @@ function bucketKeyForType(type) {
     return 'tags';
   }
   return null;
+}
+
+function currentScrollTop() {
+  return Math.max(
+    0,
+    window.pageYOffset || document.documentElement.scrollTop || 0,
+  );
+}
+
+function validSearchType(type) {
+  return type === 'all' || bucketKeyForType(type) !== null;
+}
+
+function cachedBucket(bucket) {
+  const source = bucket || {};
+  return {
+    results: Array.isArray(source.results) ? source.results : [],
+    has_next: !!source.has_next,
+    next_offset: Number.isFinite(source.next_offset) ? source.next_offset : 0,
+  };
 }
 
 export default {
@@ -257,6 +278,8 @@ export default {
       },
       queryText: '',
       resultQuery: '',
+      restoreScrollTop: 0,
+      restoreScrollFrame: null,
     };
   },
   computed: {
@@ -282,6 +305,30 @@ export default {
       ];
     },
   },
+  created() {
+    this.restoreCachedSearch();
+  },
+  mounted() {
+    if (this.restoreScrollTop <= 0) {
+      return;
+    }
+    this.$nextTick(() => {
+      this.restoreScrollFrame = window.requestAnimationFrame(() => {
+        window.scrollTo(0, this.restoreScrollTop);
+        this.restoreScrollFrame = null;
+      });
+    });
+  },
+  beforeRouteLeave(to, from, next) {
+    this.saveCachedSearch();
+    next();
+  },
+  beforeDestroy() {
+    if (this.restoreScrollFrame) {
+      window.cancelAnimationFrame(this.restoreScrollFrame);
+    }
+    this.saveCachedSearch();
+  },
   methods: {
     bucketNamesForType(type) {
       const key = bucketKeyForType(type);
@@ -292,6 +339,36 @@ export default {
     },
     clearError() {
       this.errorText = '';
+    },
+    restoreCachedSearch() {
+      const cached = loadSearchState();
+      if (!cached || !cached.resultQuery || !validSearchType(cached.activeType)) {
+        return;
+      }
+      this.activeType = cached.activeType;
+      this.buckets = {
+        pins: cachedBucket(cached.buckets && cached.buckets.pins),
+        boards: cachedBucket(cached.buckets && cached.buckets.boards),
+        comics: cachedBucket(cached.buckets && cached.buckets.comics),
+        tags: cachedBucket(cached.buckets && cached.buckets.tags),
+      };
+      this.hasSearched = true;
+      this.queryText = cached.resultQuery;
+      this.resultQuery = cached.resultQuery;
+      this.restoreScrollTop = Number.isFinite(cached.scrollTop)
+        ? cached.scrollTop
+        : 0;
+    },
+    saveCachedSearch() {
+      if (!this.hasSearched || !this.resultQuery || this.loading) {
+        return;
+      }
+      saveSearchState({
+        activeType: this.activeType,
+        buckets: this.buckets,
+        resultQuery: this.resultQuery,
+        scrollTop: currentScrollTop(),
+      });
     },
     resetBuckets() {
       this.buckets = {
@@ -327,6 +404,7 @@ export default {
         (resp) => {
           this.applySearchResponse(resp.data, false);
           this.loading = false;
+          this.saveCachedSearch();
         },
         () => {
           this.loading = false;
@@ -368,6 +446,7 @@ export default {
         (resp) => {
           this.applySearchResponse(resp.data, true);
           this.$set(this.loadingMore, name, false);
+          this.saveCachedSearch();
         },
         () => {
           this.$set(this.loadingMore, name, false);
@@ -409,6 +488,7 @@ export default {
           this.$set(pin, 'viewer_liked', resp.data.viewer_liked);
           this.$set(pin, 'likes_count', resp.data.likes_count);
           this.$set(pin, 'likeBusy', false);
+          this.saveCachedSearch();
         },
         () => {
           this.$set(pin, 'likeBusy', false);
@@ -425,6 +505,7 @@ export default {
           this.$set(comic, 'viewer_liked', resp.data.viewer_liked);
           this.$set(comic, 'likes_count', resp.data.likes_count);
           this.$set(comic, 'likeBusy', false);
+          this.saveCachedSearch();
         },
         () => {
           this.$set(comic, 'likeBusy', false);
