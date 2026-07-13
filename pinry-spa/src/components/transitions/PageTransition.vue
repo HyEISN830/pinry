@@ -71,6 +71,7 @@ export default {
 .page-transition-shell,
 .page-transition-content {
   min-height: calc(100vh - var(--nav-height));
+  background: transparent;
 }
 
 .route-curtain {

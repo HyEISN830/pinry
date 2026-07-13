@@ -94,21 +94,21 @@
             v-if="shouldShowBucket('comics') && buckets.comics.results.length > 0">
             <div class="section-head">
               <h2>{{ $t("comicsLink") }}</h2>
-              <button
-                v-if="buckets.comics.has_next"
-                class="button is-light"
-                type="button"
-                :class="{ 'is-loading': loadingMore.comics }"
-                :disabled="loadingMore.comics"
-                @click="loadMore('comics')">
-                {{ $t("loadMoreResults") }}
-              </button>
             </div>
             <SearchComicMasonry
               :comics="buckets.comics.results"
               @read="readComic"
               @toggle-like="toggleComicLike">
             </SearchComicMasonry>
+            <button
+              v-if="buckets.comics.has_next"
+              class="button is-light search-load-more"
+              type="button"
+              :class="{ 'is-loading': loadingMore.comics }"
+              :disabled="loadingMore.comics"
+              @click="loadMore('comics')">
+              {{ $t("loadMoreResults") }}
+            </button>
           </section>
 
           <section
@@ -116,15 +116,6 @@
             v-if="shouldShowBucket('pins') && buckets.pins.results.length > 0">
             <div class="section-head">
               <h2>{{ $t("pinsLink") }}</h2>
-              <button
-                v-if="buckets.pins.has_next"
-                class="button is-light"
-                type="button"
-                :class="{ 'is-loading': loadingMore.pins }"
-                :disabled="loadingMore.pins"
-                @click="loadMore('pins')">
-                {{ $t("loadMoreResults") }}
-              </button>
             </div>
             <div class="result-grid pin-results">
               <SearchPinCard
@@ -132,9 +123,19 @@
                 :key="`pin-${pin.id}`"
                 :pin="pin"
                 :like-busy="pin.likeBusy"
+                @preview="openPinPreview"
                 @toggle-like="togglePinLike">
               </SearchPinCard>
             </div>
+            <button
+              v-if="buckets.pins.has_next"
+              class="button is-light search-load-more"
+              type="button"
+              :class="{ 'is-loading': loadingMore.pins }"
+              :disabled="loadingMore.pins"
+              @click="loadMore('pins')">
+              {{ $t("loadMoreResults") }}
+            </button>
           </section>
 
           <section
@@ -142,15 +143,6 @@
             v-if="shouldShowBucket('boards') && buckets.boards.results.length > 0">
             <div class="section-head">
               <h2>{{ $t("boardsLink") }}</h2>
-              <button
-                v-if="buckets.boards.has_next"
-                class="button is-light"
-                type="button"
-                :class="{ 'is-loading': loadingMore.boards }"
-                :disabled="loadingMore.boards"
-                @click="loadMore('boards')">
-                {{ $t("loadMoreResults") }}
-              </button>
             </div>
             <div class="result-grid">
               <SearchBoardCard
@@ -159,6 +151,15 @@
                 :board="board">
               </SearchBoardCard>
             </div>
+            <button
+              v-if="buckets.boards.has_next"
+              class="button is-light search-load-more"
+              type="button"
+              :class="{ 'is-loading': loadingMore.boards }"
+              :disabled="loadingMore.boards"
+              @click="loadMore('boards')">
+              {{ $t("loadMoreResults") }}
+            </button>
           </section>
 
           <section
@@ -166,15 +167,6 @@
             v-if="shouldShowBucket('tags') && buckets.tags.results.length > 0">
             <div class="section-head">
               <h2>{{ $t("tagsLabel") }}</h2>
-              <button
-                v-if="buckets.tags.has_next"
-                class="button is-light"
-                type="button"
-                :class="{ 'is-loading': loadingMore.tags }"
-                :disabled="loadingMore.tags"
-                @click="loadMore('tags')">
-                {{ $t("loadMoreResults") }}
-              </button>
             </div>
             <div class="tag-result-list">
               <router-link
@@ -185,6 +177,15 @@
                 {{ tag.name }}
               </router-link>
             </div>
+            <button
+              v-if="buckets.tags.has_next"
+              class="button is-light search-load-more"
+              type="button"
+              :class="{ 'is-loading': loadingMore.tags }"
+              :disabled="loadingMore.tags"
+              @click="loadMore('tags')">
+              {{ $t("loadMoreResults") }}
+            </button>
           </section>
         </main>
       </div>
@@ -199,6 +200,9 @@ import loadingSpinner from '../components/loadingSpinner.vue';
 import SearchPinCard from '../components/SearchPinCard.vue';
 import SearchBoardCard from '../components/SearchBoardCard.vue';
 import SearchComicMasonry from '../components/SearchComicMasonry.vue';
+import PinPreview from '../components/PinPreview.vue';
+import createPinDisplayItem from '../components/utils/pinDisplayItem';
+import scroll from '../components/utils/scroll';
 
 function blankBucket() {
   return {
@@ -371,6 +375,24 @@ export default {
         },
       );
     },
+    openPinPreview(pin) {
+      const routeAtOpen = this.$route.fullPath;
+      const restoreScroll = scroll.preserveModalScrollPosition(
+        () => this.$route.fullPath === routeAtOpen,
+      );
+      const previewModal = this.$buefy.modal.open(
+        {
+          parent: this,
+          component: PinPreview,
+          props: {
+            pinItem: createPinDisplayItem(pin),
+          },
+          scroll: 'keep',
+          customClass: 'pin-preview-at-home',
+        },
+      );
+      previewModal.$once('close', restoreScroll);
+    },
     shouldShowBucket(name) {
       return this.activeType === 'all' || bucketKeyForType(this.activeType) === name;
     },
@@ -494,7 +516,7 @@ export default {
 .search-type-pill:focus-visible,
 .search-card .input:focus,
 .search-submit:focus-visible,
-.section-head .button:focus-visible,
+.search-load-more:focus-visible,
 .tag-result-list a:focus-visible,
 .state-card .button:focus-visible {
   @include focus-ring;
@@ -609,12 +631,23 @@ export default {
   font-size: 1.35rem;
   font-weight: 950;
 }
-.section-head .button {
+.search-load-more {
+  display: flex;
+  width: 100%;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  margin-top: var(--space-md);
   border-color: var(--color-line-soft);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-pill);
   color: var(--color-accent-strong);
   background: var(--color-accent-soft);
   font-weight: 900;
+}
+.search-load-more:hover:not(:disabled) {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-text);
+  background: var(--color-accent-strong);
 }
 .result-grid {
   display: grid;

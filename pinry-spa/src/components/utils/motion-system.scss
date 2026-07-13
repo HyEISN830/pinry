@@ -147,8 +147,7 @@ html:not([data-motion]) .board-card.motion-hover-scale:focus-within {
   background:
     radial-gradient(circle at 50% 8%, var(--color-theme-glow-strong), transparent 34vmax),
     radial-gradient(circle at 18% 22%, var(--color-theme-glow), transparent 28vmax),
-    linear-gradient(135deg, var(--color-accent-soft), transparent 58%),
-    var(--color-app-bg);
+    linear-gradient(135deg, var(--color-accent-soft), transparent 58%);
   animation: pinry-page-curtain var(--motion-duration-page) var(--motion-ease-emphasized) both;
 }
 

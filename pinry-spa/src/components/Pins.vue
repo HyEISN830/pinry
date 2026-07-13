@@ -182,7 +182,6 @@
 
 <script>
 import API from './api';
-import pinHandler from './utils/PinHandler';
 import PinPreview from './PinPreview.vue';
 import loadingSpinner from './loadingSpinner.vue';
 import noMore from './noMore.vue';
@@ -190,8 +189,8 @@ import scroll from './utils/scroll';
 import bus from './utils/bus';
 import EditorUI from './editors/PinEditorUI.vue';
 import niceLinks from './utils/niceLinks';
-import imageVariant from './utils/imageVariant';
 import format from './utils/format';
+import createPinDisplayItem from './utils/pinDisplayItem';
 
 function isWebUrl(url) {
   return /^https?:\/\//i.test((url || '').trim());
@@ -203,16 +202,6 @@ function hasSource(url) {
 
 function sourceText(url) {
   return (url || '').trim();
-}
-
-function escapeMediaUrl(url) {
-  if (!url) {
-    return null;
-  }
-  if (/^https?:\/\//i.test(url)) {
-    return pinHandler.escapeUrl(url);
-  }
-  return url;
 }
 
 function getResponsiveCardWidth(containerWidth) {
@@ -256,54 +245,6 @@ function isDocumentScrollable() {
     body ? body.scrollHeight : 0,
   );
   return scrollHeight > window.innerHeight + 120;
-}
-
-function createImageItem(pin) {
-  const image = {};
-  const pinImage = pin.image || {};
-  let thumbnail = {};
-  try {
-    thumbnail = pinImage.id ? (imageVariant.getCardThumbnail(pinImage) || {}) : {};
-  } catch (e) {
-    thumbnail = {};
-  }
-  const thumbnailWidth = thumbnail.width || pinImage.width || 240;
-  const thumbnailHeight = thumbnail.height || pinImage.height || 320;
-  image.url = thumbnail.image ? pinHandler.escapeUrl(thumbnail.image) : null;
-  image.id = pin.id;
-  image.image_id = pinImage.id || null;
-  image.owner_id = pin.submitter.id;
-  image.private = pin.private;
-  image.description = pin.description;
-  image.tags = pin.tags || [];
-  image.boards = pin.boards || [];
-  image.author = pin.submitter.username;
-  image.avatar = (pin.submitter.avatar && pin.submitter.avatar.small)
-    || `//gravatar.com/avatar/${pin.submitter.gravatar}?s=30`;
-  image.large_image_url = pinImage.image ? pinHandler.escapeUrl(pinImage.image) : null;
-  image.original_image_url = pin.url || image.large_image_url;
-  image.motion_photo = pinImage.motion_photo
-    ? Object.assign(
-      {},
-      pinImage.motion_photo,
-      { video: escapeMediaUrl(pinImage.motion_photo.video) },
-    )
-    : null;
-  image.referer = pin.referer;
-  image.likes_count = pin.likes_count || 0;
-  image.viewer_liked = !!pin.viewer_liked;
-  image.likeBusy = false;
-  image.orgianl_width = pinImage.width || thumbnailWidth;
-  image.style = {
-    aspectRatio: `${thumbnailWidth} / ${thumbnailHeight}`,
-  };
-  image.imageVisible = false;
-  image.class = {
-    'has-board': image.boards.length > 0,
-    'has-motion-photo': image.motion_photo !== null,
-    'is-image-missing': image.url === null,
-  };
-  return image;
 }
 
 function initialData() {
@@ -658,7 +599,7 @@ export default {
       const blocks = [];
       results.forEach(
         (pin) => {
-          const item = createImageItem(pin);
+          const item = createPinDisplayItem(pin);
           blocks.push(
             item,
           );

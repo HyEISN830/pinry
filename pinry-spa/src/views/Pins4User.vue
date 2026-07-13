@@ -79,10 +79,10 @@ export default {
   box-sizing: border-box;
   width: 100%;
   padding: 1rem;
-  border: 1px solid var(--line-soft, #e7ebf2);
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: var(--surface-1, #fff);
-  box-shadow: var(--shadow-soft, 0 14px 34px rgba(16, 24, 40, 0.12));
+  background: transparent;
+  box-shadow: none;
 }
 
 .user-collection-page ::v-deep .pin-collection-surface .pins > .section {
