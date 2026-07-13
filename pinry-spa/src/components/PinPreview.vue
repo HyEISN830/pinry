@@ -2,7 +2,11 @@
   <div class="pin-preview-modal">
     <section class="pin-preview-surface">
         <article class="pin-preview-card motion-card-enter" :style="previewCardStyle">
-          <section class="pin-preview-stage" :style="previewFrameStyle">
+          <section class="pin-preview-stage">
+            <div
+              class="pin-preview-backdrop"
+              :style="previewFrameStyle"
+              aria-hidden="true"></div>
             <img
               v-if="activePreviewUrl"
               class="pin-preview-image"
@@ -568,21 +572,29 @@ export default {
   min-height: 0;
   padding: clamp(10px, 1.8vw, 24px);
   overflow: hidden;
-  background-color: var(--surface-2, rgba(15, 20, 31, 0.96));
+  isolation: isolate;
+  background: var(--surface-2, rgba(15, 20, 31, 0.96));
+}
+.pin-preview-backdrop {
+  position: absolute;
+  z-index: 0;
+  inset: -36px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-}
-.pin-preview-stage::before {
-  position: absolute;
-  inset: -16px;
-  z-index: 0;
-  background: inherit;
-  background-size: cover;
-  content: '';
-  filter: blur(22px) saturate(1.08);
-  opacity: 0.3;
+  filter: blur(32px) saturate(0.72) brightness(0.62);
+  opacity: 0.56;
   transform: scale(1.08);
+}
+.pin-preview-stage::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 24%, rgba(8, 11, 18, 0.2) 70%, rgba(8, 11, 18, 0.52) 100%),
+    linear-gradient(180deg, rgba(7, 10, 17, 0.08), rgba(7, 10, 17, 0.28));
+  content: '';
+  pointer-events: none;
 }
 .pin-preview-image {
   position: relative;
