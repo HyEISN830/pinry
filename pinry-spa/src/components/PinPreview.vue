@@ -1,7 +1,10 @@
 <template>
   <div class="pin-preview-modal">
     <section ref="previewSurface" class="pin-preview-surface">
-        <article class="pin-preview-card motion-card-enter" :style="previewCardStyle">
+        <article
+          class="pin-preview-card"
+          :class="{ 'is-layout-pending': !previewLayoutReady }"
+          :style="previewCardStyle">
           <section
             class="pin-preview-stage"
             :class="{ 'is-landscape-preview': isLandscapePreview }">
@@ -43,12 +46,13 @@
               </progress>
             </div>
           </section>
-          <section ref="previewContent" class="pin-preview-details">
-            <p
-              v-if="pinItem.description"
-              class="pin-preview-description"
-              v-html="niceLinks(pinItem.description)"></p>
-            <div class="pin-preview-footer">
+          <section class="pin-preview-details">
+            <div ref="previewContent" class="pin-preview-details-inner">
+              <p
+                v-if="pinItem.description"
+                class="pin-preview-description"
+                v-html="niceLinks(pinItem.description)"></p>
+              <div class="pin-preview-footer">
               <div class="pin-preview-meta">
                 <div class="pin-preview-actions">
                   <a
@@ -105,6 +109,7 @@
                   <img class="pin-preview-avatar" :src="pinItem.avatar" alt="Image">
                   <p class="pin-preview-author"><span class="dim">{{ $t("pinnedByTitle") }}</span><span class="author">{{ pinItem.author }}</span></p>
                 </div>
+              </div>
               </div>
             </div>
           </section>
@@ -177,7 +182,8 @@ export default {
       imageRequestController: null,
       previewImageUrl: null,
       previewImageUrlFromCache: false,
-      previewLayoutFrame: null,
+      previewLayoutReady: false,
+      previewLayoutToken: 0,
       previewNaturalHeight: 0,
       previewNaturalWidth: 0,
       previewPopupGeometry: null,
@@ -246,13 +252,11 @@ export default {
   mounted() {
     this.lockBodyScroll();
     document.addEventListener('keydown', this.onKeydown);
-    window.addEventListener('resize', this.queuePreviewLayout);
+    window.addEventListener('resize', this.handlePreviewResize);
   },
   beforeDestroy() {
-    window.removeEventListener('resize', this.queuePreviewLayout);
-    if (this.previewLayoutFrame) {
-      window.cancelAnimationFrame(this.previewLayoutFrame);
-    }
+    window.removeEventListener('resize', this.handlePreviewResize);
+    this.previewLayoutToken += 1;
     if (this.imageRequestController) {
       this.imageRequestController.abort();
     }
@@ -300,6 +304,8 @@ export default {
       }
     },
     onPreviewImageError() {
+      this.previewLayoutToken += 1;
+      this.previewLayoutReady = true;
       this.previewNaturalWidth = 0;
       this.previewNaturalHeight = 0;
       this.previewPopupGeometry = null;
@@ -310,24 +316,41 @@ export default {
       if (!image || !image.naturalWidth || !image.naturalHeight) {
         return;
       }
+      const hadLayout = !!this.previewPopupGeometry;
+      const previousRatio = this.previewNaturalWidth && this.previewNaturalHeight
+        ? this.previewNaturalWidth / this.previewNaturalHeight
+        : null;
+      const nextRatio = image.naturalWidth / image.naturalHeight;
       this.previewNaturalWidth = image.naturalWidth;
       this.previewNaturalHeight = image.naturalHeight;
-      this.queuePreviewLayout();
+      if (!previousRatio || Math.abs(previousRatio - nextRatio) > 0.002) {
+        this.queuePreviewLayout(!hadLayout);
+      }
     },
-    queuePreviewLayout() {
-      if (!this.previewNaturalWidth || !this.previewNaturalHeight || this.previewLayoutFrame) {
+    queuePreviewLayout(hideWhileMeasuring = false) {
+      if (!this.previewNaturalWidth || !this.previewNaturalHeight) {
         return;
       }
-      this.previewLayoutFrame = window.requestAnimationFrame(() => {
-        this.previewLayoutFrame = null;
-        this.updatePreviewPopupGeometry();
+      const layoutToken = this.previewLayoutToken + 1;
+      this.previewLayoutToken = layoutToken;
+      if (hideWhileMeasuring) {
+        this.previewLayoutReady = false;
+      }
+      this.$nextTick(() => {
+        if (layoutToken !== this.previewLayoutToken) {
+          return;
+        }
+        this.measurePreviewLayout(layoutToken);
       });
     },
-    updatePreviewPopupGeometry() {
+    handlePreviewResize() {
+      this.queuePreviewLayout();
+    },
+    getPreviewBounds() {
       const viewportWidth = window.innerWidth;
       const viewportHeight = window.innerHeight;
       if (!viewportWidth || !viewportHeight) {
-        return;
+        return null;
       }
 
       const viewportGap = Math.min(32, Math.max(9, viewportWidth * 0.024));
@@ -350,16 +373,29 @@ export default {
         1,
         viewportHeight - (viewportGap * 2) - cardBorderSize,
       );
-      const content = this.$refs.previewContent;
-      // Keep the complete card inside the viewport. Long metadata stays
-      // accessible through the details area's own contained scroll region.
-      const naturalDetailsHeight = Math.max(96, content ? content.scrollHeight + 2 : 136);
-      const detailsBudget = Math.max(96, Math.floor(maxHeight * 0.42));
-      const allocatedDetailsHeight = Math.min(naturalDetailsHeight, detailsBudget);
+      return {
+        horizontalPadding,
+        maxHeight,
+        maxWidth,
+        verticalPadding,
+      };
+    },
+    getPreviewGeometry(bounds, detailsHeight) {
+      const {
+        horizontalPadding,
+        maxHeight,
+        maxWidth,
+        verticalPadding,
+      } = bounds;
+      const allocatedDetailsHeight = Math.min(
+        Math.max(0, Math.round(detailsHeight)),
+        Math.floor(maxHeight * 0.42),
+      );
       const availableImageWidth = Math.max(1, maxWidth - (horizontalPadding * 2));
-      const availableImageHeight = Math.max(1, maxHeight - allocatedDetailsHeight - (verticalPadding * 2));
-      // Standard contain geometry: one scale preserves the natural image ratio.
-      // Do not cap at 1: thumbnails must grow to the available workspace too.
+      const availableImageHeight = Math.max(
+        1,
+        maxHeight - allocatedDetailsHeight - (verticalPadding * 2),
+      );
       const scale = Math.min(
         availableImageWidth / this.previewNaturalWidth,
         availableImageHeight / this.previewNaturalHeight,
@@ -371,29 +407,51 @@ export default {
         maxWidth,
         Math.max(minimumCardWidth, imageWidth + (horizontalPadding * 2)),
       ));
-      const stageHeight = imageHeight + (verticalPadding * 2);
-      const nextGeometry = {
+      return {
         detailsHeight: allocatedDetailsHeight,
         horizontalPadding,
         imageHeight,
         imageWidth,
-        stageHeight,
+        stageHeight: imageHeight + (verticalPadding * 2),
         verticalPadding,
         width,
       };
-      const geometryChanged = !this.previewPopupGeometry
-        || this.previewPopupGeometry.detailsHeight !== allocatedDetailsHeight
-        || this.previewPopupGeometry.horizontalPadding !== horizontalPadding
-        || this.previewPopupGeometry.imageWidth !== imageWidth
-        || this.previewPopupGeometry.imageHeight !== imageHeight
-        || this.previewPopupGeometry.stageHeight !== stageHeight
-        || this.previewPopupGeometry.verticalPadding !== verticalPadding
-        || this.previewPopupGeometry.width !== width;
-      this.previewPopupGeometry = nextGeometry;
-
-      if (geometryChanged) {
-        this.$nextTick(this.queuePreviewLayout);
+    },
+    getPreviewContentHeight() {
+      const content = this.$refs.previewContent;
+      return content ? content.scrollHeight + 2 : 0;
+    },
+    measurePreviewLayout(layoutToken) {
+      const bounds = this.getPreviewBounds();
+      if (!bounds || layoutToken !== this.previewLayoutToken) {
+        return;
       }
+      // This first pass establishes the eventual card width before reading
+      // wrapped metadata. The final geometry is resolved while hidden.
+      const provisional = this.getPreviewGeometry(
+        bounds,
+        Math.min(160, Math.max(72, Math.round(bounds.maxHeight * 0.16))),
+      );
+      this.previewPopupGeometry = provisional;
+      this.$nextTick(() => {
+        if (layoutToken !== this.previewLayoutToken) {
+          return;
+        }
+        const measured = this.getPreviewGeometry(bounds, this.getPreviewContentHeight());
+        this.previewPopupGeometry = measured;
+        this.$nextTick(() => {
+          if (layoutToken !== this.previewLayoutToken) {
+            return;
+          }
+          // The content may wrap differently after the width settles. Read it
+          // once more, then reveal the already-final layout without a loop.
+          this.previewPopupGeometry = this.getPreviewGeometry(
+            bounds,
+            this.getPreviewContentHeight(),
+          );
+          this.previewLayoutReady = true;
+        });
+      });
     },
     readStream(reader, chunks) {
       return reader.read().then(
@@ -582,6 +640,10 @@ export default {
     var(--shadow-floating);
   transition: box-shadow 160ms ease, border-color 160ms ease;
 }
+.pin-preview-card.is-layout-pending {
+  visibility: hidden;
+  pointer-events: none;
+}
 .pin-preview-stage {
   position: relative;
   display: grid;
@@ -596,13 +658,13 @@ export default {
 .pin-preview-backdrop {
   position: absolute;
   z-index: 0;
-  inset: -22px;
+  inset: -14px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  filter: blur(12px) saturate(1.04) brightness(0.78);
-  opacity: 0.52;
-  transform: scale(1.04);
+  filter: blur(8px) saturate(1.03) brightness(0.84);
+  opacity: 0.48;
+  transform: scale(1.025);
 }
 .pin-preview-stage::after {
   position: absolute;
@@ -655,6 +717,9 @@ export default {
   border-top: 1px solid var(--color-line-soft);
   background: var(--color-surface-card);
   overscroll-behavior: contain;
+}
+.pin-preview-details-inner {
+  min-width: 0;
 }
 .pin-preview-description {
   margin: 0;
