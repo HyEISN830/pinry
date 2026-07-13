@@ -643,6 +643,13 @@ export default {
   color: var(--color-accent-strong);
   background: var(--color-accent-soft);
   font-weight: 900;
+  @include hover-scale(1.012, -1px);
+  transition:
+    transform var(--motion-duration-standard) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard),
+    border-color var(--motion-duration-standard) var(--motion-ease-standard),
+    color var(--motion-duration-standard) var(--motion-ease-standard),
+    background var(--motion-duration-standard) var(--motion-ease-standard);
 }
 .search-load-more:hover:not(:disabled) {
   border-color: var(--color-accent-border);
