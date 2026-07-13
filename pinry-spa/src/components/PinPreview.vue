@@ -1,6 +1,6 @@
 <template>
   <div class="pin-preview-modal">
-    <section class="pin-preview-surface">
+    <section ref="previewSurface" class="pin-preview-surface">
         <article class="pin-preview-card motion-card-enter" :style="previewCardStyle">
           <section
             class="pin-preview-stage"
@@ -91,9 +91,14 @@
                 </div>
                 <div v-if="pinItem.tags.length > 0" class="pin-preview-tag-container">
                   <div class="pin-preview-tags">
-                    <template v-for="tag in pinItem.tags">
-                      <b-tag v-bind:key="tag" type="is-info" class="content-tag-pill pin-preview-tag">{{ tag }}</b-tag>
-                    </template>
+                    <router-link
+                      v-for="tag in pinItem.tags"
+                      :key="tag"
+                      class="content-tag-pill pin-preview-tag"
+                      :to="{ name: 'tag', params: { tag } }"
+                      @click.native="closePreview">
+                      {{ tag }}
+                    </router-link>
                   </div>
                 </div>
                 <div class="pin-preview-identity">
@@ -332,9 +337,14 @@ export default {
         ? Math.min(16, Math.max(9, viewportWidth * 0.011))
         : horizontalPadding;
       const cardBorderSize = 2;
+      const { previewSurface } = this.$refs;
+      const surfaceWidth = previewSurface && previewSurface.clientWidth
+        ? previewSurface.clientWidth
+        : viewportWidth;
+      const availableViewportWidth = Math.min(viewportWidth, surfaceWidth);
       const maxWidth = Math.max(
         1,
-        viewportWidth - (viewportGap * 2) - cardBorderSize,
+        availableViewportWidth - (viewportGap * 2) - cardBorderSize,
       );
       const maxHeight = Math.max(
         1,
@@ -506,6 +516,11 @@ export default {
         { name: 'pin', params: { pinId: this.pinItem.id } },
       );
     },
+    closePreview() {
+      if (this.$parent && this.$parent.close) {
+        this.$parent.close();
+      }
+    },
     hasSource,
     isWebUrl,
     niceLinks,
@@ -536,7 +551,8 @@ export default {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  width: auto;
+  width: 100%;
+  height: 100%;
   min-width: 0;
   min-height: 0;
   max-height: 100%;
@@ -549,7 +565,7 @@ export default {
   grid-template-rows:
     minmax(0, var(--pin-preview-stage-height, auto))
     minmax(0, var(--pin-preview-details-height, auto));
-  width: min(92vw, 680px);
+  width: min(92vw, 960px);
   height: auto;
   min-width: 0;
   min-height: 0;
@@ -564,7 +580,7 @@ export default {
   box-shadow:
     0 0 0 1px var(--color-accent-soft),
     var(--shadow-floating);
-  transition: width 180ms cubic-bezier(0.2, 0.8, 0.2, 1), height 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: box-shadow 160ms ease, border-color 160ms ease;
 }
 .pin-preview-stage {
   position: relative;
@@ -580,13 +596,13 @@ export default {
 .pin-preview-backdrop {
   position: absolute;
   z-index: 0;
-  inset: -36px;
+  inset: -22px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-  filter: blur(22px) saturate(0.84) brightness(0.72);
-  opacity: 0.5;
-  transform: scale(1.08);
+  filter: blur(12px) saturate(1.04) brightness(0.78);
+  opacity: 0.52;
+  transform: scale(1.04);
 }
 .pin-preview-stage::after {
   position: absolute;
@@ -705,7 +721,6 @@ export default {
   order: 2;
   min-width: 0;
   padding-top: 0.08rem;
-  cursor: default;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -714,14 +729,13 @@ export default {
 }
 .pin-preview-tag {
   margin: 0 0.2rem 0.22rem 0 !important;
-  cursor: default;
-  pointer-events: none;
+  cursor: pointer;
+  pointer-events: auto;
   user-select: none;
   -webkit-user-select: none;
 }
 .pin-preview-tag-container *,
 .pin-preview-tag * {
-  cursor: default !important;
   user-select: none !important;
   -webkit-user-select: none !important;
 }
