@@ -7,6 +7,7 @@
               v-if="activePreviewUrl"
               class="pin-preview-image"
               :src="activePreviewUrl"
+              :style="previewImageStyle"
               alt="Image"
               @load="onPreviewImageLoad"
               @error="onPreviewImageError"
@@ -207,11 +208,21 @@ export default {
         && !this.motionVideoFailed
       );
     },
+    previewImageStyle() {
+      if (!this.previewPopupGeometry) {
+        return {};
+      }
+      return {
+        height: `${this.previewPopupGeometry.imageHeight}px`,
+        width: `${this.previewPopupGeometry.imageWidth}px`,
+      };
+    },
     previewCardStyle() {
       if (!this.previewPopupGeometry) {
         return {};
       }
       return {
+        '--pin-preview-details-height': `${this.previewPopupGeometry.detailsHeight}px`,
         width: `${this.previewPopupGeometry.width}px`,
         height: `${this.previewPopupGeometry.height}px`,
       };
@@ -332,18 +343,19 @@ export default {
       const framePadding = Math.min(24, Math.max(10, viewportWidth * 0.018));
       const maxWidth = Math.max(1, viewportWidth - (viewportGap * 2));
       const maxHeight = Math.max(1, viewportHeight - (viewportGap * 2));
-      const metaHeightLimit = Math.min(240, viewportHeight * 0.3);
+      const detailsHeightLimit = Math.min(240, Math.max(112, viewportHeight * 0.3));
       const content = this.$refs.previewContent;
-      const contentHeight = Math.min(
-        metaHeightLimit,
+      const detailsHeight = Math.min(
+        detailsHeightLimit,
         Math.max(88, content ? content.scrollHeight : 112),
       );
-      const imageWidthLimit = Math.max(1, maxWidth - (framePadding * 2));
-      const imageHeightLimit = Math.max(1, maxHeight - contentHeight - (framePadding * 2));
+      const availableImageWidth = Math.max(1, maxWidth - (framePadding * 2));
+      const availableImageHeight = Math.max(1, maxHeight - detailsHeight - (framePadding * 2));
+      // Standard contain geometry: one scale preserves the natural image ratio.
+      // Do not cap at 1: thumbnails must grow to the available workspace too.
       const scale = Math.min(
-        1,
-        imageWidthLimit / this.previewNaturalWidth,
-        imageHeightLimit / this.previewNaturalHeight,
+        availableImageWidth / this.previewNaturalWidth,
+        availableImageHeight / this.previewNaturalHeight,
       );
       const imageWidth = Math.max(1, Math.round(this.previewNaturalWidth * scale));
       const imageHeight = Math.max(1, Math.round(this.previewNaturalHeight * scale));
@@ -354,13 +366,19 @@ export default {
       ));
       const height = Math.round(Math.min(
         maxHeight,
-        imageHeight + (framePadding * 2) + contentHeight,
+        imageHeight + (framePadding * 2) + detailsHeight,
       ));
       const nextGeometry = {
-        width,
+        detailsHeight,
         height,
+        imageHeight,
+        imageWidth,
+        width,
       };
       const geometryChanged = !this.previewPopupGeometry
+        || this.previewPopupGeometry.detailsHeight !== detailsHeight
+        || this.previewPopupGeometry.imageWidth !== imageWidth
+        || this.previewPopupGeometry.imageHeight !== imageHeight
         || this.previewPopupGeometry.width !== width
         || this.previewPopupGeometry.height !== height;
       this.previewPopupGeometry = nextGeometry;
@@ -528,7 +546,7 @@ export default {
 }
 .pin-preview-card {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr) var(--pin-preview-details-height, auto);
   width: min(92vw, 680px);
   height: min(78vh, 560px);
   min-width: 0;
@@ -794,8 +812,7 @@ export default {
     --pin-preview-viewport-gap: 9px;
   }
   .pin-preview-card {
-    width: min(96vw, 520px) !important;
-    min-height: min(72vh, 520px);
+    max-width: 96vw;
   }
   .pin-preview-details {
     max-height: min(38vh, 280px);
