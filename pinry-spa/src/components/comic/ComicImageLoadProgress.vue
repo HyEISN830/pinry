@@ -50,6 +50,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@property --comic-image-load-progress {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
 .comic-image-load-progress {
   --comic-image-load-progress: 0%;
   position: absolute;
@@ -76,6 +82,7 @@ export default {
   box-shadow:
     0 14px 34px color-mix(in srgb, var(--color-theme-glow) 48%, transparent),
     var(--shadow-sm);
+  transition: --comic-image-load-progress 420ms var(--motion-ease-emphasized);
 }
 .comic-image-load-progress::before {
   position: absolute;
@@ -252,6 +259,7 @@ export default {
   }
 }
 html[data-motion='reduce'] .comic-image-load-progress::before,
+html[data-motion='reduce'] .comic-image-load-progress,
 html[data-motion='reduce'] .comic-image-load-progress__visual,
 html[data-motion='reduce'] .comic-image-load-progress__visual::after,
 html[data-motion='reduce'] .comic-image-load-progress__fill,

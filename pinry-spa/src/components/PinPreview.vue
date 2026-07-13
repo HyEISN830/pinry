@@ -623,6 +623,12 @@ export default {
 @import './utils/fonts.scss';
 @import './utils/motion-mixins';
 
+@property --pin-preview-load-progress {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 0%;
+}
+
 .pin-preview-modal {
   --pin-preview-viewport-gap: clamp(12px, 2.4vw, 32px);
   box-sizing: border-box;
@@ -953,6 +959,7 @@ export default {
   box-shadow:
     0 14px 34px color-mix(in srgb, var(--color-theme-glow) 48%, transparent),
     var(--shadow-sm);
+  transition: --pin-preview-load-progress 420ms var(--motion-ease-emphasized);
 }
 .preview-loading::before {
   position: absolute;
@@ -1206,6 +1213,7 @@ html[data-motion='reduce'] .pin-preview-card {
   transition: none;
 }
 html[data-motion='reduce'] .preview-loading::before,
+html[data-motion='reduce'] .preview-loading,
 html[data-motion='reduce'] .preview-loading__visual,
 html[data-motion='reduce'] .preview-loading__visual::after,
 html[data-motion='reduce'] .preview-loading__fill,
