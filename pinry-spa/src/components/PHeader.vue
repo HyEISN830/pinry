@@ -236,7 +236,12 @@
       </button>
     </nav>
 
-    <div class="mobile-backdrop" v-if="active" @click="closeMenu"></div>
+    <div
+      v-if="active"
+      class="mobile-backdrop"
+      aria-hidden="true"
+      @click.self="closeMenu"
+      @touchmove.prevent></div>
     <div class="mobile-panel" id="pinry-mobile-panel" v-if="active">
       <section class="mobile-section is-primary">
         <router-link :to="{ name: 'search' }" @click.native="closeMenu">
@@ -343,6 +348,7 @@ import theme from './utils/theme';
 
 const NAV_HIDE_DISTANCE = 96;
 const NAV_SHOW_DISTANCE = 62;
+const MOBILE_NAV_BREAKPOINT = 980;
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -364,6 +370,7 @@ export default {
       dropdownCloseTimer: null,
       langs: localeUtils.langCode2Name,
       lastScrollTop: 0,
+      mobileScrollLock: null,
       navHidden: false,
       navProgress: 0,
       pinnedDropdown: null,
@@ -409,15 +416,67 @@ export default {
     },
     closeMenu() {
       this.active = false;
+      this.unlockMobileScroll();
       this.closeDropdown();
     },
     handleDocumentClick(event) {
       if (!this.$el.contains(event.target)) {
-        this.closeDropdown();
+        this.closeMenu();
+      }
+    },
+    handleWindowResize() {
+      if (this.active && !this.isMobileViewport()) {
+        this.closeMenu();
       }
     },
     isDropdownOpen(name) {
       return this.activeDropdown === name || this.pinnedDropdown === name;
+    },
+    isMobileViewport() {
+      return window.matchMedia(`(max-width: ${MOBILE_NAV_BREAKPOINT}px)`).matches;
+    },
+    lockMobileScroll() {
+      if (this.mobileScrollLock || !this.isMobileViewport()) {
+        return;
+      }
+      const { body, documentElement } = document;
+      const scrollTop = Math.max(
+        0,
+        window.pageYOffset || documentElement.scrollTop || 0,
+      );
+      this.mobileScrollLock = {
+        bodyLeft: body.style.left,
+        bodyOverflow: body.style.overflow,
+        bodyPosition: body.style.position,
+        bodyRight: body.style.right,
+        bodyTop: body.style.top,
+        bodyWidth: body.style.width,
+        documentOverflow: documentElement.style.overflow,
+        scrollTop,
+      };
+      documentElement.style.overflow = 'hidden';
+      body.style.overflow = 'hidden';
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollTop}px`;
+      body.style.right = '0';
+      body.style.left = '0';
+      body.style.width = '100%';
+    },
+    unlockMobileScroll() {
+      if (!this.mobileScrollLock) {
+        return;
+      }
+      const { body, documentElement } = document;
+      const lock = this.mobileScrollLock;
+      documentElement.style.overflow = lock.documentOverflow;
+      body.style.overflow = lock.bodyOverflow;
+      body.style.position = lock.bodyPosition;
+      body.style.top = lock.bodyTop;
+      body.style.right = lock.bodyRight;
+      body.style.left = lock.bodyLeft;
+      body.style.width = lock.bodyWidth;
+      this.mobileScrollLock = null;
+      window.scrollTo(0, lock.scrollTop);
     },
     revealNav() {
       this.navHidden = false;
@@ -460,7 +519,10 @@ export default {
     toggleMenu() {
       this.active = !this.active;
       if (this.active) {
+        this.lockMobileScroll();
         this.revealNav();
+      } else {
+        this.unlockMobileScroll();
       }
     },
     onLoginSucceed() {
@@ -594,12 +656,20 @@ export default {
     }
     this.lastScrollTop = window.pageYOffset || 0;
     window.addEventListener('scroll', this.requestScrollUpdate, { passive: true });
+    window.addEventListener('resize', this.handleWindowResize);
     document.addEventListener('click', this.handleDocumentClick);
   },
   beforeDestroy() {
     window.removeEventListener('scroll', this.requestScrollUpdate);
+    window.removeEventListener('resize', this.handleWindowResize);
     document.removeEventListener('click', this.handleDocumentClick);
+    this.unlockMobileScroll();
     this.clearDropdownCloseTimer();
+  },
+  watch: {
+    $route() {
+      this.closeMenu();
+    },
   },
 };
 </script>
@@ -615,18 +685,15 @@ export default {
   left: 0;
   padding: var(--space-sm) clamp(var(--space-sm), 3vw, var(--space-xl));
   pointer-events: none;
-  transform: translate3d(0, 0, 0);
   transition: padding var(--motion-duration-fast) var(--motion-ease-standard);
-}
-.p-header.is-hidden,
-.p-header.is-open {
-  transform: translate3d(0, 0, 0);
 }
 .p-header.is-hidden .nav-shell,
 .p-header.is-hidden .mobile-panel {
   pointer-events: none;
 }
 .nav-shell {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -997,26 +1064,36 @@ export default {
   .mobile-backdrop {
     position: fixed;
     inset: 0;
-    z-index: calc(var(--z-nav) - 1);
+    z-index: 1;
     display: block;
     pointer-events: auto;
     background: rgba(12, 18, 28, 0.14);
     backdrop-filter: blur(2px);
+    overscroll-behavior: none;
+    touch-action: none;
   }
   .mobile-panel {
-    position: relative;
-    z-index: var(--z-nav);
+    position: fixed;
+    z-index: 2;
+    top: calc(var(--space-xs) + 58px);
+    right: var(--space-xs);
+    left: var(--space-xs);
     display: grid;
     gap: var(--space-sm);
-    width: min(100%, var(--container-max));
-    margin: var(--space-xs) auto 0;
+    width: auto;
+    max-width: var(--container-max);
+    max-height: calc(100dvh - 74px);
+    margin: 0 auto;
     padding: var(--space-sm);
+    overflow-y: auto;
     border: 1px solid var(--color-line-soft);
     border-radius: var(--radius-lg);
     background:
       radial-gradient(circle at top right, var(--color-theme-glow), transparent 240px),
       var(--color-surface-1);
     pointer-events: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     box-shadow: var(--shadow-floating);
     @include card-entrance;
   }
