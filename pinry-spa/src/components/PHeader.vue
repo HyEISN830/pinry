@@ -244,6 +244,10 @@
       @touchmove.prevent></div>
     <div class="mobile-panel" id="pinry-mobile-panel" v-if="active">
       <section class="mobile-section is-primary">
+        <a href="https://hyeisn.cn/" @click="closeMenu">
+          <b-icon icon="home-outline" custom-size="mdi-18px"></b-icon>
+          <span>HyEISN's</span>
+        </a>
         <router-link :to="{ name: 'search' }" @click.native="closeMenu">
           <b-icon icon="magnify" custom-size="mdi-18px"></b-icon>
           <span>{{ $t("searchButton") }}</span>
