@@ -115,23 +115,30 @@
               </button>
             </div>
             <div class="comic-editor__divider"></div>
-            <b-field
+            <div
               class="comic-editor__insert-controls"
-              :label="$t('comicInsertPositionLabel')"
-              grouped>
-              <b-select v-model="insertPageId" expanded>
-                <option
-                  v-for="page in comic.pages"
-                  :key="page.id"
-                  :value="page.id">
-                  {{ page.order }}
-                </option>
-              </b-select>
-              <b-select v-model="insertMode" expanded>
-                <option value="after">{{ $t("comicInsertAfterLabel") }}</option>
-                <option value="before">{{ $t("comicInsertBeforeLabel") }}</option>
-              </b-select>
-            </b-field>
+              role="group"
+              :aria-label="$t('comicInsertPositionLabel')">
+              <label
+                class="comic-editor__insert-label"
+                for="comic-insert-page">
+                {{ $t('comicInsertPositionLabel') }}
+              </label>
+              <div class="comic-editor__insert-selects">
+                <TokenSelect
+                  id="comic-insert-page"
+                  v-model="insertPageId"
+                  :aria-label="$t('comicInsertPositionLabel')"
+                  :options="insertPageOptions">
+                </TokenSelect>
+                <TokenSelect
+                  id="comic-insert-mode"
+                  v-model="insertMode"
+                  :aria-label="$t('comicInsertPositionLabel')"
+                  :options="insertModeOptions">
+                </TokenSelect>
+              </div>
+            </div>
             <b-field :label="$t('comicPagesLabel')">
               <div class="comic-file-picker">
                 <input
@@ -299,6 +306,7 @@
 import API from '../components/api';
 import ComicImageLoadProgress from '../components/comic/ComicImageLoadProgress.vue';
 import ComicUploadMiniProgress from '../components/comic/ComicUploadMiniProgress.vue';
+import TokenSelect from '../components/form/TokenSelect.vue';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import {
@@ -333,6 +341,7 @@ export default {
   components: {
     ComicImageLoadProgress,
     ComicUploadMiniProgress,
+    TokenSelect,
     PHeader,
     loadingSpinner,
   },
@@ -384,6 +393,29 @@ export default {
       return this.user.loggedIn
         && this.comic
         && this.comic.submitter.username === this.user.meta.username;
+    },
+    insertModeOptions() {
+      return [
+        {
+          label: this.$t('comicInsertAfterLabel'),
+          value: 'after',
+        },
+        {
+          label: this.$t('comicInsertBeforeLabel'),
+          value: 'before',
+        },
+      ];
+    },
+    insertPageOptions() {
+      if (!this.comic) {
+        return [];
+      }
+      return this.comic.pages.map(
+        page => ({
+          label: String(page.order),
+          value: page.id,
+        }),
+      );
     },
     secondPage() {
       if (!this.comic || this.comic.pages.length < 2) {
@@ -1659,15 +1691,6 @@ export default {
   background: var(--color-accent-soft);
 }
 
-.comic-editor ::v-deep .select,
-.comic-editor ::v-deep .select select {
-  width: 100%;
-}
-
-.comic-editor ::v-deep .select:not(.is-multiple):not(.is-loading)::after {
-  border-color: var(--color-accent-strong);
-}
-
 .comic-editor__detail-actions,
 .comic-editor__add-actions {
   display: flex;
@@ -1680,13 +1703,32 @@ export default {
   background: linear-gradient(90deg, transparent, var(--color-line-soft) 10% 90%, transparent);
 }
 
-.comic-editor__insert-controls ::v-deep .field-body,
-.comic-editor__insert-controls ::v-deep .field.is-grouped {
-  width: 100%;
+.comic-editor__insert-controls {
+  display: grid;
+  grid-template-columns: minmax(116px, auto) minmax(0, 1fr);
+  gap: var(--space-md);
+  align-items: center;
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-surface-2) 76%, transparent);
 }
 
-.comic-editor__insert-controls ::v-deep .control {
-  min-width: 0;
+.comic-editor__insert-label {
+  align-self: center;
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.comic-editor__insert-selects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xs);
+  width: 100%;
 }
 
 .editor-save-button {
@@ -1881,6 +1923,11 @@ export default {
     grid-column: auto;
   }
 
+  .comic-editor__insert-controls {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-xs);
+  }
+
   .comic-editor-files {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1903,6 +1950,10 @@ export default {
   .comic-file-picker {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .comic-editor__insert-selects {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .comic-file-picker__button,
@@ -1930,6 +1981,7 @@ html[data-motion='reduce'] .comic-editor-button,
 html[data-motion='reduce'] .page-tool-button,
 html[data-motion='reduce'] .comic-editor-file,
 html[data-motion='reduce'] .comic-editor-file__remove,
+html[data-motion='reduce'] .comic-editor__insert-controls,
 html[data-motion='reduce'] .comic-editor-reveal-enter-active,
 html[data-motion='reduce'] .comic-editor-reveal-leave-active {
   animation: none;

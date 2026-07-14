@@ -267,6 +267,7 @@ function initialData() {
       loading: false,
       hasNext: true,
       offset: 0,
+      count: null,
       error: false,
     },
     editorMeta: {
@@ -321,7 +322,7 @@ export default {
   },
   // R6 route/category switching layout guard
   watch: {
-    '$route.fullPath': function () {
+    '$route.fullPath': function routeFullPathChanged() {
       this.queueMasonryLayout();
     },
     pinFilters() {
@@ -666,6 +667,61 @@ export default {
         },
       );
     },
+    pinMatchesCurrentFilters(pin) {
+      const filters = this.pinFilters || {};
+      if (
+        filters.tagFilter
+        && (!pin.tags || pin.tags.indexOf(filters.tagFilter) === -1)
+      ) {
+        return false;
+      }
+      if (
+        filters.userFilter
+        && (
+          !pin.submitter
+          || pin.submitter.username !== filters.userFilter
+        )
+      ) {
+        return false;
+      }
+      if (
+        filters.boardFilter
+        && !(pin.boards || []).some(
+          board => String(board.id) === String(filters.boardFilter),
+        )
+      ) {
+        return false;
+      }
+      return !filters.idFilter || String(pin.id) === String(filters.idFilter);
+    },
+    insertCreatedPin(pin) {
+      if (!pin || !pin.id || !this.pinMatchesCurrentFilters(pin)) {
+        return;
+      }
+      const existingIndex = this.blocks.findIndex(item => item.id === pin.id);
+      if (existingIndex >= 0) {
+        return;
+      }
+      const item = createPinDisplayItem(pin);
+      this.$set(this.blocksMap, item.id, item);
+      this.blocks = [item].concat(this.blocks);
+      this.status.offset += 1;
+      if (Number.isFinite(this.status.count)) {
+        this.status.count += 1;
+        this.$emit('pins-meta-loaded', { count: this.status.count });
+      }
+      this.$nextTick(() => {
+        this.observeLazyImages();
+        this.queueMasonryLayout();
+      });
+    },
+    handlePinRefresh(payload) {
+      if (payload && payload.type === 'created') {
+        this.insertCreatedPin(payload.pin);
+        return;
+      }
+      this.reset();
+    },
     reset() {
       if (this.lazyObserver) {
         this.lazyObserver.disconnect();
@@ -707,6 +763,7 @@ export default {
         (resp) => {
           const { count, results, next } = resp.data;
           if (count !== undefined) {
+            this.status.count = count;
             this.$emit('pins-meta-loaded', { count });
           }
           let newBlocks = this.buildBlocks(results);
@@ -754,7 +811,7 @@ export default {
   },
   created() {
     this.lazyObserver = null;
-    bus.bus.$on(bus.events.refreshPin, this.reset);
+    bus.bus.$on(bus.events.refreshPin, this.handlePinRefresh);
     this.registerScrollEvent();
     window.addEventListener('resize', this.handleResize);
     this.initialize();
@@ -765,6 +822,7 @@ export default {
     this.measureGridWhenReady();
   },
   beforeDestroy() {
+    bus.bus.$off(bus.events.refreshPin, this.handlePinRefresh);
     this.unbindMasonryMediaEvents();
     this.clearMasonryTimers();
     if (this.gridResizeObserver) {

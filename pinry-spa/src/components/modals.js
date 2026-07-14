@@ -4,6 +4,7 @@ import SignUpForm from './SignUpForm.vue';
 import BoardEdit from './BoardEdit.vue';
 import Add2Board from './pin_edit/Add2Board.vue';
 import ComicCreateModal from './comic/ComicCreateModal.vue';
+import scroll from './utils/scroll';
 
 function runCreatedCallback(vm, callback, item) {
   if (typeof callback !== 'function') {
@@ -12,8 +13,22 @@ function runCreatedCallback(vm, callback, item) {
   vm.$nextTick(() => callback(item));
 }
 
+function openPreservingScroll(vm, options) {
+  const routeAtOpen = vm.$route ? vm.$route.fullPath : null;
+  const restoreScroll = scroll.preserveModalScrollPosition(
+    () => !routeAtOpen || !vm.$route || vm.$route.fullPath === routeAtOpen,
+  );
+  const modal = vm.$buefy.modal.open(Object.assign(
+    { scroll: 'keep' },
+    options,
+  ));
+  modal.$once('close', restoreScroll);
+  return modal;
+}
+
 function openPinEdit(vm, props = null, onCreated = null) {
-  vm.$buefy.modal.open(
+  return openPreservingScroll(
+    vm,
     {
       parent: vm,
       component: PinCreateModal,
@@ -42,7 +57,8 @@ function openAdd2Board(vm, pin, username) {
 }
 
 function openBoardCreate(vm, onCreated = null) {
-  vm.$buefy.modal.open(
+  return openPreservingScroll(
+    vm,
     {
       parent: vm,
       component: BoardEdit,
@@ -59,7 +75,8 @@ function openBoardCreate(vm, onCreated = null) {
 }
 
 function openComicCreate(vm, username, onCreated = null) {
-  vm.$buefy.modal.open(
+  return openPreservingScroll(
+    vm,
     {
       parent: vm,
       component: ComicCreateModal,
@@ -77,7 +94,8 @@ function openComicCreate(vm, username, onCreated = null) {
 }
 
 function openBoardEdit(vm, board, onSaved) {
-  vm.$buefy.modal.open(
+  return openPreservingScroll(
+    vm,
     {
       parent: vm,
       component: BoardEdit,

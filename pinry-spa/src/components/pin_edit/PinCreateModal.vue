@@ -451,11 +451,23 @@ export default {
       promise.then(
         (resp) => {
           const promises = [];
-          function done() {
-            bus.bus.$emit(bus.events.refreshPin);
-            self.$emit('pinCreated', resp.data);
+          function publishCreatedPin(pin) {
+            bus.bus.$emit(
+              bus.events.refreshPin,
+              { type: 'created', pin },
+            );
+            self.$emit('pinCreated', pin);
             self.$parent.close();
             loading.close();
+          }
+          function done() {
+            API.fetchPin(resp.data.id).then(
+              (pinResp) => {
+                const [createdPin] = pinResp.data.results;
+                publishCreatedPin(createdPin || resp.data);
+              },
+              () => publishCreatedPin(resp.data),
+            );
           }
           if (self.boardIds) {
             // FIXME(winkidney): Should handle error for add-to board

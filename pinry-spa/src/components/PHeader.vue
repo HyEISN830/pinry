@@ -253,36 +253,95 @@
           <span>{{ $t("searchButton") }}</span>
         </router-link>
         <router-link :to="{ name: 'comics' }" @click.native="closeMenu">
-          <b-icon icon="book-open-page-variant-outline" custom-size="mdi-18px"></b-icon>
+          <ComicIcon class="mobile-comic-icon"></ComicIcon>
           <span>{{ $t("comicsLink") }}</span>
         </router-link>
       </section>
 
-      <section class="mobile-section" v-if="user.loggedIn">
-        <button type="button" @click="createPin">{{ $t("pinLink") }}</button>
-        <button type="button" @click="createBoard">{{ $t("boardLink") }}</button>
-        <button type="button" @click="createComic">{{ $t("comicLink") }}</button>
+      <section class="mobile-accordion" v-if="user.loggedIn">
+        <button
+          class="mobile-accordion__trigger"
+          type="button"
+          :class="{ 'is-active': isMobileSectionOpen('create') }"
+          :aria-expanded="isMobileSectionOpen('create') ? 'true' : 'false'"
+          aria-controls="pinry-mobile-create-items"
+          @click="toggleMobileSection('create')">
+          <b-icon icon="plus-circle-outline" custom-size="mdi-19px"></b-icon>
+          <span>{{ $t("createLink") }}</span>
+          <b-icon
+            class="mobile-accordion__chevron"
+            icon="chevron-down"
+            custom-size="mdi-20px">
+          </b-icon>
+        </button>
+        <transition name="mobile-accordion-reveal">
+          <div
+            v-if="isMobileSectionOpen('create')"
+            id="pinry-mobile-create-items"
+            class="mobile-section mobile-accordion__items">
+            <button type="button" @click="createPin">
+              <b-icon icon="image-outline" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("pinLink") }}</span>
+            </button>
+            <button type="button" @click="createBoard">
+              <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("boardLink") }}</span>
+            </button>
+            <button type="button" @click="createComic">
+              <ComicIcon class="mobile-comic-icon"></ComicIcon>
+              <span>{{ $t("comicLink") }}</span>
+            </button>
+          </div>
+        </transition>
       </section>
 
-      <section class="mobile-section" v-if="user.loggedIn">
-        <router-link
-          :to="{ name: 'user', params: {user: user.meta.username} }"
-          @click.native="closeMenu">
-          <b-icon icon="image-outline" custom-size="mdi-18px"></b-icon>
-          <span>{{ $t("pinsLink") }}</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'boards4user', params: {username: user.meta.username} }"
-          @click.native="closeMenu">
-          <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
-          <span>{{ $t("boardsLink") }}</span>
-        </router-link>
-        <router-link
-          :to="{ name: 'comics4user', params: {username: user.meta.username} }"
-          @click.native="closeMenu">
-          <b-icon icon="book-open-page-variant-outline" custom-size="mdi-18px"></b-icon>
-          <span>{{ $t("comicsLink") }}</span>
-        </router-link>
+      <section class="mobile-accordion" v-if="user.loggedIn">
+        <button
+          class="mobile-accordion__trigger"
+          type="button"
+          :class="{ 'is-active': isMobileSectionOpen('mine') }"
+          :aria-expanded="isMobileSectionOpen('mine') ? 'true' : 'false'"
+          aria-controls="pinry-mobile-mine-items"
+          @click="toggleMobileSection('mine')">
+          <b-icon icon="account-outline" custom-size="mdi-19px"></b-icon>
+          <span>{{ $t("myLink") }}</span>
+          <b-icon
+            class="mobile-accordion__chevron"
+            icon="chevron-down"
+            custom-size="mdi-20px">
+          </b-icon>
+        </button>
+        <transition name="mobile-accordion-reveal">
+          <div
+            v-if="isMobileSectionOpen('mine')"
+            id="pinry-mobile-mine-items"
+            class="mobile-section mobile-accordion__items">
+            <router-link
+              :to="{ name: 'user', params: {user: user.meta.username} }"
+              @click.native="closeMenu">
+              <b-icon icon="image-outline" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("pinsLink") }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'boards4user', params: {username: user.meta.username} }"
+              @click.native="closeMenu">
+              <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("boardsLink") }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'comics4user', params: {username: user.meta.username} }"
+              @click.native="closeMenu">
+              <ComicIcon class="mobile-comic-icon"></ComicIcon>
+              <span>{{ $t("comicsLink") }}</span>
+            </router-link>
+            <router-link
+              :to="{ name: 'profile4user', params: {username: user.meta.username} }"
+              @click.native="closeMenu">
+              <b-icon icon="account-outline" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("profileLink") }}</span>
+            </router-link>
+          </div>
+        </transition>
       </section>
 
       <section class="mobile-section is-preferences">
@@ -345,9 +404,11 @@
 
 <script>
 import localeUtils from '@/components/utils/i18n';
+import ComicIcon from './icons/ComicIcon.vue';
 import api from './api';
 import modals from './modals';
 import motionPreference from './utils/motionPreference';
+import scroll from './utils/scroll';
 import theme from './utils/theme';
 
 const NAV_HIDE_DISTANCE = 96;
@@ -360,6 +421,9 @@ function clamp(value, min, max) {
 
 export default {
   name: 'p-header',
+  components: {
+    ComicIcon,
+  },
   props: {
     appShell: {
       type: Boolean,
@@ -375,6 +439,7 @@ export default {
       langs: localeUtils.langCode2Name,
       lastScrollTop: 0,
       mobileScrollLock: null,
+      mobileSectionOpen: null,
       navHidden: false,
       navProgress: 0,
       pinnedDropdown: null,
@@ -420,6 +485,7 @@ export default {
     },
     closeMenu() {
       this.active = false;
+      this.mobileSectionOpen = null;
       this.unlockMobileScroll();
       this.closeDropdown();
     },
@@ -438,6 +504,9 @@ export default {
     },
     isMobileViewport() {
       return window.matchMedia(`(max-width: ${MOBILE_NAV_BREAKPOINT}px)`).matches;
+    },
+    isMobileSectionOpen(name) {
+      return this.mobileSectionOpen === name;
     },
     lockMobileScroll() {
       if (this.mobileScrollLock || !this.isMobileViewport()) {
@@ -480,7 +549,7 @@ export default {
       body.style.left = lock.bodyLeft;
       body.style.width = lock.bodyWidth;
       this.mobileScrollLock = null;
-      window.scrollTo(0, lock.scrollTop);
+      scroll.restoreScrollPosition(lock.scrollTop);
     },
     revealNav() {
       this.navHidden = false;
@@ -529,6 +598,9 @@ export default {
         this.unlockMobileScroll();
       }
     },
+    toggleMobileSection(name) {
+      this.mobileSectionOpen = this.mobileSectionOpen === name ? null : name;
+    },
     onLoginSucceed() {
       this.initializeUser(true);
     },
@@ -551,7 +623,6 @@ export default {
       modals.openPinEdit(
         this,
         { username: this.user.meta.username },
-        pin => this.$router.push({ name: 'pin', params: { pinId: pin.id } }),
       );
     },
     createBoard() {
@@ -1110,6 +1181,73 @@ export default {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-xs);
   }
+  .mobile-comic-icon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    font-size: 18px;
+  }
+  .mobile-accordion {
+    display: grid;
+    gap: var(--space-xs);
+    padding: var(--space-xs);
+    border: 1px solid var(--color-line-soft);
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-surface-2) 72%, transparent);
+  }
+  .mobile-accordion__trigger {
+    width: 100%;
+    min-height: 46px;
+    border-color: transparent;
+    color: var(--color-text-strong);
+    background: color-mix(in srgb, var(--color-surface-1) 82%, transparent);
+    box-shadow: var(--shadow-xs);
+  }
+  .mobile-accordion__trigger:hover,
+  .mobile-accordion__trigger:focus-visible,
+  .mobile-accordion__trigger.is-active {
+    border-color: var(--color-accent-border);
+    color: var(--color-accent-strong);
+    background: var(--color-accent-soft);
+    box-shadow: 0 8px 22px var(--color-theme-glow);
+  }
+  .mobile-accordion__chevron {
+    margin-left: auto;
+    transition: transform var(--motion-duration-standard) var(--motion-ease-spring);
+  }
+  .mobile-accordion__trigger.is-active .mobile-accordion__chevron {
+    transform: rotate(180deg);
+  }
+  .mobile-accordion__items {
+    padding-top: var(--space-2xs);
+    transform-origin: top center;
+  }
+  .mobile-accordion__items a,
+  .mobile-accordion__items button {
+    min-width: 0;
+    border-color: color-mix(in srgb, var(--color-line-soft) 78%, transparent);
+    background: color-mix(in srgb, var(--color-surface-1) 68%, transparent);
+  }
+  .mobile-accordion-reveal-enter-active,
+  .mobile-accordion-reveal-leave-active {
+    overflow: hidden;
+    transition:
+      max-height var(--motion-duration-card) var(--motion-ease-emphasized),
+      opacity var(--motion-duration-standard) var(--motion-ease-standard),
+      transform var(--motion-duration-card) var(--motion-ease-emphasized);
+  }
+  .mobile-accordion-reveal-enter,
+  .mobile-accordion-reveal-leave-to {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+  .mobile-accordion-reveal-enter-to,
+  .mobile-accordion-reveal-leave {
+    max-height: 260px;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
   .mobile-section.is-primary a {
     min-height: 46px;
     border-color: var(--color-accent-border);
@@ -1140,6 +1278,12 @@ export default {
   .accent-swatch {
     justify-self: center;
   }
+}
+
+html[data-motion='reduce'] .mobile-accordion__chevron,
+html[data-motion='reduce'] .mobile-accordion-reveal-enter-active,
+html[data-motion='reduce'] .mobile-accordion-reveal-leave-active {
+  transition: none;
 }
 
 /* R6 nav anti-overlap polish */

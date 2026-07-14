@@ -4,7 +4,12 @@ const tooltipStates = new WeakMap();
 let tooltipSequence = 0;
 
 function tooltipText(element) {
-  return (element.getAttribute('data-source-tip') || '').trim();
+  return (
+    element.getAttribute('data-source-tip')
+    || element.getAttribute('data-tooltip')
+    || element.getAttribute('aria-label')
+    || ''
+  ).trim();
 }
 
 function removeTooltip(element) {

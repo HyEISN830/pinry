@@ -1,11 +1,12 @@
 <template>
   <div class="editor pin-editor">
     <div class="editor-buttons" v-if="isOwner">
-      <span
+      <button
         class="icon-container"
         v-if="inOwnedBoard"
+        v-source-tooltip
+        type="button"
         data-tooltip="移出画板"
-        title="移出画板"
         aria-label="移出画板"
         @click.stop="removeFromBoard"
         @touchstart.stop="noop">
@@ -14,11 +15,12 @@
             icon="minus-box"
             custom-size="mdi-24px">
          </b-icon>
-      </span>
-      <span
+      </button>
+      <button
         class="icon-container"
+        v-source-tooltip
+        type="button"
         data-tooltip="添加到画板"
-        title="添加到画板"
         aria-label="添加到画板"
         @click.stop="addToBoard"
         @touchstart.stop="noop">
@@ -27,11 +29,12 @@
             icon="plus-box"
             custom-size="mdi-24px">
          </b-icon>
-      </span>
-      <span
+      </button>
+      <button
         class="icon-container"
+        v-source-tooltip
+        type="button"
         data-tooltip="删除"
-        title="删除"
         aria-label="删除"
         @click.stop="deletePin"
         @touchstart.stop="noop">
@@ -40,11 +43,12 @@
            icon="delete"
            custom-size="mdi-24px">
          </b-icon>
-      </span>
-      <span
+      </button>
+      <button
         class="icon-container"
+        v-source-tooltip
+        type="button"
         data-tooltip="编辑"
-        title="编辑"
         aria-label="编辑"
         @click.stop="editPin"
         @touchstart.stop="noop">
@@ -53,7 +57,7 @@
          icon="pencil"
          custom-size="mdi-24px">
        </b-icon>
-      </span>
+      </button>
     </div>
   </div>
 </template>
