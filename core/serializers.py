@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from taggit.models import Tag
 
 from core.likes import like_actor_keys
-from core.models import Image, Board, Comic, ComicPage, MotionPhoto
+from core.models import ChunkedUpload, Image, Board, Comic, ComicPage, MotionPhoto
 from core.models import ImageFetchJob, Pin
 from django_images.models import Thumbnail
 from users.serializers import UserSerializer
@@ -116,6 +116,22 @@ class ImageSerializer(serializers.ModelSerializer):
         if motion_photo is None:
             return None
         return MotionPhotoSerializer(motion_photo, context=self.context).data
+
+
+class ChunkedUploadSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChunkedUpload
+        fields = (
+            'id',
+            'target',
+            'filename',
+            'content_type',
+            'total_size',
+            'received_size',
+            'status',
+            'client_key',
+        )
+        read_only_fields = ('id', 'received_size', 'status')
 
 
 def image_fetch_job_for(instance):

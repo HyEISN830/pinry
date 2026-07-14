@@ -2,6 +2,7 @@ import hashlib
 import os
 import PIL.Image
 import requests
+import uuid
 
 from datetime import timedelta
 from io import BytesIO
@@ -184,6 +185,89 @@ class Image(BaseImage):
         )
         motion_photo.save()
         return motion_photo
+
+
+class ChunkedUpload(models.Model):
+    TARGET_IMAGE = 'image'
+    TARGET_AVATAR = 'avatar'
+    TARGET_CHOICES = (
+        (TARGET_IMAGE, TARGET_IMAGE),
+        (TARGET_AVATAR, TARGET_AVATAR),
+    )
+
+    STATUS_UPLOADING = 'uploading'
+    STATUS_PROCESSING = 'processing'
+    STATUS_COMPLETE = 'complete'
+    STATUS_FAILED = 'failed'
+    STATUS_CHOICES = (
+        (STATUS_UPLOADING, STATUS_UPLOADING),
+        (STATUS_PROCESSING, STATUS_PROCESSING),
+        (STATUS_COMPLETE, STATUS_COMPLETE),
+        (STATUS_FAILED, STATUS_FAILED),
+    )
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        User,
+        related_name='chunked_uploads',
+        on_delete=models.CASCADE,
+    )
+    target = models.CharField(max_length=16, choices=TARGET_CHOICES)
+    filename = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=127, blank=True)
+    total_size = models.PositiveIntegerField()
+    received_size = models.PositiveIntegerField(default=0)
+    status = models.CharField(
+        max_length=16,
+        choices=STATUS_CHOICES,
+        default=STATUS_UPLOADING,
+        db_index=True,
+    )
+    client_key = models.CharField(max_length=96, blank=True, db_index=True)
+    ip_hash = models.CharField(max_length=96, blank=True, db_index=True)
+    error = models.TextField(blank=True)
+    image = models.ForeignKey(
+        Image,
+        blank=True,
+        null=True,
+        related_name='chunked_uploads',
+        on_delete=models.CASCADE,
+    )
+    published = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    expires = models.DateTimeField(db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['user', 'status', 'updated'],
+                name='core_chunk_user_status_idx',
+            ),
+            models.Index(
+                fields=['ip_hash', 'status', 'updated'],
+                name='core_chunk_ip_status_idx',
+            ),
+        ]
+
+
+class UploadRateBucket(models.Model):
+    actor_key = models.CharField(max_length=128, unique=True)
+    available_at = models.DateTimeField()
+    updated = models.DateTimeField(auto_now=True)
+
+
+@receiver(models.signals.post_delete, sender=ChunkedUpload)
+def delete_chunked_upload_file(sender, instance, **kwargs):
+    path = os.path.join(
+        settings.MEDIA_ROOT,
+        '.upload-chunks',
+        '{}.part'.format(instance.id),
+    )
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except OSError:
+        pass
 
 
 class MotionPhoto(models.Model):

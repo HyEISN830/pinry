@@ -20,6 +20,7 @@ from core.likes import like_actor_key, like_actor_keys, like_ip_hash
 from core.models import Image, Pin, Board, Comic, PinLike, ComicLike
 from core.permissions import IsOwnerOrReadOnly, OwnerOnlyIfPrivate
 from core.throttles import LikeDailyRateThrottle, LikeMinuteRateThrottle
+from core.upload_views import ChunkedUploadViewSet
 from core.serializers import (
     filter_private_pin,
     filter_private_board,
@@ -378,6 +379,7 @@ class AggregateSearchViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 drf_router = routers.DefaultRouter()
 drf_router.register(r'pins', PinViewSet, basename="pin")
 drf_router.register(r'images', ImageViewSet)
+drf_router.register(r'uploads', ChunkedUploadViewSet, basename='upload')
 drf_router.register(r'boards', BoardViewSet, basename="board")
 drf_router.register(r'comics', ComicViewSet, basename="comic")
 drf_router.register(r'tags-auto-complete', TagAutoCompleteViewSet)

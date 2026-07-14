@@ -151,7 +151,7 @@ export default {
       this.avatarUploadProgress = 0;
       this.avatarMessage = '';
       this.avatarMessageType = '';
-      api.User.uploadAvatar(this.user, file, this.onAvatarUploadProgress).then(
+      api.User.uploadAvatar(file, this.onAvatarUploadProgress).then(
         (resp) => {
           this.avatarUploadProgress = 100;
           this.avatarUploading = false;

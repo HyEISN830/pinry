@@ -1,16 +1,8 @@
 import axios from 'axios';
 import storage from './utils/storage';
+import uploadChunkedFile from './utils/chunkedUpload';
 
 const API_PREFIX = '/api/v2/';
-
-function sameOriginUrl(url) {
-  if (!url) {
-    return url;
-  }
-  const parsed = document.createElement('a');
-  parsed.href = url;
-  return `${parsed.pathname}${parsed.search}${parsed.hash}`;
-}
 
 const Board = {
   create(name, private_ = false) {
@@ -132,22 +124,7 @@ const Pin = {
     return this.create(jsonData);
   },
   uploadImage(fileObject, progressHandler) {
-    const url = `${API_PREFIX}images/`;
-    const data = new FormData();
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    };
-    data.append('image', fileObject);
-    if (typeof progressHandler === 'function') {
-      config.onUploadProgress = progressHandler;
-    }
-    return axios.post(
-      url,
-      data,
-      config,
-    );
+    return uploadChunkedFile(fileObject, 'image', progressHandler);
   },
   deleteById(pinId) {
     const url = `${API_PREFIX}pins/${pinId}/`;
@@ -291,22 +268,8 @@ const User = {
       },
     );
   },
-  uploadAvatar(user, fileObject, progressHandler) {
-    const data = new FormData();
-    const config = {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    };
-    data.append('avatar_file', fileObject);
-    if (typeof progressHandler === 'function') {
-      config.onUploadProgress = progressHandler;
-    }
-    return axios.patch(
-      sameOriginUrl(user.resource_link),
-      data,
-      config,
-    ).then(
+  uploadAvatar(fileObject, progressHandler) {
+    return uploadChunkedFile(fileObject, 'avatar', progressHandler).then(
       (resp) => {
         storage.set(this.storageKey, resp.data, 60 * 5 * 1000);
         return resp;
