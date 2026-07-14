@@ -355,6 +355,8 @@ export default {
       loadedPages: {},
       loading: true,
       loadingAll: false,
+      allPagesLoadPromise: null,
+      pageLoadPromises: {},
       pageLoading: {},
       pageProgress: {},
       tagOptions: [],
@@ -437,6 +439,9 @@ export default {
               this.insertPageId = this.comic.pages[0].id;
             }
             this.loadPageOriginal(this.comic.pages[0]);
+            if (this.editing) {
+              this.loadAllPages();
+            }
           }
         },
         () => {
@@ -470,9 +475,12 @@ export default {
         this.$set(this.loadedPages, page.id, cached.objectUrl);
         return Promise.resolve(cached);
       }
+      if (this.pageLoadPromises[page.id]) {
+        return this.pageLoadPromises[page.id];
+      }
       this.$set(this.pageLoading, page.id, true);
       this.$set(this.pageProgress, page.id, null);
-      return API.Pin.fetchOriginalImage(page.image.id).then(
+      const loadPromise = API.Pin.fetchOriginalImage(page.image.id).then(
         (response) => {
           if (!response.ok) {
             throw new Error('Failed to load comic page');
@@ -498,13 +506,17 @@ export default {
           }
           this.$set(this.pageLoading, page.id, false);
           this.$set(this.pageProgress, page.id, 100);
+          this.$delete(this.pageLoadPromises, page.id);
           return cachedImage;
         },
         (error) => {
           this.$set(this.pageLoading, page.id, false);
+          this.$delete(this.pageLoadPromises, page.id);
           throw error;
         },
       );
+      this.$set(this.pageLoadPromises, page.id, loadPromise);
+      return loadPromise;
     },
     readPageStream(reader, chunks, page, total, loaded) {
       return reader.read().then(
@@ -541,21 +553,27 @@ export default {
       );
     },
     loadAllPages() {
-      if (!this.comic || this.loadingAll) {
-        return;
+      if (!this.comic) {
+        return Promise.resolve();
+      }
+      if (this.allPagesLoadPromise) {
+        return this.allPagesLoadPromise;
       }
       this.loadingAll = true;
       const remainingPages = this.comic.pages.filter(
         page => !this.loadedPages[page.id],
       );
-      this.loadPagesSequentially(remainingPages).then(
+      this.allPagesLoadPromise = this.loadPagesSequentially(remainingPages).then(
         () => {
           this.loadingAll = false;
+          this.allPagesLoadPromise = null;
         },
         () => {
           this.loadingAll = false;
+          this.allPagesLoadPromise = null;
         },
       );
+      return this.allPagesLoadPromise;
     },
     openFullReader() {
       if (this.fullReaderOpen) {
@@ -820,7 +838,9 @@ export default {
     niceLinks,
     toggleEditing() {
       this.editing = !this.editing;
-      if (!this.editing) {
+      if (this.editing) {
+        this.loadAllPages();
+      } else {
         this.clearEditorFiles();
       }
     },
