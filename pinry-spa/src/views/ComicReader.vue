@@ -35,89 +35,149 @@
           </div>
           <div class="reader-actions">
             <button
-              class="button is-primary"
+              class="button reader-action-button reader-action-button--primary"
               type="button"
               :disabled="loadingAll"
               @click="openFullReader">
-              {{ loadingAll ? $t("imageLoadingText") : $t("readFullComicButton") }}
+              <b-icon icon="book-open-page-variant" custom-size="mdi-19px"></b-icon>
+              <span>{{ loadingAll ? $t("imageLoadingText") : $t("readFullComicButton") }}</span>
             </button>
             <button
               v-if="isOwner"
-              class="button is-light"
+              class="button reader-action-button reader-action-button--secondary"
+              :class="{ 'is-active': editing }"
               type="button"
-              @click="editing = !editing">
-              {{ $t("editComicButton") }}
+              :aria-expanded="editing ? 'true' : 'false'"
+              @click="toggleEditing">
+              <b-icon
+                :icon="editing ? 'close' : 'pencil'"
+                custom-size="mdi-18px">
+              </b-icon>
+              <span>{{ editing ? $t("closeButton") : $t("editComicButton") }}</span>
             </button>
           </div>
         </div>
-        <div class="comic-editor" v-if="comic && isOwner && editing">
-          <b-field :label="$t('descriptionLabel')">
-            <b-input
-              type="textarea"
-              v-model="editForm.description"
-              maxlength="1024"
-              :placeholder="$t('pinCreateModalImageDescriptionPlaceholder')">
-            </b-input>
-          </b-field>
-          <b-field :label="$t('imageSourceLabel')">
-            <b-input
-              v-model="editForm.referer"
-              maxlength="2048"
-              :placeholder="$t('pinCreateModalImageSourcePlaceholder')">
-            </b-input>
-          </b-field>
-          <b-field :label="$t('tagsLabel')">
-            <b-taginput
-              ref="tagInput"
-              v-model="editForm.tags"
-              :data="filteredTagOptions"
-              autocomplete
-              allow-new
-              field="name"
-              :placeholder="$t('pinCreateModalImageTagsPlaceholder')"
-              @typing="getFilteredTags">
-              <template slot="empty">{{ $t("noResultsFound") }}</template>
-            </b-taginput>
-          </b-field>
-          <button
-            class="button is-light editor-save-button"
-            type="button"
-            :disabled="detailSaving"
-            :class="{ 'is-loading': detailSaving }"
-            @click="saveComicDetails">
-            {{ $t("saveChangesButton") }}
-          </button>
-          <b-field :label="$t('comicInsertPositionLabel')">
-            <b-select v-model="insertPageId">
-              <option
-                v-for="page in comic.pages"
-                :key="page.id"
-                :value="page.id">
-                {{ page.order }}
-              </option>
-            </b-select>
-            <b-select v-model="insertMode">
-              <option value="after">{{ $t("comicInsertAfterLabel") }}</option>
-              <option value="before">{{ $t("comicInsertBeforeLabel") }}</option>
-            </b-select>
-          </b-field>
-          <b-field :label="$t('comicPagesLabel')">
-            <input
-              class="input"
-              type="file"
-              multiple
-              accept="image/*"
-              @change="onEditorFilesSelected">
-          </b-field>
-          <button
-            class="button is-primary"
-            type="button"
-            :disabled="editorFiles.length === 0 || editorSaving"
-            :class="{ 'is-loading': editorSaving }"
-            @click="addPages">
-            {{ $t("comicAddPagesButton") }}
-          </button>
-        </div>
+        <transition name="comic-editor-reveal">
+          <div class="comic-editor" v-if="comic && isOwner && editing">
+            <div class="comic-editor__form-grid">
+              <b-field :label="$t('descriptionLabel')">
+                <b-input
+                  type="textarea"
+                  v-model="editForm.description"
+                  maxlength="1024"
+                  :placeholder="$t('pinCreateModalImageDescriptionPlaceholder')">
+                </b-input>
+              </b-field>
+              <b-field :label="$t('imageSourceLabel')">
+                <b-input
+                  v-model="editForm.referer"
+                  maxlength="2048"
+                  :placeholder="$t('pinCreateModalImageSourcePlaceholder')">
+                </b-input>
+              </b-field>
+              <b-field class="comic-editor__tags" :label="$t('tagsLabel')">
+                <b-taginput
+                  ref="tagInput"
+                  v-model="editForm.tags"
+                  :data="filteredTagOptions"
+                  autocomplete
+                  allow-new
+                  field="name"
+                  :placeholder="$t('pinCreateModalImageTagsPlaceholder')"
+                  @typing="getFilteredTags">
+                  <template slot="empty">{{ $t("noResultsFound") }}</template>
+                </b-taginput>
+              </b-field>
+            </div>
+            <div class="comic-editor__detail-actions">
+              <button
+                class="button comic-editor-button comic-editor-button--secondary editor-save-button"
+                type="button"
+                :disabled="detailSaving"
+                :class="{ 'is-loading': detailSaving }"
+                @click="saveComicDetails">
+                <b-icon icon="content-save" custom-size="mdi-18px"></b-icon>
+                <span>{{ $t("saveChangesButton") }}</span>
+              </button>
+            </div>
+            <div class="comic-editor__divider"></div>
+            <b-field
+              class="comic-editor__insert-controls"
+              :label="$t('comicInsertPositionLabel')"
+              grouped>
+              <b-select v-model="insertPageId" expanded>
+                <option
+                  v-for="page in comic.pages"
+                  :key="page.id"
+                  :value="page.id">
+                  {{ page.order }}
+                </option>
+              </b-select>
+              <b-select v-model="insertMode" expanded>
+                <option value="after">{{ $t("comicInsertAfterLabel") }}</option>
+                <option value="before">{{ $t("comicInsertBeforeLabel") }}</option>
+              </b-select>
+            </b-field>
+            <b-field :label="$t('comicPagesLabel')">
+              <div class="comic-file-picker">
+                <input
+                  ref="editorFileInput"
+                  class="comic-file-picker__input"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  @change="onEditorFilesSelected">
+                <button
+                  class="button comic-editor-button comic-file-picker__button"
+                  type="button"
+                  @click="openEditorFilePicker">
+                  <b-icon icon="image-multiple" custom-size="mdi-20px"></b-icon>
+                  <span>{{ $t("comicSelectPagesButton") }}</span>
+                </button>
+                <span class="comic-file-picker__count">
+                  {{ $t("comicSelectedFilesCount", { count: editorFiles.length }) }}
+                </span>
+              </div>
+            </b-field>
+            <div class="comic-editor-files" v-if="editorFiles.length > 0">
+              <article
+                class="comic-editor-file"
+                v-for="editorFile in editorFiles"
+                :key="editorFile.id">
+                <div class="comic-editor-file__preview">
+                  <img :src="editorFile.previewUrl" :alt="editorFile.name">
+                </div>
+                <div class="comic-editor-file__copy">
+                  <strong :title="editorFile.name">{{ editorFile.name }}</strong>
+                  <span>
+                    {{ formatFileSize(editorFile.size) }}
+                    ·
+                    {{ editorFileDimensions(editorFile) }}
+                  </span>
+                </div>
+                <button
+                  class="comic-editor-file__remove"
+                  type="button"
+                  :title="$t('comicRemoveSelectedFile')"
+                  :aria-label="$t('comicRemoveSelectedFile')"
+                  @click="removeEditorFile(editorFile.id)">
+                  <b-icon icon="close" custom-size="mdi-18px"></b-icon>
+                </button>
+              </article>
+            </div>
+            <div class="comic-editor__add-actions">
+              <button
+                class="button comic-editor-button comic-editor-add-button"
+                type="button"
+                :disabled="editorFiles.length === 0 || editorSaving"
+                :class="{ 'is-loading': editorSaving }"
+                @click="addPages">
+                <b-icon icon="image-plus" custom-size="mdi-20px"></b-icon>
+                <span>{{ $t("comicAddPagesButton") }}</span>
+              </button>
+            </div>
+          </div>
+        </transition>
         <div class="reader-pages" v-if="comic">
           <figure
             class="reader-page"
@@ -125,19 +185,27 @@
             :key="page.id">
             <div class="page-tools" v-if="isOwner && editing">
               <button
-                class="button is-small"
+                class="button page-tool-button"
+                type="button"
+                :disabled="page.order <= 1"
                 @click="movePage(page, page.order - 1)">
-                {{ $t("moveUpButton") }}
+                <b-icon icon="arrow-up" custom-size="mdi-17px"></b-icon>
+                <span>{{ $t("moveUpButton") }}</span>
               </button>
               <button
-                class="button is-small"
+                class="button page-tool-button"
+                type="button"
+                :disabled="page.order >= comic.pages.length"
                 @click="movePage(page, page.order + 1)">
-                {{ $t("moveDownButton") }}
+                <b-icon icon="arrow-down" custom-size="mdi-17px"></b-icon>
+                <span>{{ $t("moveDownButton") }}</span>
               </button>
               <button
-                class="button is-small is-danger"
+                class="button page-tool-button page-tool-button--danger"
+                type="button"
                 @click="removePage(page)">
-                {{ $t("removePageButton") }}
+                <b-icon icon="delete-outline" custom-size="mdi-17px"></b-icon>
+                <span>{{ $t("removePageButton") }}</span>
               </button>
             </div>
             <img
@@ -253,6 +321,7 @@ export default {
       comic: null,
       editing: false,
       editorFiles: [],
+      editorFileSequence: 0,
       editorSaving: false,
       detailSaving: false,
       editForm: {
@@ -323,6 +392,7 @@ export default {
     this.fetchComic();
   },
   beforeDestroy() {
+    this.clearEditorFiles();
     this.disconnectFullPageObserver();
     this.unlockFullReaderScroll();
   },
@@ -734,14 +804,98 @@ export default {
       return (url || '').trim();
     },
     niceLinks,
+    toggleEditing() {
+      this.editing = !this.editing;
+      if (!this.editing) {
+        this.clearEditorFiles();
+      }
+    },
+    openEditorFilePicker() {
+      const input = this.$refs.editorFileInput;
+      if (input) {
+        input.click();
+      }
+    },
     onEditorFilesSelected(event) {
-      this.editorFiles = Array.from(event.target.files || []);
+      const files = Array.from(event.target.files || []);
+      this.clearEditorFiles();
+      this.editorFiles = files.map(
+        (file) => {
+          this.editorFileSequence += 1;
+          return {
+            id: this.editorFileSequence,
+            file,
+            name: file.name,
+            size: file.size,
+            width: null,
+            height: null,
+            previewUrl: window.URL.createObjectURL(file),
+          };
+        },
+      );
+      this.editorFiles.forEach(this.readEditorFileDimensions);
+      const input = this.$refs.editorFileInput;
+      if (input) {
+        input.value = '';
+      }
+    },
+    readEditorFileDimensions(editorFile) {
+      const image = new Image();
+      image.onload = () => {
+        const matched = this.editorFiles.find(item => item.id === editorFile.id);
+        if (!matched) {
+          return;
+        }
+        this.$set(matched, 'width', image.naturalWidth || null);
+        this.$set(matched, 'height', image.naturalHeight || null);
+      };
+      image.src = editorFile.previewUrl;
+    },
+    revokeEditorFile(editorFile) {
+      if (
+        editorFile
+        && editorFile.previewUrl
+        && window.URL
+        && typeof window.URL.revokeObjectURL === 'function'
+      ) {
+        window.URL.revokeObjectURL(editorFile.previewUrl);
+      }
+    },
+    clearEditorFiles() {
+      this.editorFiles.forEach(this.revokeEditorFile);
+      this.editorFiles = [];
+      const input = this.$refs.editorFileInput;
+      if (input) {
+        input.value = '';
+      }
+    },
+    removeEditorFile(editorFileId) {
+      const matched = this.editorFiles.find(item => item.id === editorFileId);
+      this.revokeEditorFile(matched);
+      this.editorFiles = this.editorFiles.filter(item => item.id !== editorFileId);
+    },
+    formatFileSize(bytes) {
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let size = Number(bytes) || 0;
+      let unitIndex = 0;
+      while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex += 1;
+      }
+      const fractionDigits = unitIndex === 0 || size >= 10 ? 0 : 1;
+      return `${size.toFixed(fractionDigits)} ${units[unitIndex]}`;
+    },
+    editorFileDimensions(editorFile) {
+      if (editorFile.width && editorFile.height) {
+        return `${editorFile.width} × ${editorFile.height} px`;
+      }
+      return this.$t('imageDimensionsReading');
     },
     uploadEditorFiles(index = 0, responses = []) {
       if (index >= this.editorFiles.length) {
         return Promise.resolve(responses);
       }
-      return API.Pin.uploadImage(this.editorFiles[index]).then(
+      return API.Pin.uploadImage(this.editorFiles[index].file).then(
         (resp) => {
           responses.push(resp);
           return this.uploadEditorFiles(index + 1, responses);
@@ -783,7 +937,7 @@ export default {
         },
       ).then(
         () => {
-          this.editorFiles = [];
+          this.clearEditorFiles();
           this.editorSaving = false;
           this.fetchComic();
         },
@@ -1189,5 +1343,544 @@ export default {
   position: relative;
   top: auto;
   z-index: 1;
+}
+
+/* R44 comic reader controls and editor system */
+.comic-reader-page {
+  --comic-editor-danger: #c43f62;
+  --comic-editor-danger-soft: color-mix(in srgb, var(--comic-editor-danger) 12%, transparent);
+}
+
+.reader-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.reader-action-button,
+.comic-editor-button,
+.page-tool-button {
+  position: relative;
+  overflow: hidden;
+  gap: var(--space-xs);
+  min-height: 42px;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-strong);
+  background: var(--color-surface-1);
+  box-shadow: none;
+  font-weight: 850;
+  transition:
+    transform var(--motion-duration-standard) var(--motion-ease-emphasized),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard);
+}
+
+.reader-action-button::before,
+.comic-editor-button::before {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 24%,
+    color-mix(in srgb, var(--color-accent-text) 32%, transparent) 50%,
+    transparent 76%
+  );
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-110%);
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-card) var(--motion-ease-emphasized);
+}
+
+.reader-action-button:hover:not(:disabled),
+.reader-action-button:focus-visible,
+.comic-editor-button:hover:not(:disabled),
+.comic-editor-button:focus-visible,
+.page-tool-button:hover:not(:disabled),
+.page-tool-button:focus-visible {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  box-shadow: var(--shadow-xs);
+  transform: translateY(-2px);
+}
+
+.reader-action-button:hover:not(:disabled)::before,
+.reader-action-button:focus-visible::before,
+.comic-editor-button:hover:not(:disabled)::before,
+.comic-editor-button:focus-visible::before {
+  opacity: 1;
+  transform: translateX(110%);
+}
+
+.reader-action-button:focus-visible,
+.comic-editor-button:focus-visible,
+.page-tool-button:focus-visible,
+.comic-editor-file__remove:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.reader-action-button ::v-deep .icon,
+.comic-editor-button ::v-deep .icon,
+.page-tool-button ::v-deep .icon {
+  transition: transform var(--motion-duration-standard) var(--motion-ease-spring);
+}
+
+.reader-action-button:hover:not(:disabled) ::v-deep .icon,
+.comic-editor-button:hover:not(:disabled) ::v-deep .icon,
+.page-tool-button:hover:not(:disabled) ::v-deep .icon {
+  transform: scale(1.12) rotate(-4deg);
+}
+
+.reader-action-button--primary,
+.comic-editor-add-button {
+  border-color: var(--color-accent-strong);
+  color: var(--color-accent-text);
+  background: var(--color-accent-strong);
+  box-shadow: 0 10px 24px var(--color-theme-glow);
+}
+
+.reader-action-button--primary:hover:not(:disabled),
+.reader-action-button--primary:focus-visible,
+.comic-editor-add-button:hover:not(:disabled),
+.comic-editor-add-button:focus-visible {
+  border-color: var(--color-accent-strong);
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  box-shadow: 0 14px 30px var(--color-theme-glow-strong);
+}
+
+.reader-action-button--secondary.is-active {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 1px var(--color-accent-border);
+}
+
+.reader-action-button:disabled,
+.comic-editor-button:disabled,
+.page-tool-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+  transform: none;
+}
+
+.comic-editor-reveal-enter-active,
+.comic-editor-reveal-leave-active {
+  overflow: hidden;
+  transition:
+    opacity var(--motion-duration-standard) var(--motion-ease-standard),
+    transform var(--motion-duration-card) var(--motion-ease-emphasized),
+    max-height var(--motion-duration-card) var(--motion-ease-emphasized),
+    margin var(--motion-duration-standard) var(--motion-ease-standard),
+    padding var(--motion-duration-standard) var(--motion-ease-standard);
+}
+
+.comic-editor-reveal-enter,
+.comic-editor-reveal-leave-to {
+  max-height: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  transform: translateY(-14px) scale(0.985);
+}
+
+.comic-editor-reveal-enter-to,
+.comic-editor-reveal-leave {
+  max-height: 1600px;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.comic-editor {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-strong);
+  background:
+    radial-gradient(circle at top left, var(--color-theme-glow), transparent 320px),
+    color-mix(in srgb, var(--color-surface-card) 92%, transparent);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(14px) saturate(1.04);
+}
+
+.comic-editor::before {
+  position: absolute;
+  top: 0;
+  right: var(--space-lg);
+  left: var(--space-lg);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-accent-border), transparent);
+  content: '';
+}
+
+.comic-editor__form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+  gap: var(--space-sm) var(--space-md);
+}
+
+.comic-editor__tags {
+  grid-column: 1 / -1;
+}
+
+.comic-editor ::v-deep .field {
+  margin-bottom: var(--space-md);
+}
+
+.comic-editor ::v-deep .label {
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-strong);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.comic-editor ::v-deep .input,
+.comic-editor ::v-deep .textarea,
+.comic-editor ::v-deep .taginput-container,
+.comic-editor ::v-deep .select select {
+  border-color: var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-strong);
+  background: color-mix(in srgb, var(--color-surface-1) 84%, transparent);
+  box-shadow: none;
+  font-size: 0.9rem;
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.comic-editor ::v-deep .textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.comic-editor ::v-deep .input::placeholder,
+.comic-editor ::v-deep .textarea::placeholder,
+.comic-editor ::v-deep .taginput-container input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.72;
+}
+
+.comic-editor ::v-deep .input:focus,
+.comic-editor ::v-deep .textarea:focus,
+.comic-editor ::v-deep .taginput-container.is-focusable:focus-within,
+.comic-editor ::v-deep .select select:focus {
+  border-color: var(--color-accent-border);
+  background: var(--color-surface-1);
+  box-shadow: var(--focus-ring);
+}
+
+.comic-editor ::v-deep .taginput .tag {
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+  font-weight: 800;
+}
+
+.comic-editor ::v-deep .autocomplete .dropdown-content {
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-strong);
+  background: var(--color-surface-card);
+  box-shadow: var(--shadow-floating);
+}
+
+.comic-editor ::v-deep .autocomplete .dropdown-item {
+  color: var(--color-text-strong);
+}
+
+.comic-editor ::v-deep .autocomplete .dropdown-item:hover,
+.comic-editor ::v-deep .autocomplete .dropdown-item.is-hovered {
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+}
+
+.comic-editor ::v-deep .select,
+.comic-editor ::v-deep .select select {
+  width: 100%;
+}
+
+.comic-editor ::v-deep .select:not(.is-multiple):not(.is-loading)::after {
+  border-color: var(--color-accent-strong);
+}
+
+.comic-editor__detail-actions,
+.comic-editor__add-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.comic-editor__divider {
+  height: 1px;
+  margin: var(--space-md) 0 var(--space-lg);
+  background: linear-gradient(90deg, transparent, var(--color-line-soft) 10% 90%, transparent);
+}
+
+.comic-editor__insert-controls ::v-deep .field-body,
+.comic-editor__insert-controls ::v-deep .field.is-grouped {
+  width: 100%;
+}
+
+.comic-editor__insert-controls ::v-deep .control {
+  min-width: 0;
+}
+
+.editor-save-button {
+  margin-bottom: 0;
+}
+
+.comic-file-picker {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.comic-file-picker__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.comic-file-picker__button {
+  flex: 0 0 auto;
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-strong);
+  background: var(--color-accent-soft);
+}
+
+.comic-file-picker__count {
+  min-width: 0;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.comic-editor-files {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-xs);
+  margin: calc(var(--space-xs) * -1) 0 var(--space-md);
+}
+
+.comic-editor-file {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) 34px;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-strong);
+  background: color-mix(in srgb, var(--color-surface-2) 82%, transparent);
+  box-shadow: var(--shadow-xs);
+  transition:
+    transform var(--motion-duration-standard) var(--motion-ease-emphasized),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard);
+  animation: comic-editor-file-enter var(--motion-duration-card) var(--motion-ease-emphasized) both;
+}
+
+.comic-editor-file:hover {
+  border-color: var(--color-accent-border);
+  background: color-mix(in srgb, var(--color-accent-soft) 54%, var(--color-surface-2));
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.comic-editor-file__preview {
+  width: 62px;
+  height: 62px;
+  overflow: hidden;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface-1);
+}
+
+.comic-editor-file__preview img,
+.comic-reader .comic-editor-file__preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  object-fit: cover;
+  box-shadow: none;
+}
+
+.comic-editor-file__copy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-2xs);
+}
+
+.comic-editor-file__copy strong {
+  overflow: hidden;
+  color: var(--color-text-strong);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.comic-editor-file__copy span {
+  color: var(--color-text-muted);
+  font-size: 0.74rem;
+  font-weight: 750;
+}
+
+.comic-editor-file__remove {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-xs);
+  color: var(--color-text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-spring),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.comic-editor-file__remove:hover {
+  border-color: color-mix(in srgb, var(--comic-editor-danger) 34%, transparent);
+  color: var(--comic-editor-danger);
+  background: var(--comic-editor-danger-soft);
+  transform: scale(1.06);
+}
+
+.comic-editor-add-button {
+  min-width: 150px;
+}
+
+.page-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding: var(--space-xs);
+  border-bottom: 1px solid var(--color-line-soft);
+  background: color-mix(in srgb, var(--color-surface-2) 88%, transparent);
+}
+
+.page-tool-button {
+  min-height: 34px;
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-xs);
+  font-size: 0.76rem;
+}
+
+.page-tool-button--danger {
+  border-color: color-mix(in srgb, var(--comic-editor-danger) 30%, transparent);
+  color: var(--comic-editor-danger);
+  background: var(--comic-editor-danger-soft);
+}
+
+.page-tool-button--danger:hover:not(:disabled),
+.page-tool-button--danger:focus-visible {
+  border-color: var(--comic-editor-danger);
+  color: var(--comic-editor-danger);
+  background: color-mix(in srgb, var(--comic-editor-danger) 18%, transparent);
+}
+
+@keyframes comic-editor-file-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media screen and (max-width: 760px) {
+  .comic-editor {
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+  }
+
+  .comic-editor__form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .comic-editor__tags {
+    grid-column: auto;
+  }
+
+  .comic-editor-files {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media screen and (max-width: 542px) {
+  .reader-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+    margin-top: var(--space-md);
+  }
+
+  .reader-head .reader-action-button,
+  .reader-actions .reader-action-button {
+    width: 100%;
+    margin-top: 0;
+  }
+
+  .comic-file-picker {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .comic-file-picker__button,
+  .comic-editor__detail-actions .comic-editor-button,
+  .comic-editor__add-actions .comic-editor-button {
+    width: 100%;
+  }
+
+  .comic-file-picker__count {
+    text-align: center;
+  }
+
+  .comic-editor-file {
+    grid-template-columns: 54px minmax(0, 1fr) 34px;
+  }
+
+  .comic-editor-file__preview {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+html[data-motion='reduce'] .reader-action-button,
+html[data-motion='reduce'] .comic-editor-button,
+html[data-motion='reduce'] .page-tool-button,
+html[data-motion='reduce'] .comic-editor-file,
+html[data-motion='reduce'] .comic-editor-file__remove,
+html[data-motion='reduce'] .comic-editor-reveal-enter-active,
+html[data-motion='reduce'] .comic-editor-reveal-leave-active {
+  animation: none;
+  transition: none;
 }
 </style>
