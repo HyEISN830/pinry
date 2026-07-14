@@ -407,44 +407,60 @@ export default {
       );
       return canvas;
     },
-    async compressCropAttempt(maxEdge, quality, attempt) {
+    compressCropAttempt(maxEdge, quality, attempt) {
       if (attempt >= 14) {
-        return null;
+        return Promise.resolve(null);
       }
       this.processingProgress = Math.min(92, 8 + attempt * 7);
-      const canvas = this.renderCropCanvas(maxEdge);
-      const blob = await canvasToBlob(canvas, 'image/jpeg', quality);
-      if (blob && blob.size <= MAX_OUTPUT_BYTES) {
-        this.processingProgress = 100;
-        return blob;
-      }
-      const lowerQuality = quality > 0.56;
-      const nextMaxEdge = lowerQuality
-        ? maxEdge
-        : Math.max(512, Math.round(maxEdge * 0.82));
-      const nextQuality = lowerQuality ? quality - 0.08 : 0.78;
-      return this.compressCropAttempt(nextMaxEdge, nextQuality, attempt + 1);
+      return Promise.resolve().then(
+        () => this.renderCropCanvas(maxEdge),
+      ).then(
+        canvas => canvasToBlob(canvas, 'image/jpeg', quality),
+      ).then(
+        (blob) => {
+          if (blob && blob.size <= MAX_OUTPUT_BYTES) {
+            this.processingProgress = 100;
+            return blob;
+          }
+          const lowerQuality = quality > 0.56;
+          const nextMaxEdge = lowerQuality
+            ? maxEdge
+            : Math.max(512, Math.round(maxEdge * 0.82));
+          const nextQuality = lowerQuality ? quality - 0.08 : 0.78;
+          return this.compressCropAttempt(nextMaxEdge, nextQuality, attempt + 1);
+        },
+      );
     },
     compressCrop() {
       return this.compressCropAttempt(MAX_OUTPUT_EDGE, 0.92, 0);
     },
-    async confirmCrop() {
+    confirmCrop() {
       this.processing = true;
       this.processingProgress = 4;
-      try {
-        const blob = await this.compressCrop();
-        if (!blob) {
-          this.$emit('error');
-          return;
-        }
-        const baseName = this.file.name.replace(/\.[^.]+$/, '') || 'avatar';
-        const output = new File([blob], `${baseName}-avatar.jpg`, { type: 'image/jpeg' });
-        this.$emit('confirm', output);
-      } catch (error) {
-        this.$emit('error', error);
-      } finally {
-        this.processing = false;
-      }
+      this.compressCrop()
+        .then(
+          (blob) => {
+            if (!blob) {
+              this.$emit('error');
+              return;
+            }
+            const baseName = this.file.name.replace(/\.[^.]+$/, '') || 'avatar';
+            const output = new File(
+              [blob],
+              `${baseName}-avatar.jpg`,
+              { type: 'image/jpeg' },
+            );
+            this.$emit('confirm', output);
+          },
+        )
+        .catch(
+          error => this.$emit('error', error),
+        )
+        .then(
+          () => {
+            this.processing = false;
+          },
+        );
     },
   },
 };
