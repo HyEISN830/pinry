@@ -12,22 +12,36 @@
               v-if="hasDescription(comic.description)"
               v-html="niceLinks(comic.description)">
             </div>
-            <div class="reader-source" v-if="hasSource(comic.referer)">
+            <div class="reader-source-row comic-source" v-if="hasSource(comic.referer)">
               <a
                 v-if="isWebUrl(comic.referer)"
+                v-source-tooltip
+                class="content-source-link"
                 :href="comic.referer"
-                target="_blank">
+                :data-source-tip="sourceText(comic.referer)"
+                target="_blank"
+                rel="noopener">
                 {{ $t("sourceLink") }}
               </a>
-              <span v-else>{{ sourceText(comic.referer) }}</span>
+              <span
+                v-else
+                v-source-tooltip
+                class="content-source-link"
+                tabindex="0"
+                :data-source-tip="sourceText(comic.referer)">
+                {{ sourceText(comic.referer) }}
+              </span>
             </div>
-            <div class="reader-source is-warning" v-else>
+            <div class="reader-source-row comic-source is-warning" v-else>
               {{ $t("missingSourceNotice") }}
             </div>
-            <div class="reader-tags" v-if="comic.tags && comic.tags.length > 0">
+            <div
+              class="reader-tags comic-tags"
+              v-if="comic.tags && comic.tags.length > 0">
               <router-link
                 v-for="tag in comic.tags"
                 :key="tag"
+                class="content-tag-pill"
                 :to="{ name: 'tag', params: { tag } }">
                 {{ tag }}
               </router-link>
@@ -1010,37 +1024,24 @@ export default {
   color: #1f6feb;
   font-weight: 700;
 }
-.reader-source {
-  display: inline-flex;
+.reader-source-row {
+  display: flex;
+  min-width: 0;
   align-items: center;
   margin-top: 0.5rem;
+}
+.reader-source-row.is-warning {
+  width: fit-content;
   padding: 0.22rem 0.5rem;
-  border-radius: 6px;
-  color: #7e57c2;
-  background: #f5f0ff;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-.reader-source a {
-  color: inherit;
-}
-.reader-source.is-warning {
+  border: 1px solid color-mix(in srgb, #8a6d1d 24%, transparent);
+  border-radius: var(--radius-sm);
   color: #8a6d1d;
-  background: #fff8dc;
+  background: color-mix(in srgb, #fff8dc 78%, transparent);
+  font-size: 0.8rem;
+  font-weight: 750;
 }
 .reader-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
   margin-top: 0.55rem;
-}
-.reader-tags a {
-  padding: 0.18rem 0.45rem;
-  border-radius: 999px;
-  color: #4f46e5;
-  background: #eef2ff;
-  font-size: 0.82rem;
-  font-weight: 800;
 }
 .comic-editor {
   margin-bottom: 1rem;
@@ -1258,16 +1259,9 @@ export default {
   color: var(--color-text-muted, var(--text-muted, #64748b));
 }
 
-.reader-source,
-.reader-tags a {
-  border-radius: var(--radius-pill, 999px);
-  color: var(--accent-strong, #7e57c2);
-  background: var(--accent-soft, #f5f0ff);
-}
-
-.reader-source.is-warning {
+.reader-source-row.is-warning {
   color: #8a6d1d;
-  background: #fff8dc;
+  background: color-mix(in srgb, #fff8dc 78%, transparent);
 }
 
 .page-tools,
