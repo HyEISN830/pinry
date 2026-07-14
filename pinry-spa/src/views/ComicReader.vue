@@ -168,6 +168,10 @@
                     ·
                     {{ editorFileDimensions(editorFile) }}
                   </span>
+                  <ComicUploadMiniProgress
+                    :status="editorFile.uploadStatus"
+                    :progress="editorFile.uploadProgress">
+                  </ComicUploadMiniProgress>
                 </div>
                 <button
                   class="comic-editor-file__remove"
@@ -294,6 +298,7 @@
 <script>
 import API from '../components/api';
 import ComicImageLoadProgress from '../components/comic/ComicImageLoadProgress.vue';
+import ComicUploadMiniProgress from '../components/comic/ComicUploadMiniProgress.vue';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import {
@@ -327,6 +332,7 @@ export default {
   name: 'ComicReader',
   components: {
     ComicImageLoadProgress,
+    ComicUploadMiniProgress,
     PHeader,
     loadingSpinner,
   },
@@ -864,6 +870,9 @@ export default {
             width: null,
             height: null,
             previewUrl: window.URL.createObjectURL(file),
+            uploadedResponse: null,
+            uploadProgress: 0,
+            uploadStatus: 'queued',
           };
         },
       );
@@ -925,14 +934,43 @@ export default {
       }
       return this.$t('imageDimensionsReading');
     },
+    onEditorFileUploadProgress(editorFile, event) {
+      const loaded = Number(event.loaded);
+      const total = Number(event.total);
+      if (!Number.isFinite(loaded) || !Number.isFinite(total) || total <= 0) {
+        this.$set(editorFile, 'uploadProgress', null);
+        return;
+      }
+      this.$set(
+        editorFile,
+        'uploadProgress',
+        Math.min(99, Math.max(0, Math.round((loaded / total) * 100))),
+      );
+    },
     uploadEditorFiles(index = 0, responses = []) {
       if (index >= this.editorFiles.length) {
         return Promise.resolve(responses);
       }
-      return API.Pin.uploadImage(this.editorFiles[index].file).then(
+      const editorFile = this.editorFiles[index];
+      if (editorFile.uploadedResponse) {
+        responses.push(editorFile.uploadedResponse);
+        return this.uploadEditorFiles(index + 1, responses);
+      }
+      this.$set(editorFile, 'uploadStatus', 'uploading');
+      return API.Pin.uploadImage(
+        editorFile.file,
+        event => this.onEditorFileUploadProgress(editorFile, event),
+      ).then(
         (resp) => {
+          this.$set(editorFile, 'uploadedResponse', resp);
+          this.$set(editorFile, 'uploadStatus', 'complete');
+          this.$set(editorFile, 'uploadProgress', 100);
           responses.push(resp);
           return this.uploadEditorFiles(index + 1, responses);
+        },
+        (error) => {
+          this.$set(editorFile, 'uploadStatus', 'failed');
+          throw error;
         },
       );
     },

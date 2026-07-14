@@ -18,12 +18,12 @@
             <b-upload
               v-model="avatarFile"
               accept="image/*"
-              @input="uploadAvatar"
+              @input="openAvatarCropper"
             >
               <a
-                class="button is-primary"
+                class="button avatar-upload-button"
                 :class="{ 'is-loading': avatarUploading }">
-                <b-icon icon="upload"></b-icon>
+                <b-icon icon="account-edit"></b-icon>
                 <span>{{ $t("avatarUploadButton") }}</span>
               </a>
             </b-upload>
@@ -54,20 +54,36 @@
         </div>
       </div>
     </div>
+
+    <AvatarCropper
+      v-if="avatarCropSource"
+      :file="avatarCropSource"
+      :uploading="avatarUploading"
+      :upload-progress="avatarUploadProgress"
+      :upload-error="avatarCropError"
+      @cancel="closeAvatarCropper"
+      @error="onAvatarCropError"
+      @confirm="uploadAvatar">
+    </AvatarCropper>
   </div>
 </template>
 
 <script>
 import api from '../api';
+import AvatarCropper from './AvatarCropper.vue';
 
-const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
+const MAX_AVATAR_SOURCE_SIZE = 10 * 1024 * 1024;
 
 export default {
   name: 'profile',
   props: ['user'],
+  components: { AvatarCropper },
   data() {
     return {
+      avatarCropError: '',
+      avatarCropSource: null,
       avatarFile: null,
+      avatarUploadProgress: 0,
       avatarUploading: false,
       avatarMessage: '',
       avatarMessageType: '',
@@ -88,30 +104,68 @@ export default {
     },
   },
   methods: {
-    uploadAvatar(file) {
+    openAvatarCropper(file) {
       if (!file) {
         return;
       }
-      if (file.size > MAX_AVATAR_SIZE) {
+      if (file.size > MAX_AVATAR_SOURCE_SIZE) {
         this.avatarMessage = this.$t('avatarUploadTooLarge');
         this.avatarMessageType = 'is-danger';
         this.avatarFile = null;
         return;
       }
-      this.avatarUploading = true;
+      this.avatarCropSource = file;
+      this.avatarCropError = '';
+      this.avatarUploadProgress = 0;
       this.avatarMessage = '';
       this.avatarMessageType = '';
-      api.User.uploadAvatar(this.user, file).then(
+    },
+    closeAvatarCropper() {
+      if (this.avatarUploading) {
+        return;
+      }
+      this.avatarCropSource = null;
+      this.avatarCropError = '';
+      this.avatarFile = null;
+      this.avatarUploadProgress = 0;
+    },
+    onAvatarUploadProgress(event) {
+      const loaded = Number(event.loaded);
+      const total = Number(event.total);
+      if (!Number.isFinite(loaded) || !Number.isFinite(total) || total <= 0) {
+        return;
+      }
+      this.avatarUploadProgress = Math.min(
+        99,
+        Math.max(0, Math.round((loaded / total) * 100)),
+      );
+    },
+    onAvatarCropError() {
+      this.avatarCropError = this.$t('avatarCropFailed');
+      this.avatarMessage = this.avatarCropError;
+      this.avatarMessageType = 'is-danger';
+    },
+    uploadAvatar(file) {
+      this.avatarUploading = true;
+      this.avatarCropError = '';
+      this.avatarUploadProgress = 0;
+      this.avatarMessage = '';
+      this.avatarMessageType = '';
+      api.User.uploadAvatar(this.user, file, this.onAvatarUploadProgress).then(
         (resp) => {
+          this.avatarUploadProgress = 100;
           this.avatarUploading = false;
           this.avatarMessage = this.$t('avatarUploadSucceed');
           this.avatarMessageType = 'is-success';
           this.$emit('profile-updated', resp.data);
+          this.closeAvatarCropper();
         },
         (error) => {
-          const data = error && error.data ? error.data : {};
+          const response = error && error.response ? error.response : error;
+          const data = response && response.data ? response.data : {};
           this.avatarUploading = false;
-          this.avatarMessage = data.avatar_file || this.$t('avatarUploadFailed');
+          this.avatarCropError = data.avatar_file || this.$t('avatarUploadFailed');
+          this.avatarMessage = this.avatarCropError;
           this.avatarMessageType = 'is-danger';
         },
       );
@@ -178,9 +232,38 @@ export default {
 .token-content {
   color: var(--text-muted, #64748b);
 }
-.button {
-  border-radius: 6px;
-  font-weight: 600;
+.avatar-upload-button {
+  gap: var(--space-xs);
+  min-height: 42px;
+  border: 1px solid var(--color-accent-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-text);
+  background: var(--color-accent-strong);
+  box-shadow: 0 10px 24px var(--color-theme-glow);
+  font-weight: 900;
+  transition:
+    transform var(--motion-duration-standard) var(--motion-ease-emphasized),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard);
+}
+.avatar-upload-button:hover,
+.avatar-upload-button:focus-visible {
+  border-color: var(--color-accent-strong);
+  color: var(--color-accent-text);
+  background: var(--color-accent);
+  box-shadow: 0 14px 30px var(--color-theme-glow-strong);
+  transform: translateY(-2px);
+}
+.avatar-upload-button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+.avatar-upload-button ::v-deep .icon {
+  transition: transform var(--motion-duration-standard) var(--motion-ease-spring);
+}
+.avatar-upload-button:hover ::v-deep .icon {
+  transform: rotate(-5deg) scale(1.12);
 }
 pre {
   overflow: auto;
@@ -207,7 +290,7 @@ pre {
     width: 72px;
     height: 72px;
   }
-  .button {
+  .avatar-upload-button {
     width: 100%;
   }
 }

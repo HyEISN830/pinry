@@ -291,17 +291,21 @@ const User = {
       },
     );
   },
-  uploadAvatar(user, fileObject) {
+  uploadAvatar(user, fileObject, progressHandler) {
     const data = new FormData();
+    const config = {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    };
     data.append('avatar_file', fileObject);
+    if (typeof progressHandler === 'function') {
+      config.onUploadProgress = progressHandler;
+    }
     return axios.patch(
       sameOriginUrl(user.resource_link),
       data,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      },
+      config,
     ).then(
       (resp) => {
         storage.set(this.storageKey, resp.data, 60 * 5 * 1000);

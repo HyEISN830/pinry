@@ -8,7 +8,7 @@ from users.models import AVATAR_FIELD_BY_SIZE, User, UserProfile, create_token_i
 
 class AvatarImageField(serializers.ImageField):
     default_error_messages = {
-        'max_size': 'Avatar cannot be larger than 2MB.',
+        'max_size': 'Cropped avatar cannot be larger than 2MB.',
     }
 
     def to_internal_value(self, data):
