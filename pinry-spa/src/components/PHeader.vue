@@ -1189,7 +1189,7 @@ export default {
   }
   .mobile-accordion {
     display: grid;
-    gap: var(--space-xs);
+    gap: 0;
     padding: var(--space-xs);
     border: 1px solid var(--color-line-soft);
     border-radius: var(--radius-md);
@@ -1219,7 +1219,8 @@ export default {
     transform: rotate(180deg);
   }
   .mobile-accordion__items {
-    padding-top: var(--space-2xs);
+    min-height: 0;
+    padding-top: var(--space-xs);
     transform-origin: top center;
   }
   .mobile-accordion__items a,
@@ -1233,12 +1234,14 @@ export default {
     overflow: hidden;
     transition:
       max-height var(--motion-duration-card) var(--motion-ease-emphasized),
+      padding-top var(--motion-duration-card) var(--motion-ease-emphasized),
       opacity var(--motion-duration-standard) var(--motion-ease-standard),
       transform var(--motion-duration-card) var(--motion-ease-emphasized);
   }
   .mobile-accordion-reveal-enter,
   .mobile-accordion-reveal-leave-to {
     max-height: 0;
+    padding-top: 0;
     opacity: 0;
     transform: translateY(-8px) scale(0.985);
   }
