@@ -86,22 +86,62 @@
     right: 8px;
     width: min(220px, calc(100vw - 32px));
     padding: 0.65rem;
-    color: #fff;
-    background: rgba(15, 23, 42, 0.86);
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 7px;
+    overflow: hidden;
+    color: var(--color-text-strong);
+    background:
+      radial-gradient(circle at top right, var(--color-theme-glow), transparent 72%),
+      color-mix(in srgb, var(--color-surface-card) 92%, transparent);
+    border: 1px solid var(--color-accent-border);
+    border-radius: var(--radius-sm);
     backdrop-filter: blur(10px);
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.28);
+    box-shadow: var(--shadow-floating);
+    animation: board-delete-progress-enter var(--motion-duration-standard) var(--motion-ease-emphasized) both;
 
-    span {
-      display: block;
-      margin-bottom: 0.45rem;
+    .board-delete-progress-heading {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: var(--space-2xs);
+      margin-bottom: var(--space-xs);
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 780;
     }
-    .progress {
+    .board-delete-progress-heading > span:nth-child(2) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .board-delete-progress-heading strong {
+      color: var(--color-accent-strong);
+      font-size: 11px;
+    }
+    .board-delete-progress-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--color-accent-strong);
+      box-shadow: 0 0 0 5px var(--color-accent-soft);
+      animation: board-delete-progress-pulse 1.8s var(--motion-ease-standard) infinite;
+    }
+    .board-delete-progress-bar {
       height: 0.45rem;
       margin-bottom: 0;
+      overflow: hidden;
+      border-radius: var(--radius-pill);
+      color: var(--color-accent-strong);
+      background: var(--color-accent-soft);
+    }
+    .board-delete-progress-bar::-webkit-progress-bar {
+      background: var(--color-accent-soft);
+    }
+    .board-delete-progress-bar::-webkit-progress-value {
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--color-accent), var(--color-accent-strong));
+      transition: width var(--motion-duration-standard) var(--motion-ease-emphasized);
+    }
+    .board-delete-progress-bar::-moz-progress-bar {
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--color-accent), var(--color-accent-strong));
     }
   }
   .editor-buttons {
@@ -134,6 +174,7 @@
     width: 32px;
     height: 32px;
     padding: 0;
+    border: 0;
     margin-right: 0;
     color: #fff;
     background-color: rgba(0, 0, 0, 0.34);
@@ -141,38 +182,52 @@
     opacity: 0.86;
     transition: opacity .16s ease, transform .16s ease, background-color .16s ease;
     touch-action: manipulation;
+    cursor: pointer;
 
-    &::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      right: 50%;
-      bottom: calc(100% + 8px);
-      padding: 4px 7px;
-      color: #fff;
-      font-size: 12px;
-      line-height: 1.2;
-      white-space: nowrap;
-      background: rgba(15, 23, 42, 0.92);
-      border-radius: 5px;
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.22);
-      opacity: 0;
-      pointer-events: none;
-      transform: translate(50%, 3px);
-      transition: opacity .16s ease, transform .16s ease;
-    }
     &:hover,
-    &:focus {
+    &:focus-visible {
       background-color: rgba(31, 111, 235, 0.72);
       opacity: 1;
       transform: translateY(-2px) scale(1.04);
     }
-    &:hover::after,
-    &:focus::after {
-      opacity: 1;
-      transform: translate(50%, 0);
+    &:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, 0.94);
+      outline-offset: 2px;
     }
     &:active {
       transform: translateY(0) scale(0.98);
     }
+    &:disabled {
+      opacity: 0.42;
+      cursor: wait;
+      transform: none;
+    }
   }
+}
+
+@keyframes board-delete-progress-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes board-delete-progress-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
+  }
+
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+
+html[data-motion='reduce'] .board-editor .board-delete-progress,
+html[data-motion='reduce'] .board-editor .board-delete-progress-dot {
+  animation: none;
 }

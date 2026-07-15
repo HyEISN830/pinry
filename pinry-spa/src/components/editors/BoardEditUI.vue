@@ -1,33 +1,49 @@
 <template>
   <div class="editor board-editor">
     <div class="editor-buttons">
-      <span
+      <button
         class="icon-container"
+        v-source-tooltip
+        type="button"
         :data-tooltip="$t('deleteBoardTooltip')"
-        :title="$t('deleteBoardTooltip')"
-        @click.stop="deleteBoard">
+        :aria-label="$t('deleteBoardTooltip')"
+        :disabled="deleting"
+        @click.stop="deleteBoard"
+        @touchstart.stop="noop">
          <b-icon
            type="is-light"
            icon="delete"
            custom-size="mdi-24px">
           </b-icon>
-      </span>
-      <span
+      </button>
+      <button
         class="icon-container"
+        v-source-tooltip
+        type="button"
         :data-tooltip="$t('editBoardTooltip')"
-        :title="$t('editBoardTooltip')"
-        @click.stop="editBoard">
+        :aria-label="$t('editBoardTooltip')"
+        :disabled="deleting"
+        @click.stop="editBoard"
+        @touchstart.stop="noop">
        <b-icon
          type="is-light"
          icon="pencil"
          custom-size="mdi-24px">
        </b-icon>
-      </span>
+      </button>
     </div>
-    <div class="board-delete-progress" v-if="deleting">
-      <span>{{ deleteStatusText }}</span>
+    <div
+      class="board-delete-progress"
+      v-if="deleting"
+      role="status"
+      aria-live="polite">
+      <div class="board-delete-progress-heading">
+        <span class="board-delete-progress-dot" aria-hidden="true"></span>
+        <span>{{ deleteStatusText }}</span>
+        <strong>{{ deleteProgress }}%</strong>
+      </div>
       <progress
-        class="progress is-info"
+        class="progress board-delete-progress-bar"
         :value="deleteProgress"
         max="100">
         {{ deleteProgress }}%
@@ -61,6 +77,9 @@ export default {
     };
   },
   methods: {
+    noop() {
+      return true;
+    },
     onBoardSaved() {
       this.$emit('board-save-succeed');
     },
@@ -143,13 +162,20 @@ export default {
       if (this.deleting) {
         return;
       }
-      this.$buefy.dialog.confirm({
-        message: this.$t(
-          'boardDeleteConfirm',
-          { count: this.board.total_pins || 0 },
-        ),
-        onConfirm: this.deleteBoardWithProgress,
-      });
+      modals.openActionConfirm(
+        this,
+        {
+          title: this.$t('boardDeleteTitle'),
+          message: this.$t(
+            'boardDeleteConfirm',
+            { count: this.board.total_pins || 0 },
+          ),
+          confirmLabel: this.$t('deleteButton'),
+          cancelLabel: this.$t('cancelButton'),
+          icon: 'delete-outline',
+        },
+        this.deleteBoardWithProgress,
+      );
     },
   },
 };

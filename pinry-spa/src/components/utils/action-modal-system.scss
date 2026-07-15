@@ -1,0 +1,143 @@
+.modal.pinry-action-modal {
+  --action-danger: color-mix(in srgb, var(--color-accent-strong) 16%, #dc2626);
+  --action-danger-soft: color-mix(in srgb, var(--action-danger) 13%, transparent);
+  --action-danger-border: color-mix(in srgb, var(--action-danger) 42%, transparent);
+}
+
+.pinry-action-modal .action-confirm-card,
+.pinry-add-board-modal .add2board-card {
+  animation: action-modal-arrive var(--motion-duration-standard) var(--motion-ease-emphasized) both;
+}
+
+.pinry-action-modal .action-confirm-card {
+  --create-modal-width: 540px;
+}
+
+.pinry-action-modal .action-confirm-head {
+  position: relative;
+  overflow: hidden;
+}
+
+.pinry-action-modal .action-confirm-head::after {
+  content: '';
+  position: absolute;
+  right: -58px;
+  bottom: -76px;
+  width: 170px;
+  height: 170px;
+  border: 1px solid var(--action-danger-border);
+  border-radius: 50%;
+  opacity: 0.52;
+  pointer-events: none;
+  transform: rotate(-14deg);
+}
+
+.pinry-action-modal .action-confirm-card.is-danger .action-confirm-icon {
+  border-color: var(--action-danger-border);
+  color: var(--action-danger);
+  background: var(--action-danger-soft);
+}
+
+.pinry-action-modal .action-confirm-card.is-danger .create-modal-kicker {
+  color: var(--action-danger);
+}
+
+.pinry-action-modal .action-confirm-body {
+  display: grid;
+  min-height: 132px;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.pinry-action-modal .action-confirm-body p {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 0.96rem;
+  font-weight: 720;
+  line-height: 1.65;
+}
+
+.pinry-action-modal .action-confirm-pulse {
+  position: relative;
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--action-danger);
+  box-shadow: 0 0 0 7px var(--action-danger-soft);
+}
+
+.pinry-action-modal .action-confirm-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border: 1px solid var(--action-danger-border);
+  border-radius: inherit;
+  animation: action-confirm-pulse 2.2s var(--motion-ease-standard) infinite;
+}
+
+.pinry-action-modal .action-confirm-submit {
+  min-width: 126px;
+  gap: var(--space-2xs);
+  border-color: var(--action-danger);
+  color: #fff;
+  background: var(--action-danger);
+  box-shadow: 0 10px 24px var(--action-danger-soft);
+}
+
+.pinry-action-modal .action-confirm-submit:hover:not(:disabled),
+.pinry-action-modal .action-confirm-submit:focus-visible {
+  border-color: color-mix(in srgb, var(--action-danger) 84%, #000);
+  color: #fff;
+  background: color-mix(in srgb, var(--action-danger) 88%, #000);
+  box-shadow: 0 14px 28px var(--action-danger-soft);
+}
+
+.pinry-action-modal .action-confirm-submit:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.pinry-action-modal .action-confirm-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--action-danger-soft), 0 14px 28px var(--action-danger-soft);
+}
+
+@keyframes action-modal-arrive {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.975);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes action-confirm-pulse {
+  0%, 100% {
+    opacity: 0.24;
+    transform: scale(0.72);
+  }
+
+  48% {
+    opacity: 0.8;
+    transform: scale(1.22);
+  }
+}
+
+html[data-motion='reduce'] .pinry-action-modal .action-confirm-card,
+html[data-motion='reduce'] .pinry-add-board-modal .add2board-card,
+html[data-motion='reduce'] .pinry-action-modal .action-confirm-pulse::after,
+html[data-motion='reduce'] .pinry-add-board-modal .add2board-loading-icon {
+  animation: none;
+}
+
+@media screen and (max-width: 640px) {
+  .pinry-action-modal .action-confirm-body {
+    min-height: 116px;
+    padding-top: var(--space-md);
+    padding-bottom: var(--space-md);
+  }
+}

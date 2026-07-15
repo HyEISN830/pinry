@@ -134,22 +134,29 @@ export default {
       );
     },
     deletePin() {
-      this.$buefy.dialog.confirm({
-        message: 'Delete this Pin?',
-        onConfirm: () => {
+      modals.openActionConfirm(
+        this,
+        {
+          title: this.$t('pinDeleteTitle'),
+          message: this.$t('pinDeleteConfirm'),
+          confirmLabel: this.$t('deleteButton'),
+          cancelLabel: this.$t('cancelButton'),
+          icon: 'delete-outline',
+        },
+        () => {
           API.Pin.deleteById(this.pin.id).then(
             () => {
-              this.$buefy.toast.open('Pin deleted');
+              this.$buefy.toast.open(this.$t('pinDeleteSucceeded'));
               this.$emit('pin-delete-succeed', this.pin.id);
             },
             () => {
               this.$buefy.toast.open(
-                { type: 'is-danger', message: 'Failed to delete Pin' },
+                { type: 'is-danger', message: this.$t('pinDeleteFailed') },
               );
             },
           );
         },
-      });
+      );
     },
   },
 };

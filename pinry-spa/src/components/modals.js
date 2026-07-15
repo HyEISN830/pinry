@@ -4,6 +4,7 @@ import SignUpForm from './SignUpForm.vue';
 import BoardEdit from './BoardEdit.vue';
 import Add2Board from './pin_edit/Add2Board.vue';
 import ComicCreateModal from './comic/ComicCreateModal.vue';
+import ActionConfirmModal from './ActionConfirmModal.vue';
 import scroll from './utils/scroll';
 
 function runCreatedCallback(vm, callback, item) {
@@ -46,12 +47,32 @@ function openPinEdit(vm, props = null, onCreated = null) {
 }
 
 function openAdd2Board(vm, pin, username) {
-  vm.$buefy.modal.open(
+  return openPreservingScroll(
+    vm,
     {
       parent: vm,
       component: Add2Board,
       props: { pin, username },
       hasModalCard: true,
+      canCancel: ['escape', 'outside'],
+      customClass: 'pinry-create-modal pinry-action-modal pinry-add-board-modal',
+    },
+  );
+}
+
+function openActionConfirm(vm, props, onConfirm) {
+  return openPreservingScroll(
+    vm,
+    {
+      parent: vm,
+      component: ActionConfirmModal,
+      props,
+      hasModalCard: true,
+      canCancel: ['escape', 'outside'],
+      customClass: 'pinry-create-modal pinry-action-modal pinry-confirm-modal',
+      events: {
+        confirm: onConfirm,
+      },
     },
   );
 }
@@ -140,6 +161,7 @@ export default {
   openComicCreate,
   openBoardEdit,
   openAdd2Board,
+  openActionConfirm,
   openPinEdit,
   openLogin,
   openSignUp,
