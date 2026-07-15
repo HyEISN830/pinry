@@ -96,7 +96,7 @@ export default {
 }
 .tag-pin-heading h1 {
   margin: 0;
-  color: #22313f;
+  color: var(--color-accent-foreground);
   font-size: 1.6rem;
   font-weight: 800;
 }

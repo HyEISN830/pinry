@@ -321,7 +321,7 @@ export default {
 }
 
 .home-collection-stat__metric strong {
-  color: inherit;
+  color: var(--color-accent-foreground);
   font-size: 1.5rem;
   font-weight: 950;
   font-variant-numeric: tabular-nums;

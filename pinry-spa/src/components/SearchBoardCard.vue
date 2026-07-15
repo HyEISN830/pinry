@@ -88,7 +88,7 @@ export default {
 .search-board-card__owner img { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
 .search-board-card__owner span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .search-board-card__count { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.25rem; min-height: 30px; margin-left: auto; padding: 0 0.55rem; border-radius: var(--radius-pill); color: var(--color-accent-foreground); background: var(--color-accent-soft-gradient); cursor: default; user-select: none; white-space: nowrap; -webkit-user-select: none; }
-.search-board-card__count strong { font-size: 0.94rem; font-weight: 950; }
+.search-board-card__count strong { color: var(--color-accent-foreground); font-size: 0.94rem; font-weight: 950; }
 .search-board-card__count small { color: inherit; font-size: 0.76rem; font-weight: 850; opacity: 0.82; }
 
 </style>
