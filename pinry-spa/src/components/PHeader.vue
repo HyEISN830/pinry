@@ -1116,6 +1116,61 @@ export default {
   background: #fff;
   transform: translate(-50%, -50%);
 }
+@media screen and (min-width: 981px) {
+  .theme-popover .accent-swatch {
+    flex-basis: 32px;
+    width: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    height: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+  .theme-popover .accent-swatch::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 2px;
+    border-radius: 50%;
+    background: var(--accent-preview);
+    box-shadow:
+      0 0 0 2px var(--color-surface-1),
+      0 0 0 3px var(--color-line-soft),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.44);
+    pointer-events: none;
+    transition: box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+  }
+  .theme-popover .accent-swatch:hover,
+  .theme-popover .accent-swatch.is-active {
+    box-shadow: none;
+    transform: translateY(-1px);
+  }
+  .theme-popover .accent-swatch:hover::before {
+    box-shadow:
+      0 0 0 2px var(--color-surface-1),
+      0 0 0 3px var(--color-accent-border),
+      0 6px 14px var(--color-theme-glow),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  }
+  .theme-popover .accent-swatch.is-active::before {
+    box-shadow:
+      0 0 0 2px var(--color-surface-1),
+      0 0 0 4px var(--color-accent-strong),
+      0 8px 18px var(--color-theme-glow),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  }
+  .theme-popover .accent-swatch:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+  .theme-popover .accent-swatch.is-active::after {
+    z-index: 2;
+  }
+}
 .mobile-toggle {
   display: none;
   place-items: center;
