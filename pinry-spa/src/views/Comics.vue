@@ -120,15 +120,17 @@ function comicGridCapacity(viewportWidth) {
   return 8;
 }
 
-function comicPageLimit(largeCards = false) {
+function comicPageLimit(largeCards = false, maxColumns = null) {
   if (typeof window === 'undefined') {
-    return largeCards ? 3 : 4;
+    const fallback = largeCards ? 3 : 4;
+    return maxColumns ? Math.min(fallback, maxColumns) : fallback;
   }
   const viewportWidth = window.innerWidth
     || document.documentElement.clientWidth
     || 0;
   const capacity = comicGridCapacity(viewportWidth);
-  return largeCards ? Math.max(1, capacity - 1) : capacity;
+  const cardCapacity = largeCards ? Math.max(1, capacity - 1) : capacity;
+  return maxColumns ? Math.min(cardCapacity, maxColumns) : cardCapacity;
 }
 
 export default {
@@ -151,6 +153,13 @@ export default {
       type: Boolean,
       default: false,
     },
+    maxColumns: {
+      type: Number,
+      default: null,
+      validator(value) {
+        return value === null || (Number.isInteger(value) && value > 0);
+      },
+    },
     tagFilter: {
       type: String,
       default: null,
@@ -168,7 +177,7 @@ export default {
     return {
       comics: [],
       currentPage: 0,
-      pageLimit: comicPageLimit(this.largeCards),
+      pageLimit: comicPageLimit(this.largeCards, this.maxColumns),
       resizeTimer: null,
       status: {
         count: null,
@@ -206,6 +215,11 @@ export default {
   },
   watch: {
     largeCards() {
+      this.pageLimit = comicPageLimit(this.largeCards, this.maxColumns);
+      this.resetPages();
+    },
+    maxColumns() {
+      this.pageLimit = comicPageLimit(this.largeCards, this.maxColumns);
       this.resetPages();
     },
     tagFilter() {
@@ -282,7 +296,7 @@ export default {
         window.clearTimeout(this.resizeTimer);
       }
       this.resizeTimer = window.setTimeout(() => {
-        const nextLimit = comicPageLimit(this.largeCards);
+        const nextLimit = comicPageLimit(this.largeCards, this.maxColumns);
         if (nextLimit === this.pageLimit) {
           return;
         }
