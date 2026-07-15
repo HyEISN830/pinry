@@ -9,7 +9,7 @@
     <section class="section comics-section">
       <div class="container comics-container">
         <div class="comics-toolbar">
-          <div>
+          <div class="comics-toolbar__identity">
             <h1 v-if="!homeShowcase">{{ displayTitle }}</h1>
             <HomeCollectionStat
               v-if="homeShowcase"
@@ -425,6 +425,15 @@ export default {
   border-radius: var(--radius-card, 22px);
   background: var(--color-surface-card, var(--surface-card, #fff));
   box-shadow: var(--shadow-soft, 0 14px 34px rgba(16, 24, 40, 0.12));
+}
+
+.comics-toolbar__identity {
+  min-width: 0;
+}
+
+.comics-page.is-home-showcase .comics-toolbar__identity {
+  width: min(100%, 420px);
+  flex: 0 1 420px;
 }
 
 .comics-toolbar h1 {
