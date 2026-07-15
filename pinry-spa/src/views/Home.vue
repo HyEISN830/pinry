@@ -1,13 +1,21 @@
 <template>
   <div class="home">
     <PHeader></PHeader>
-    <Comics embedded :max-columns="4" :title="$t('comicsLink')"></Comics>
+    <Comics
+      embedded
+      home-showcase
+      :max-columns="4"
+      :title="$t('comicsLink')">
+    </Comics>
     <section class="section home-pin-heading">
       <div class="container">
         <h1>{{ $t("pinsLink") }}</h1>
-        <p v-if="pinCount !== null">
-          {{ pinCount }} {{ $t("collectionArtworksLabel") }}
-        </p>
+        <HomeCollectionStat
+          v-if="pinCount !== null"
+          :count="pinCount"
+          kind="pin"
+          :label="$t('collectionArtworksLabel')">
+        </HomeCollectionStat>
       </div>
     </section>
     <Pins v-on:pins-meta-loaded="onPinsMetaLoaded"></Pins>
@@ -16,6 +24,7 @@
 
 <script>
 import Comics from './Comics.vue';
+import HomeCollectionStat from '../components/HomeCollectionStat.vue';
 import PHeader from '../components/PHeader.vue';
 import Pins from '../components/Pins.vue';
 
@@ -23,6 +32,7 @@ export default {
   name: 'Home',
   components: {
     Comics,
+    HomeCollectionStat,
     PHeader,
     Pins,
   },
@@ -86,17 +96,11 @@ export default {
   padding-left: 0;
 }
 .home-pin-heading h1 {
-  margin: 0;
+  margin: 0 0 var(--space-xs);
   color: var(--text-strong, #22313f);
   font-size: 1.6rem;
   font-weight: 800;
 }
-.home-pin-heading p {
-  margin: 0.25rem 0 0;
-  color: var(--text-muted, #64748b);
-  font-size: 0.95rem;
-}
-
 @media screen and (max-width: 760px) {
   .home {
     --home-feed-width: calc(100vw - 20px);
