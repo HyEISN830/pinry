@@ -171,7 +171,7 @@
                   class="accent-swatch"
                   type="button"
                   :class="[{ 'is-active': themeState.accent === accent.value, 'is-gradient': accent.kind === 'gradient' }]"
-                  :style="{ background: accent.preview }"
+                  :style="{ '--accent-preview': accent.preview }"
                   :title="accentLabel(accent)"
                   :aria-label="accentLabel(accent)"
                   :aria-pressed="themeState.accent === accent.value ? 'true' : 'false'"
@@ -392,7 +392,7 @@
               class="accent-swatch"
               type="button"
               :class="[{ 'is-active': themeState.accent === accent.value, 'is-gradient': accent.kind === 'gradient' }]"
-              :style="{ background: accent.preview }"
+              :style="{ '--accent-preview': accent.preview }"
               :title="accentLabel(accent)"
               :aria-label="accentLabel(accent)"
               :aria-pressed="themeState.accent === accent.value ? 'true' : 'false'"
@@ -1063,18 +1063,34 @@ export default {
   grid-template-columns: repeat(6, 1fr);
   gap: var(--space-xs);
 }
-.accent-swatch {
+.theme-popover .accent-swatch,
+.mobile-panel .accent-swatch {
   position: relative;
+  display: block;
+  flex: 0 0 28px;
+  box-sizing: border-box;
   width: 28px;
+  min-width: 28px;
+  max-width: 28px;
   height: 28px;
   min-height: 28px;
+  max-height: 28px;
   padding: 0;
+  overflow: hidden;
   border: 2px solid var(--color-surface-1);
   border-radius: 50%;
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--accent-preview);
+  background-clip: padding-box;
+  background-origin: padding-box;
   box-shadow:
     0 0 0 1px var(--color-line-soft),
     inset 0 0 0 1px rgba(255, 255, 255, 0.44);
+  color: transparent;
   cursor: pointer;
+  line-height: 0;
+  text-align: center;
   transition:
     transform var(--motion-duration-fast) var(--motion-ease-standard),
     box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
