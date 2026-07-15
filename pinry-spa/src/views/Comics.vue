@@ -10,12 +10,13 @@
       <div class="container comics-container">
         <div class="comics-toolbar">
           <div>
-            <h1>{{ displayTitle }}</h1>
+            <h1 v-if="!homeShowcase">{{ displayTitle }}</h1>
             <HomeCollectionStat
-              v-if="homeShowcase && status.count !== null"
+              v-if="homeShowcase"
               :count="status.count"
               kind="comic"
-              :label="$t('collectionArtworksLabel')">
+              :label="$t('collectionArtworksLabel')"
+              :title="displayTitle">
             </HomeCollectionStat>
             <p v-else-if="status.count !== null">
               {{ status.count }} {{ $t("collectionArtworksLabel") }}
@@ -49,6 +50,9 @@
             :title="$t('previousPageButton')"
             @click="previousPage">
             <span class="comic-page-button__halo" aria-hidden="true"></span>
+            <span class="comic-page-button__surface" aria-hidden="true">
+              <span class="comic-page-button__shine"></span>
+            </span>
             <b-icon icon="chevron-left" custom-size="mdi-27px"></b-icon>
           </button>
           <div
@@ -76,6 +80,9 @@
             :title="$t('nextPageButton')"
             @click="nextPage">
             <span class="comic-page-button__halo" aria-hidden="true"></span>
+            <span class="comic-page-button__surface" aria-hidden="true">
+              <span class="comic-page-button__shine"></span>
+            </span>
             <b-icon icon="chevron-right" custom-size="mdi-27px"></b-icon>
           </button>
         </div>
@@ -399,10 +406,6 @@ export default {
   padding-top: var(--space-md, 16px);
 }
 
-.comics-page.is-home-showcase .comics-toolbar h1 {
-  margin-bottom: var(--space-xs);
-}
-
 .comics-container {
   margin: 0 auto;
 }
@@ -523,29 +526,45 @@ export default {
   height: 3.2rem;
   place-items: center;
   padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 50%;
+  color: var(--color-accent-text);
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 340ms var(--motion-ease-emphasized),
+    filter 340ms var(--motion-ease-standard),
+    opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.comic-page-button__surface {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--color-accent-border) 82%, #fff);
   border-radius: 50%;
-  color: var(--color-accent-text);
   background:
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.48), transparent 34%),
     linear-gradient(145deg, var(--color-accent), var(--color-accent-strong));
-  cursor: pointer;
-  transform: translateY(-50%);
   box-shadow:
     0 16px 34px color-mix(in srgb, var(--color-theme-glow-strong) 84%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.62);
-  -webkit-tap-highlight-color: transparent;
+  pointer-events: none;
+  transform: translateZ(0) scale(1);
   transition:
-    transform var(--motion-duration-standard) var(--motion-ease-spring),
-    border-color var(--motion-duration-fast) var(--motion-ease-standard),
-    box-shadow var(--motion-duration-standard) var(--motion-ease-standard),
-    filter var(--motion-duration-standard) var(--motion-ease-standard);
+    border-color 300ms var(--motion-ease-standard),
+    box-shadow 360ms var(--motion-ease-standard),
+    transform 360ms var(--motion-ease-emphasized);
 }
 
-.comic-page-button::before {
+.comic-page-button__surface::before {
   position: absolute;
-  z-index: -1;
+  z-index: 1;
   inset: 3px;
   border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: inherit;
@@ -553,15 +572,14 @@ export default {
   pointer-events: none;
 }
 
-.comic-page-button::after {
+.comic-page-button__shine {
   position: absolute;
-  z-index: 0;
+  z-index: 2;
   top: -45%;
   bottom: -45%;
   left: -72%;
   width: 34%;
   background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.78), transparent);
-  content: '';
   opacity: 0.72;
   pointer-events: none;
   transform: skewX(-18deg);
@@ -576,7 +594,7 @@ export default {
 
 .comic-page-button__halo {
   position: absolute;
-  z-index: -2;
+  z-index: -1;
   inset: -8px;
   border: 2px solid var(--color-accent-border);
   border-radius: 50%;
@@ -595,15 +613,25 @@ export default {
 
 .comic-page-button:focus-visible {
   outline: none;
+}
+
+.comic-page-button:focus-visible .comic-page-button__surface {
   box-shadow:
     var(--focus-ring),
-    0 18px 38px var(--color-theme-glow-strong);
+    0 18px 38px var(--color-theme-glow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .comic-page-button:active {
   filter: saturate(0.92);
-  transform: translateY(-50%) scale(0.9);
-  transition-duration: var(--motion-duration-instant);
+  transform: translateY(-50%) scale(0.95);
+  transition-duration: 120ms;
+}
+
+.comic-page-button:active .comic-page-button__surface {
+  animation: none;
+  transform: scale(0.96);
+  transition-duration: 120ms;
 }
 
 .comic-page-button:disabled {
@@ -612,19 +640,34 @@ export default {
   filter: saturate(0.62);
 }
 
-html[data-motion='full'] .comic-page-button::after {
-  animation: comic-page-button-shine 3.6s var(--motion-ease-standard) infinite;
+.comic-page-button:disabled .comic-page-button__surface,
+.comic-page-button:disabled .comic-page-button__shine,
+.comic-page-button:disabled .comic-page-button__halo {
+  animation-play-state: paused;
+}
+
+html[data-motion='full'] .comic-page-button__shine {
+  animation: comic-page-button-shine 3.2s var(--motion-ease-standard) infinite;
 }
 
 html[data-motion='full'] .comic-page-button__halo {
-  animation: comic-page-button-halo 2.4s var(--motion-ease-standard) infinite;
+  animation: comic-page-button-halo 2.8s var(--motion-ease-standard) infinite;
+}
+
+html[data-motion='full'] .comic-page-button__surface {
+  animation: comic-page-button-breathe 4.2s var(--motion-ease-standard) infinite;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .comic-page-button:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--color-accent) 68%, #fff);
     filter: saturate(1.18) brightness(1.04);
-    transform: translateY(-50%) scale(1.1);
+    transform: translateY(-50%) scale(1.065);
+  }
+
+  .comic-page-button:hover:not(:disabled) .comic-page-button__surface {
+    animation: none;
+    border-color: color-mix(in srgb, var(--color-accent) 68%, #fff);
+    transform: scale(1.025);
     box-shadow:
       0 20px 44px var(--color-theme-glow-strong),
       0 0 0 5px color-mix(in srgb, var(--color-accent-soft) 72%, transparent),
@@ -1037,7 +1080,8 @@ html[data-motion="reduce"] {
   }
 
   .comic-page-button,
-  .comic-page-button::after,
+  .comic-page-button__surface,
+  .comic-page-button__shine,
   .comic-page-button__halo,
   .comic-page-button .icon {
     animation: none;
@@ -1046,14 +1090,19 @@ html[data-motion="reduce"] {
 }
 
 @keyframes comic-page-button-shine {
-  0%, 56% { transform: translateX(0) skewX(-18deg); }
-  84%, 100% { transform: translateX(540%) skewX(-18deg); }
+  0%, 48% { transform: translateX(0) skewX(-18deg); }
+  76%, 100% { transform: translateX(540%) skewX(-18deg); }
 }
 
 @keyframes comic-page-button-halo {
   0%, 100% { opacity: 0; transform: scale(0.78); }
-  42% { opacity: 0.54; transform: scale(1); }
-  72% { opacity: 0; transform: scale(1.22); }
+  38% { opacity: 0.48; transform: scale(1); }
+  74% { opacity: 0; transform: scale(1.2); }
+}
+
+@keyframes comic-page-button-breathe {
+  0%, 100% { transform: translateZ(0) scale(1); }
+  50% { transform: translateZ(0) scale(1.025); }
 }
 
 @include screen-grid-layout(".comics-container");

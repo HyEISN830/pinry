@@ -9,12 +9,11 @@
     </Comics>
     <section class="section home-pin-heading">
       <div class="container">
-        <h1>{{ $t("pinsLink") }}</h1>
         <HomeCollectionStat
-          v-if="pinCount !== null"
           :count="pinCount"
           kind="pin"
-          :label="$t('collectionArtworksLabel')">
+          :label="$t('collectionArtworksLabel')"
+          :title="$t('pinsLink')">
         </HomeCollectionStat>
       </div>
     </section>
@@ -94,12 +93,6 @@ export default {
   padding-right: 0;
   padding-bottom: var(--space-md, 16px);
   padding-left: 0;
-}
-.home-pin-heading h1 {
-  margin: 0 0 var(--space-xs);
-  color: var(--text-strong, #22313f);
-  font-size: 1.6rem;
-  font-weight: 800;
 }
 @media screen and (max-width: 760px) {
   .home {
