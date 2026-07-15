@@ -3,7 +3,8 @@
     class="comics-page"
     :class="{
       'is-embedded': embedded,
-      'is-home-showcase': homeShowcase
+      'is-home-showcase': homeShowcase,
+      'is-infinite-masonry': usesInfiniteMasonry
     }">
     <PHeader v-if="!embedded"></PHeader>
     <section class="section comics-section">
@@ -25,17 +26,20 @@
           <div class="toolbar-actions">
             <button
               v-if="user.loggedIn && !embedded && showCreate"
-              class="button is-primary"
+              class="comic-create-action"
               type="button"
               @click="createComic">
-              {{ $t("NewComicTitle") }}
+              <span class="comic-create-action__shine" aria-hidden="true"></span>
+              <b-icon icon="plus" custom-size="mdi-19px"></b-icon>
+              <span>{{ $t("NewComicTitle") }}</span>
             </button>
           </div>
         </div>
-        <div v-if="status.count !== null" class="comic-page-summary">
+        <div v-if="embedded && status.count !== null" class="comic-page-summary">
           {{ currentPage + 1 }}/{{ totalPages }} · {{ status.count }}
         </div>
         <div
+          v-if="embedded"
           class="comic-row-shell"
           :class="{
             'can-page-left': currentPage > 0,
@@ -86,8 +90,47 @@
             <b-icon icon="chevron-right" custom-size="mdi-27px"></b-icon>
           </button>
         </div>
-        <div v-if="showInitialSkeleton" class="comic-skeleton-grid" aria-hidden="true">
-          <div v-for="index in pageLimit" :key="index" class="comic-skeleton-card">
+        <div
+          v-else
+          ref="masonryContainer"
+          class="comic-masonry-container">
+          <div
+            v-if="comics.length > 0"
+            ref="masonryGrid"
+            v-masonry=""
+            v-layout-ready="{ itemSelector: '.comic-masonry-item' }"
+            :key="masonryKey"
+            :style="gridStyle"
+            class="comic-masonry motion-stagger"
+            transition-duration="0.16s"
+            item-selector=".comic-masonry-item"
+            column-width=".comic-masonry-sizer"
+            gutter=".comic-masonry-gutter"
+            fit-width="true">
+            <div class="comic-masonry-sizer" aria-hidden="true"></div>
+            <div class="comic-masonry-gutter" aria-hidden="true"></div>
+            <ComicCard
+              v-for="comic in comics"
+              :key="comic.id"
+              v-masonry-tile
+              class="comic-masonry-item"
+              :comic="comic"
+              :current-username="user.loggedIn ? user.meta.username : null"
+              :like-busy="comic.likeBusy"
+              @read="openComic"
+              @delete="deleteComic"
+              @toggle-like="toggleComicLike"
+              @image-settled="queueMasonryLayout"
+              @layout-settled="queueMasonryLayout">
+            </ComicCard>
+          </div>
+        </div>
+        <div
+          v-if="showInitialSkeleton"
+          class="comic-skeleton-grid"
+          :style="gridStyle"
+          aria-hidden="true">
+          <div v-for="index in skeletonCount" :key="index" class="comic-skeleton-card">
             <div class="comic-skeleton-cover"></div>
             <div class="comic-skeleton-line is-wide"></div>
             <div class="comic-skeleton-line"></div>
@@ -95,7 +138,7 @@
         </div>
         <div v-if="status.error" class="comic-state is-error">
           <p>{{ $t("cardLoadError") }}</p>
-          <button class="button is-light" type="button" @click="fetchPage(currentPage)">
+          <button class="button is-light" type="button" @click="retryLoad">
             {{ $t("loadMoreResults") }}
           </button>
         </div>
@@ -103,6 +146,12 @@
           <p>{{ $t("comicsEmptyState") }}</p>
         </div>
         <loadingSpinner :show="status.loading && comics.length > 0" size="compact"></loadingSpinner>
+        <div
+          v-if="usesInfiniteMasonry && status.hasNext"
+          ref="loadSentinel"
+          class="comic-load-sentinel"
+          aria-hidden="true">
+        </div>
       </div>
     </section>
   </div>
@@ -115,6 +164,11 @@ import HomeCollectionStat from '../components/HomeCollectionStat.vue';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import modals from '../components/modals';
+
+const FULL_PAGE_BATCH_SIZE = 12;
+const FULL_PAGE_MAX_COLUMNS = 4;
+const MASONRY_GUTTER = 16;
+const MAX_MEASURE_ATTEMPTS = 8;
 
 function comicGridCapacity(viewportWidth) {
   if (viewportWidth < 543) {
@@ -152,6 +206,15 @@ function comicPageLimit(largeCards = false, maxColumns = null) {
   const capacity = comicGridCapacity(viewportWidth);
   const cardCapacity = largeCards ? Math.max(1, capacity - 1) : capacity;
   return maxColumns ? Math.min(cardCapacity, maxColumns) : cardCapacity;
+}
+
+function masonryMetrics(containerWidth, columns) {
+  const safeWidth = Math.max(0, containerWidth || 0);
+  const safeColumns = Math.max(1, columns || 1);
+  const gutter = safeColumns === 1 ? 0 : MASONRY_GUTTER;
+  const availableWidth = Math.max(1, safeWidth - ((safeColumns - 1) * gutter));
+  const itemWidth = Math.round((availableWidth / safeColumns) * 1000) / 1000;
+  return { columns: safeColumns, gutter, itemWidth };
 }
 
 export default {
@@ -203,13 +266,30 @@ export default {
     return {
       comics: [],
       currentPage: 0,
-      pageLimit: comicPageLimit(this.largeCards, this.maxColumns),
+      pageLimit: comicPageLimit(
+        this.largeCards,
+        this.embedded ? this.maxColumns : FULL_PAGE_MAX_COLUMNS,
+      ),
       resizeTimer: null,
+      requestEpoch: 0,
+      masonryKey: 0,
+      masonryMetrics: masonryMetrics(240, 1),
+      masonryMetricsSignature: '240-0-1',
+      masonryMeasureAttempts: 0,
+      masonryMeasureTimer: null,
+      masonryMeasureFrame: null,
+      masonryLayoutFrame: null,
+      masonryLayoutTimers: [],
+      masonryResizeObserver: null,
+      loadObserver: null,
+      fillViewportTimer: null,
+      scrollFallbackBound: false,
       status: {
         count: null,
         error: false,
         hasNext: false,
         loading: false,
+        offset: 0,
       },
       user: {
         loggedIn: false,
@@ -229,6 +309,12 @@ export default {
     displayTitle() {
       return this.title || this.$t('comicsLink');
     },
+    usesInfiniteMasonry() {
+      return !this.embedded;
+    },
+    skeletonCount() {
+      return this.usesInfiniteMasonry ? this.pageLimit * 2 : this.pageLimit;
+    },
     totalPages() {
       if (this.status.count === null || this.status.count === 0) return 1;
       return Math.max(1, Math.ceil(this.status.count / this.pageLimit));
@@ -236,15 +322,23 @@ export default {
     gridStyle() {
       return {
         '--comic-page-limit': this.pageLimit,
+        '--comic-masonry-width': `${this.masonryMetrics.itemWidth}px`,
+        '--comic-masonry-gutter': `${this.masonryMetrics.gutter}px`,
       };
     },
   },
   watch: {
     largeCards() {
-      this.pageLimit = comicPageLimit(this.largeCards, this.maxColumns);
+      this.pageLimit = comicPageLimit(
+        this.largeCards,
+        this.embedded ? this.maxColumns : FULL_PAGE_MAX_COLUMNS,
+      );
       this.resetPages();
     },
     maxColumns() {
+      if (this.usesInfiniteMasonry) {
+        return;
+      }
       this.pageLimit = comicPageLimit(this.largeCards, this.maxColumns);
       this.resetPages();
     },
@@ -257,13 +351,40 @@ export default {
   },
   created() {
     this.fetchUser();
-    this.fetchPage(0);
+    this.resetPages();
     window.addEventListener('resize', this.handleResize);
+  },
+  mounted() {
+    if (this.usesInfiniteMasonry) {
+      this.observeMasonryContainer();
+      this.measureMasonryWhenReady();
+      this.setupInfiniteLoading();
+    }
   },
   beforeDestroy() {
     if (this.resizeTimer) {
       window.clearTimeout(this.resizeTimer);
     }
+    if (this.masonryMeasureTimer) {
+      window.clearTimeout(this.masonryMeasureTimer);
+    }
+    if (this.masonryMeasureFrame) {
+      const cancelFrame = window.cancelAnimationFrame || window.clearTimeout;
+      cancelFrame(this.masonryMeasureFrame);
+    }
+    if (this.masonryResizeObserver) {
+      this.masonryResizeObserver.disconnect();
+    }
+    if (this.loadObserver) {
+      this.loadObserver.disconnect();
+    }
+    if (this.fillViewportTimer) {
+      window.clearTimeout(this.fillViewportTimer);
+    }
+    if (this.scrollFallbackBound) {
+      window.removeEventListener('scroll', this.handleInfiniteScroll);
+    }
+    this.clearMasonryLayoutTimers();
     window.removeEventListener('resize', this.handleResize);
   },
   methods: {
@@ -284,9 +405,10 @@ export default {
       );
     },
     fetchPage(page) {
-      if (this.status.loading || page < 0) {
+      if (this.status.loading || page < 0 || this.usesInfiniteMasonry) {
         return;
       }
+      const epoch = this.requestEpoch;
       this.status.loading = true;
       this.status.error = false;
       API.Comic.fetchList(
@@ -296,25 +418,88 @@ export default {
         this.userFilter,
       ).then(
         (resp) => {
+          if (epoch !== this.requestEpoch) {
+            return;
+          }
           const { count, results, next } = resp.data;
           this.comics = (results || []).map(item => Object.assign({ likeBusy: false }, item));
           this.currentPage = page;
           this.status.count = count;
           this.status.hasNext = next !== null;
+          this.status.offset = this.comics.length;
           this.status.loading = false;
           this.$emit('comics-meta-loaded', { count });
         },
         () => {
+          if (epoch !== this.requestEpoch) {
+            return;
+          }
+          this.status.loading = false;
+          this.status.error = true;
+        },
+      );
+    },
+    fetchNext() {
+      if (!this.usesInfiniteMasonry || this.status.loading || !this.status.hasNext) {
+        return;
+      }
+      const epoch = this.requestEpoch;
+      const { offset } = this.status;
+      this.status.loading = true;
+      this.status.error = false;
+      API.Comic.fetchList(
+        offset,
+        FULL_PAGE_BATCH_SIZE,
+        this.tagFilter,
+        this.userFilter,
+      ).then(
+        (resp) => {
+          if (epoch !== this.requestEpoch) {
+            return;
+          }
+          const { count, results, next } = resp.data;
+          const incoming = (results || []).map(
+            item => Object.assign({ likeBusy: false }, item),
+          );
+          const knownIds = new Set(this.comics.map(item => item.id));
+          const additions = incoming.filter(item => !knownIds.has(item.id));
+          this.comics = this.comics.concat(additions);
+          this.status.count = count;
+          this.status.offset = offset + incoming.length;
+          this.status.hasNext = next !== null && incoming.length > 0;
+          this.status.loading = false;
+          this.$emit('comics-meta-loaded', { count });
+          this.$nextTick(() => {
+            this.measureMasonryWhenReady();
+            this.queueMasonryLayout();
+            this.observeLoadSentinel();
+            this.scheduleViewportFill();
+          });
+        },
+        () => {
+          if (epoch !== this.requestEpoch) {
+            return;
+          }
           this.status.loading = false;
           this.status.error = true;
         },
       );
     },
     resetPages() {
+      this.requestEpoch += 1;
       this.comics = [];
       this.currentPage = 0;
       this.status.count = null;
-      this.status.hasNext = false;
+      this.status.error = false;
+      this.status.hasNext = this.usesInfiniteMasonry;
+      this.status.loading = false;
+      this.status.offset = 0;
+      if (this.usesInfiniteMasonry) {
+        this.masonryKey += 1;
+        this.fetchNext();
+        this.$nextTick(this.observeLoadSentinel);
+        return;
+      }
       this.fetchPage(0);
     },
     handleResize() {
@@ -322,11 +507,22 @@ export default {
         window.clearTimeout(this.resizeTimer);
       }
       this.resizeTimer = window.setTimeout(() => {
-        const nextLimit = comicPageLimit(this.largeCards, this.maxColumns);
-        if (nextLimit === this.pageLimit) {
+        const nextLimit = comicPageLimit(
+          this.largeCards,
+          this.embedded ? this.maxColumns : FULL_PAGE_MAX_COLUMNS,
+        );
+        if (nextLimit === this.pageLimit && this.embedded) {
           return;
         }
+        const limitChanged = nextLimit !== this.pageLimit;
         this.pageLimit = nextLimit;
+        if (this.usesInfiniteMasonry) {
+          this.measureMasonryWhenReady();
+          if (limitChanged) {
+            this.scheduleViewportFill();
+          }
+          return;
+        }
         this.resetPages();
       }, 120);
     },
@@ -339,6 +535,13 @@ export default {
       if (this.currentPage > 0) {
         this.fetchPage(this.currentPage - 1);
       }
+    },
+    retryLoad() {
+      if (this.usesInfiniteMasonry) {
+        this.fetchNext();
+        return;
+      }
+      this.fetchPage(this.currentPage);
     },
     createComic() {
       modals.openComicCreate(
@@ -366,13 +569,177 @@ export default {
               if (this.status.count !== null) {
                 this.status.count = Math.max(0, this.status.count - 1);
               }
-              if (this.comics.length === 0 && this.currentPage > 0) {
+              this.$emit('comics-meta-loaded', { count: this.status.count });
+              if (this.usesInfiniteMasonry) {
+                this.status.offset = Math.max(0, this.status.offset - 1);
+                this.$nextTick(() => {
+                  this.queueMasonryLayout();
+                  this.scheduleViewportFill();
+                });
+              } else if (this.comics.length === 0 && this.currentPage > 0) {
                 this.fetchPage(this.currentPage - 1);
               }
             },
           );
         },
       );
+    },
+    updateMasonryMetrics() {
+      const container = this.$refs.masonryContainer;
+      const width = container ? container.clientWidth : 0;
+      if (!width) {
+        return false;
+      }
+      const metrics = masonryMetrics(width, this.pageLimit);
+      const signature = `${metrics.itemWidth}-${metrics.gutter}-${metrics.columns}`;
+      if (signature === this.masonryMetricsSignature) {
+        return false;
+      }
+      this.masonryMetrics = metrics;
+      this.masonryMetricsSignature = signature;
+      return true;
+    },
+    measureMasonryWhenReady() {
+      if (!this.usesInfiniteMasonry) {
+        return;
+      }
+      if (this.masonryMeasureTimer) {
+        window.clearTimeout(this.masonryMeasureTimer);
+        this.masonryMeasureTimer = null;
+      }
+      this.$nextTick(() => {
+        if (this.masonryMeasureFrame) {
+          const cancelFrame = window.cancelAnimationFrame || window.clearTimeout;
+          cancelFrame(this.masonryMeasureFrame);
+        }
+        const requestFrame = window.requestAnimationFrame
+          || (callback => window.setTimeout(callback, 16));
+        this.masonryMeasureFrame = requestFrame(() => {
+          this.masonryMeasureFrame = null;
+          if (this.updateMasonryMetrics()) {
+            this.masonryMeasureAttempts = 0;
+            this.masonryKey += 1;
+            this.$nextTick(this.redrawMasonry);
+            return;
+          }
+          const container = this.$refs.masonryContainer;
+          const width = container ? container.clientWidth : 0;
+          if (width || this.masonryMeasureAttempts >= MAX_MEASURE_ATTEMPTS) {
+            this.masonryMeasureAttempts = 0;
+            this.redrawMasonry();
+            return;
+          }
+          this.masonryMeasureAttempts += 1;
+          this.masonryMeasureTimer = window.setTimeout(
+            this.measureMasonryWhenReady,
+            Math.min(40 * this.masonryMeasureAttempts, 240),
+          );
+        });
+      });
+    },
+    observeMasonryContainer() {
+      if (!window.ResizeObserver || !this.$refs.masonryContainer) {
+        return;
+      }
+      this.masonryResizeObserver = new window.ResizeObserver(() => {
+        if (this.updateMasonryMetrics()) {
+          this.masonryKey += 1;
+          this.$nextTick(this.redrawMasonry);
+        }
+      });
+      this.masonryResizeObserver.observe(this.$refs.masonryContainer);
+    },
+    redrawMasonry() {
+      if (typeof this.$redrawVueMasonry === 'function') {
+        this.$redrawVueMasonry();
+      }
+    },
+    queueMasonryLayout() {
+      if (!this.usesInfiniteMasonry) {
+        return;
+      }
+      this.clearMasonryLayoutTimers();
+      this.$nextTick(() => {
+        const requestFrame = window.requestAnimationFrame
+          || (callback => window.setTimeout(callback, 16));
+        this.masonryLayoutFrame = requestFrame(() => {
+          this.masonryLayoutFrame = null;
+          this.redrawMasonry();
+        });
+        [100, 220, 420].forEach((delay) => {
+          this.masonryLayoutTimers.push(
+            window.setTimeout(this.redrawMasonry, delay),
+          );
+        });
+      });
+    },
+    clearMasonryLayoutTimers() {
+      if (this.masonryLayoutFrame) {
+        const cancelFrame = window.cancelAnimationFrame || window.clearTimeout;
+        cancelFrame(this.masonryLayoutFrame);
+        this.masonryLayoutFrame = null;
+      }
+      this.masonryLayoutTimers.forEach(timer => window.clearTimeout(timer));
+      this.masonryLayoutTimers = [];
+    },
+    setupInfiniteLoading() {
+      if (window.IntersectionObserver) {
+        this.loadObserver = new window.IntersectionObserver(
+          (entries) => {
+            if (entries.some(entry => entry.isIntersecting)) {
+              this.fetchNext();
+            }
+          },
+          { rootMargin: '520px 0px' },
+        );
+        this.observeLoadSentinel();
+      } else {
+        window.addEventListener('scroll', this.handleInfiniteScroll, { passive: true });
+        this.scrollFallbackBound = true;
+      }
+      this.scheduleViewportFill();
+    },
+    observeLoadSentinel() {
+      if (!this.loadObserver) {
+        return;
+      }
+      this.loadObserver.disconnect();
+      if (this.$refs.loadSentinel) {
+        this.loadObserver.observe(this.$refs.loadSentinel);
+      }
+    },
+    handleInfiniteScroll() {
+      const { body, documentElement } = document;
+      const scrollHeight = Math.max(
+        documentElement.scrollHeight,
+        body ? body.scrollHeight : 0,
+      );
+      const currentBottom = window.pageYOffset + window.innerHeight;
+      if (currentBottom >= scrollHeight - 520) {
+        this.fetchNext();
+      }
+    },
+    scheduleViewportFill() {
+      if (!this.usesInfiniteMasonry) {
+        return;
+      }
+      if (this.fillViewportTimer) {
+        window.clearTimeout(this.fillViewportTimer);
+      }
+      this.fillViewportTimer = window.setTimeout(() => {
+        this.fillViewportTimer = null;
+        if (this.status.loading || !this.status.hasNext) {
+          return;
+        }
+        const { body, documentElement } = document;
+        const scrollHeight = Math.max(
+          documentElement.scrollHeight,
+          body ? body.scrollHeight : 0,
+        );
+        if (scrollHeight <= window.innerHeight + 280) {
+          this.fetchNext();
+        }
+      }, 240);
     },
     toggleComicLike(comic) {
       if (comic.likeBusy) {
@@ -412,8 +779,19 @@ export default {
   padding-top: var(--space-md, 16px);
 }
 
+.comics-page.is-infinite-masonry .comics-section {
+  padding-right: 0;
+  padding-left: 0;
+}
+
 .comics-container {
   margin: 0 auto;
+}
+
+.comics-page.is-infinite-masonry .comics-container {
+  box-sizing: border-box;
+  width: min(1260px, calc(100vw - 32px));
+  max-width: min(1260px, calc(100vw - 32px));
 }
 
 .comics-section {
@@ -459,6 +837,111 @@ export default {
   display: flex;
   align-items: center;
   gap: var(--space-sm, 12px);
+}
+
+.comic-create-action {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  padding: 0.62rem 1.08rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-accent-border) 82%, #fff);
+  border-radius: var(--radius-pill);
+  color: var(--color-accent-text);
+  background:
+    radial-gradient(circle at 24% 16%, color-mix(in srgb, #fff 42%, transparent), transparent 38%),
+    linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+  box-shadow:
+    0 12px 26px var(--color-theme-glow),
+    inset 0 1px 0 color-mix(in srgb, #fff 46%, transparent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform var(--motion-duration-standard) var(--motion-ease-emphasized),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    filter var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard);
+}
+
+.comic-create-action::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 3px;
+  border: 1px solid color-mix(in srgb, var(--color-accent-text) 30%, transparent);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.comic-create-action__shine {
+  position: absolute;
+  z-index: 0;
+  top: -55%;
+  bottom: -55%;
+  left: -45%;
+  width: 26%;
+  background: linear-gradient(
+    105deg,
+    transparent,
+    color-mix(in srgb, var(--color-accent-text) 72%, transparent),
+    transparent
+  );
+  opacity: 0.68;
+  pointer-events: none;
+  transform: skewX(-18deg);
+}
+
+.comic-create-action .icon,
+.comic-create-action > span:last-child {
+  position: relative;
+  z-index: 1;
+}
+
+.comic-create-action .icon {
+  transition: transform var(--motion-duration-standard) var(--motion-ease-spring);
+}
+
+.comic-create-action:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--focus-ring),
+    0 15px 32px var(--color-theme-glow-strong),
+    inset 0 1px 0 color-mix(in srgb, #fff 52%, transparent);
+}
+
+.comic-create-action:active {
+  filter: saturate(0.92);
+  transform: translateY(0) scale(0.97);
+  transition-duration: var(--motion-duration-instant);
+}
+
+html[data-motion='full'] .comic-create-action__shine {
+  animation: comic-create-action-shine 3.8s var(--motion-ease-standard) infinite;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .comic-create-action:hover {
+    border-color: color-mix(in srgb, var(--color-accent) 72%, #fff);
+    filter: saturate(1.12) brightness(1.04);
+    transform: translateY(-2px) scale(1.025);
+    box-shadow:
+      0 17px 34px var(--color-theme-glow-strong),
+      0 0 0 4px color-mix(in srgb, var(--color-accent-soft) 72%, transparent),
+      inset 0 1px 0 color-mix(in srgb, #fff 56%, transparent);
+  }
+
+  .comic-create-action:hover .icon {
+    transform: rotate(90deg) scale(1.08);
+  }
 }
 
 .comic-row-shell {
@@ -707,6 +1190,39 @@ html[data-motion='full'] .comic-page-button__surface {
   gap: var(--space-md, var(--pin-grid-gutter, 15px));
   justify-content: start;
   perspective: 1200px;
+}
+
+.comic-masonry-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.comic-masonry {
+  margin-right: auto;
+  margin-left: auto;
+  background: transparent;
+  perspective: 1200px;
+}
+
+.comic-masonry-sizer,
+.comic-masonry-item {
+  width: var(--comic-masonry-width, 240px);
+}
+
+.comic-masonry-gutter {
+  width: var(--comic-masonry-gutter, 16px);
+}
+
+.comic-masonry-item {
+  margin-bottom: calc(var(--comic-masonry-gutter, 16px) + 14px);
+  transform: none;
+  will-change: top, left;
+}
+
+.comic-load-sentinel {
+  width: 100%;
+  height: 2px;
+  pointer-events: none;
 }
 
 .comic-card-shell {
@@ -1007,8 +1523,8 @@ html[data-motion='full'] .comic-page-button__surface {
 
 .comic-skeleton-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: var(--space-lg, 24px);
+  grid-template-columns: repeat(var(--comic-page-limit), minmax(0, 1fr));
+  gap: var(--space-md, 16px);
 }
 
 .comic-skeleton-card,
@@ -1053,6 +1569,10 @@ html[data-motion='full'] .comic-page-button__surface {
   }
 
   .toolbar-actions .button.is-primary {
+    width: 100%;
+  }
+
+  .comic-create-action {
     width: 100%;
   }
 
@@ -1102,6 +1622,23 @@ html[data-motion="reduce"] {
     animation: none;
     transition: none;
   }
+
+  .comic-create-action,
+  .comic-create-action__shine,
+  .comic-create-action .icon {
+    animation: none;
+    transition: none;
+  }
+}
+
+@keyframes comic-create-action-shine {
+  0%, 52% {
+    transform: translateX(0) skewX(-18deg);
+  }
+
+  78%, 100% {
+    transform: translateX(620%) skewX(-18deg);
+  }
 }
 
 @keyframes comic-page-button-shine {
@@ -1120,7 +1657,14 @@ html[data-motion="reduce"] {
   50% { transform: translateZ(0) scale(1.025); }
 }
 
-@include screen-grid-layout(".comics-container");
+@include screen-grid-layout(".comics-page.is-embedded .comics-container");
+
+@media screen and (max-width: 760px) {
+  .comics-page.is-infinite-masonry .comics-container {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+  }
+}
 
 /* R6 comic reset transition */
 .comic-card-shell .motion-tilt-card {

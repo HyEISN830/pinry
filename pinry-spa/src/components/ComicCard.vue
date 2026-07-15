@@ -27,7 +27,14 @@
       </transition>
       <div class="comic-ribbon">{{ $t('comicLink') }}</div>
       <div class="comic-cover" :style="coverStyle">
-        <img v-if="coverImageUrl" :src="coverImageUrl" :alt="comic.title" @load="$emit('image-settled')" @error="$emit('image-settled')">
+        <img
+          v-if="coverImageUrl"
+          :src="coverImageUrl"
+          :alt="comic.title"
+          loading="lazy"
+          decoding="async"
+          @load="$emit('image-settled')"
+          @error="$emit('image-settled')">
         <div v-else class="comic-cover-placeholder">{{ $t('imageUnavailableText') }}</div>
       </div>
       <div class="comic-info">
