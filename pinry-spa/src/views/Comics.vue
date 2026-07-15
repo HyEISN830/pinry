@@ -350,10 +350,16 @@ export default {
       );
     },
     deleteComic(comic) {
-      this.$buefy.dialog.confirm({
-        message: this.$t('deleteComicConfirm'),
-        type: 'is-danger',
-        onConfirm: () => {
+      modals.openActionConfirm(
+        this,
+        {
+          title: this.$t('comicDeleteTitle'),
+          message: this.$t('deleteComicConfirm'),
+          confirmLabel: this.$t('deleteButton'),
+          cancelLabel: this.$t('cancelButton'),
+          icon: 'delete-outline',
+        },
+        () => {
           API.Comic.delete(comic.id).then(
             () => {
               this.comics = this.comics.filter(item => item.id !== comic.id);
@@ -366,7 +372,7 @@ export default {
             },
           );
         },
-      });
+      );
     },
     toggleComicLike(comic) {
       if (comic.likeBusy) {

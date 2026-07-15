@@ -53,6 +53,7 @@
 import API from './api';
 import ComicCard from './ComicCard.vue';
 import loadingSpinner from './loadingSpinner.vue';
+import modals from './modals';
 
 const PAGE_SIZE = 18;
 const SAFE_WIDTH = 240;
@@ -176,16 +177,22 @@ export default {
       }, () => this.$set(comic, 'likeBusy', false));
     },
     deleteComic(comic) {
-      this.$buefy.dialog.confirm({
-        message: this.$t('deleteComicConfirm'),
-        type: 'is-danger',
-        onConfirm: () => API.Comic.delete(comic.id).then(() => {
+      modals.openActionConfirm(
+        this,
+        {
+          title: this.$t('comicDeleteTitle'),
+          message: this.$t('deleteComicConfirm'),
+          confirmLabel: this.$t('deleteButton'),
+          cancelLabel: this.$t('cancelButton'),
+          icon: 'delete-outline',
+        },
+        () => API.Comic.delete(comic.id).then(() => {
           this.comics = this.comics.filter(item => item.id !== comic.id);
           this.status.count = Math.max(0, this.status.count - 1);
           this.$emit('meta', { count: this.status.count });
           this.queueLayout();
         }),
-      });
+      );
     },
     updateMetrics() {
       const width = this.$refs.container ? this.$refs.container.clientWidth : 0;

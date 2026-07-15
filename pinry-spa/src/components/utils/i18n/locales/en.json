@@ -139,6 +139,7 @@
     "comicPagesLabel": "Comic pages",
     "comicCreateButton": "Create Comic",
     "comicCreateFailed": "Failed to create comic.",
+    "comicDeleteTitle": "Delete Comic",
     "deleteComicConfirm": "Delete this comic and all images under it? This cannot be undone.",
     "comicPagesUnit": "pages",
     "readFullComicButton": "Read full comic",
