@@ -1,0 +1,34 @@
+.collection-detail-page {
+  --collection-detail-shell-width: min(1260px, calc(100vw - 32px));
+
+  min-height: 100vh;
+  background: transparent;
+}
+
+.collection-detail-page .comics-page.is-embedded .comics-section,
+.collection-detail-page .collection-detail-pin-heading,
+.collection-detail-page > .pins > .section {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.collection-detail-page .comics-page.is-embedded .comics-container.comics-container,
+.collection-detail-page .collection-detail-pin-heading > .container,
+.collection-detail-page > .pins > .section > #pins-container {
+  box-sizing: border-box;
+  width: var(--collection-detail-shell-width);
+  max-width: var(--collection-detail-shell-width);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.collection-detail-page .collection-detail-pin-heading > .container {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+@media screen and (max-width: 760px) {
+  .collection-detail-page {
+    --collection-detail-shell-width: calc(100vw - 20px);
+  }
+}

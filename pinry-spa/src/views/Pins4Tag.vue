@@ -1,5 +1,5 @@
 <template>
-  <div class="pins-for-tag">
+  <div class="pins-for-tag collection-detail-page">
     <PHeader></PHeader>
     <CollectionHero
       type="tag"
@@ -9,11 +9,12 @@
     <Comics
       embedded
       :show-create="false"
+      :max-columns="4"
       :tag-filter="filters.tagFilter"
       :title="$t('comicsLink')"
       v-on:comics-meta-loaded="onComicsMetaLoaded">
     </Comics>
-    <section class="section tag-pin-heading">
+    <section class="section tag-pin-heading collection-detail-pin-heading">
       <div class="container">
         <h1>{{ $t("pinsLink") }}</h1>
         <p v-if="collection.pinsCount !== null">
@@ -88,8 +89,6 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-@import '../components/utils/grid-layout';
-
 .tag-pin-heading {
   padding-top: 0.5rem;
   padding-bottom: 0;
@@ -105,5 +104,4 @@ export default {
   color: #64748b;
   font-size: 0.95rem;
 }
-@include screen-grid-layout(".tag-pin-heading .container");
 </style>

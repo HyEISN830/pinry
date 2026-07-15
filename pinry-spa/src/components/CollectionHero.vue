@@ -84,10 +84,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import './utils/grid-layout';
-
 .collection-hero {
+  box-sizing: border-box;
   display: flex;
+  width: min(1260px, calc(100vw - 32px));
+  max-width: min(1260px, calc(100vw - 32px));
   align-items: center;
   gap: 1rem;
   margin: 2rem auto 0;
@@ -157,6 +158,13 @@ export default {
   box-shadow: var(--accent-shadow, 0 12px 24px rgba(31, 111, 235, 0.24));
 }
 
+@media screen and (max-width: 760px) {
+  .collection-hero {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+  }
+}
+
 @media screen and (max-width: 542px) {
   .collection-hero {
     display: block;
@@ -173,6 +181,4 @@ export default {
     margin-top: 1rem;
   }
 }
-
-@include screen-grid-layout(".collection-hero");
 </style>

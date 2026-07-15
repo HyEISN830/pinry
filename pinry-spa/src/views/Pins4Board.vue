@@ -1,5 +1,5 @@
 <template>
-  <div class="pins-for-board">
+  <div class="pins-for-board collection-detail-page">
     <PHeader></PHeader>
     <CollectionHero
       type="board"
