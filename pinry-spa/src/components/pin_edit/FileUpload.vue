@@ -295,7 +295,7 @@ export default {
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-sm);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
 }
 .selected-image-meta__copy {
   display: grid;
@@ -363,7 +363,7 @@ export default {
   inset: 0 auto 0 0;
   overflow: hidden;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-strong));
+  background: var(--color-accent-progress);
   box-shadow: 0 0 16px var(--color-theme-glow-strong);
   transition: width var(--motion-duration-standard) var(--motion-ease-emphasized);
 }

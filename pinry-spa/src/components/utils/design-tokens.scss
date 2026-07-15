@@ -1,7 +1,7 @@
 @import "./ui-tokens";
 
 :root {
-  // Theme-following color aliases. Source values are defined by App.vue and theme.js via data-theme/data-accent.
+  // Theme-following color aliases. Source values are injected by theme.js.
   --color-app-bg: var(--app-bg);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
@@ -12,11 +12,24 @@
   --color-line-soft: var(--line-soft);
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
+  --color-accent-fill: var(--accent-fill);
+  --color-accent-fill-hover: var(--accent-fill-hover);
+  --color-accent-gradient: var(--accent-gradient);
+  --color-accent-gradient-horizontal: var(--accent-gradient-horizontal);
+  --color-accent-gradient-vertical: var(--accent-gradient-vertical);
+  --color-accent-gradient-diagonal: var(--accent-gradient-diagonal);
+  --color-accent-progress: var(--accent-progress);
+  --color-accent-soft-gradient: var(--accent-soft-gradient);
+  --color-accent-swatch: var(--accent-swatch);
   --color-accent-soft: var(--accent-soft);
   --color-accent-border: var(--accent-border);
   --color-accent-text: var(--accent-text);
+  --color-accent-text-shadow: var(--accent-text-shadow);
   --color-theme-glow: var(--theme-glow);
   --color-theme-glow-strong: var(--theme-glow-strong);
+  --color-theme-glow-start: var(--theme-glow-start);
+  --color-theme-glow-end: var(--theme-glow-end);
+  --color-theme-backdrop: var(--theme-backdrop);
 
   // Spacing scale.
   --space-0: 0;

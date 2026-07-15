@@ -180,6 +180,8 @@
     "descriptionLabel": "Descripton",
     "selectBoardLabel": "Select Board",
     "themeSettingsLabel": "Theme",
+    "solidThemesLabel": "Solid colors",
+    "gradientThemesLabel": "Gradient palettes",
     "lightThemeLabel": "Light theme",
     "darkThemeLabel": "Dark theme",
     "languageLabel": "Language",

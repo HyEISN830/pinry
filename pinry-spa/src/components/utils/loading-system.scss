@@ -47,7 +47,8 @@
 
 .loading-overlay .loading-background {
   background:
-    linear-gradient(130deg, color-mix(in srgb, var(--color-app-bg) 76%, transparent), color-mix(in srgb, var(--color-accent-soft) 46%, transparent)) !important;
+    linear-gradient(130deg, color-mix(in srgb, var(--color-app-bg) 76%, transparent), color-mix(in srgb, var(--color-app-bg) 42%, transparent)),
+    var(--color-accent-soft-gradient) !important;
   backdrop-filter: blur(12px) saturate(1.08);
 }
 
@@ -70,7 +71,7 @@
 
 .loading-overlay .loading-icon::before {
   inset: 28%;
-  background: var(--color-accent-strong);
+  background: var(--color-accent-fill);
   box-shadow:
     0 0 0 4px var(--color-accent-soft),
     0 0 28px var(--color-theme-glow-strong);

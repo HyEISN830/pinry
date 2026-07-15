@@ -83,8 +83,21 @@ export default {
     --accent-border: rgba(232, 121, 185, 0.34);
     --accent-shadow: 0 16px 38px rgba(217, 70, 145, 0.18);
     --accent-text: #ffffff;
+    --accent-text-shadow: 0 1px 2px rgba(15, 23, 42, 0.24);
+    --accent-fill: #d94691;
+    --accent-fill-hover: #e879b9;
+    --accent-gradient: linear-gradient(180deg, #e879b9 0%, #d94691 100%);
+    --accent-gradient-horizontal: linear-gradient(90deg, #e879b9 0%, #d94691 100%);
+    --accent-gradient-vertical: linear-gradient(180deg, #e879b9 0%, #d94691 100%);
+    --accent-gradient-diagonal: linear-gradient(135deg, #e879b9 0%, #d94691 100%);
+    --accent-progress: linear-gradient(90deg, #e879b9 0%, #d94691 100%);
+    --accent-soft-gradient: linear-gradient(135deg, rgba(232, 121, 185, 0.2) 0%, rgba(217, 70, 145, 0.16) 100%);
+    --accent-swatch: #e879b9;
     --theme-glow: rgba(232, 121, 185, 0.24);
     --theme-glow-strong: rgba(232, 121, 185, 0.36);
+    --theme-glow-start: rgba(232, 121, 185, 0.36);
+    --theme-glow-end: rgba(217, 70, 145, 0.24);
+    --theme-backdrop: linear-gradient(150deg, rgba(232, 121, 185, 0.14) 0%, rgba(217, 70, 145, 0.1) 48%, transparent 78%);
     --skeleton-base: #f7edf4;
     --skeleton-highlight: #ffffff;
     --nav-height: 80px;
@@ -99,72 +112,8 @@ export default {
     --text-muted: #9aa8ba;
     --line-soft: #283142;
     --shadow-soft: 0 18px 46px rgba(0, 0, 0, 0.36);
-    --accent-border: rgba(239, 124, 186, 0.36);
-    --accent-shadow: 0 18px 46px rgba(0, 0, 0, 0.42);
-    --theme-glow: rgba(239, 124, 186, 0.18);
-    --theme-glow-strong: rgba(239, 124, 186, 0.28);
     --skeleton-base: #1d2531;
     --skeleton-highlight: #283142;
-  }
-  html[data-accent="elysia"] {
-    --accent: #ef7cba;
-    --accent-strong: #db4e9c;
-    --accent-soft: rgba(239, 124, 186, 0.16);
-    --surface-accent: rgba(239, 124, 186, 0.12);
-    --accent-border: rgba(239, 124, 186, 0.36);
-    --accent-shadow: 0 16px 38px rgba(219, 78, 156, 0.18);
-    --theme-glow: rgba(239, 124, 186, 0.24);
-    --theme-glow-strong: rgba(239, 124, 186, 0.36);
-  }
-  html[data-accent="eden"] {
-    --accent: #d5a344;
-    --accent-strong: #b88416;
-    --accent-soft: rgba(213, 163, 68, 0.18);
-    --surface-accent: rgba(213, 163, 68, 0.13);
-    --accent-border: rgba(213, 163, 68, 0.38);
-    --accent-shadow: 0 16px 38px rgba(184, 132, 22, 0.18);
-    --theme-glow: rgba(213, 163, 68, 0.25);
-    --theme-glow-strong: rgba(213, 163, 68, 0.36);
-  }
-  html[data-accent="mobius"] {
-    --accent: #32b47b;
-    --accent-strong: #168a5a;
-    --accent-soft: rgba(50, 180, 123, 0.16);
-    --surface-accent: rgba(50, 180, 123, 0.12);
-    --accent-border: rgba(50, 180, 123, 0.36);
-    --accent-shadow: 0 16px 38px rgba(22, 138, 90, 0.18);
-    --theme-glow: rgba(50, 180, 123, 0.24);
-    --theme-glow-strong: rgba(50, 180, 123, 0.36);
-  }
-  html[data-accent="kevin"] {
-    --accent: #6ab7ff;
-    --accent-strong: #2788dd;
-    --accent-soft: rgba(106, 183, 255, 0.16);
-    --surface-accent: rgba(106, 183, 255, 0.12);
-    --accent-border: rgba(106, 183, 255, 0.38);
-    --accent-shadow: 0 16px 38px rgba(39, 136, 221, 0.18);
-    --theme-glow: rgba(106, 183, 255, 0.24);
-    --theme-glow-strong: rgba(106, 183, 255, 0.36);
-  }
-  html[data-accent="griseo"] {
-    --accent: #7c8cff;
-    --accent-strong: #5366e6;
-    --accent-soft: rgba(124, 140, 255, 0.16);
-    --surface-accent: rgba(124, 140, 255, 0.12);
-    --accent-border: rgba(124, 140, 255, 0.38);
-    --accent-shadow: 0 16px 38px rgba(83, 102, 230, 0.18);
-    --theme-glow: rgba(124, 140, 255, 0.24);
-    --theme-glow-strong: rgba(124, 140, 255, 0.36);
-  }
-  html[data-accent="pardofelis"] {
-    --accent: #f2a65e;
-    --accent-strong: #dc7f24;
-    --accent-soft: rgba(242, 166, 94, 0.18);
-    --surface-accent: rgba(242, 166, 94, 0.13);
-    --accent-border: rgba(242, 166, 94, 0.38);
-    --accent-shadow: 0 16px 38px rgba(220, 127, 36, 0.18);
-    --theme-glow: rgba(242, 166, 94, 0.25);
-    --theme-glow-strong: rgba(242, 166, 94, 0.36);
   }
   html {
     background-color: var(--app-bg);
@@ -180,9 +129,9 @@ export default {
   #app {
     min-height: 100vh;
     background:
-      radial-gradient(circle at top left, var(--theme-glow-strong), transparent 360px),
-      radial-gradient(circle at 92% 12%, var(--theme-glow), transparent 300px),
-      linear-gradient(180deg, var(--accent-soft), transparent 420px),
+      radial-gradient(circle at top left, var(--theme-glow-start), transparent 360px),
+      radial-gradient(circle at 92% 12%, var(--theme-glow-end), transparent 300px),
+      var(--theme-backdrop),
       var(--app-bg);
   }
   .app-global-header {
@@ -202,11 +151,13 @@ export default {
   }
   .button.is-primary {
     border-color: var(--accent-strong);
-    background-color: var(--accent-strong);
+    color: var(--accent-text);
+    text-shadow: var(--accent-text-shadow);
+    background: var(--accent-fill);
   }
   .button.is-primary:hover {
     border-color: var(--accent);
-    background-color: var(--accent);
+    background: var(--accent-fill-hover);
   }
   .button.is-light {
     border-color: var(--line-soft);
@@ -216,17 +167,19 @@ export default {
   .button.is-light:hover {
     border-color: var(--accent);
     color: var(--accent-strong);
-    background-color: var(--accent-soft);
+    background: var(--accent-soft-gradient);
   }
   .button.is-link,
   .button.is-info {
     border-color: var(--accent-strong);
-    background-color: var(--accent-strong);
+    color: var(--accent-text);
+    text-shadow: var(--accent-text-shadow);
+    background: var(--accent-fill);
   }
   .button.is-link:hover,
   .button.is-info:hover {
     border-color: var(--accent);
-    background-color: var(--accent);
+    background: var(--accent-fill-hover);
   }
   .input,
   .textarea,
@@ -257,7 +210,8 @@ export default {
     color: var(--text-strong);
     border: 1px solid var(--line-soft);
     background:
-      radial-gradient(circle at top left, var(--theme-glow), transparent 260px),
+      radial-gradient(circle at top left, var(--theme-glow-start), transparent 260px),
+      radial-gradient(circle at bottom right, var(--theme-glow-end), transparent 280px),
       var(--surface-card);
     box-shadow: var(--shadow-soft);
   }
@@ -292,12 +246,13 @@ export default {
   .dropdown-item:hover,
   .autocomplete .dropdown-item:hover {
     color: var(--accent-strong);
-    background: var(--accent-soft);
+    background: var(--accent-soft-gradient);
   }
   .tabs.is-toggle li.is-active a {
     border-color: var(--accent-strong);
     color: var(--accent-text);
-    background-color: var(--accent-strong);
+    text-shadow: var(--accent-text-shadow);
+    background: var(--accent-fill);
   }
   .pin-preview-at-home .modal-content {
     display: flex;

@@ -154,7 +154,8 @@ export default {
   background:
     linear-gradient(var(--surface-1, #fff), var(--surface-1, #fff)) padding-box,
     conic-gradient(
-      var(--accent-strong, #d94691) 0deg,
+      from 0deg,
+      var(--accent, #ef7cba) 0deg,
       var(--accent-strong, #d94691) var(--scroll-progress),
       var(--line-soft, #e5eaf2) var(--scroll-progress),
       var(--line-soft, #e5eaf2) 360deg
@@ -171,7 +172,8 @@ export default {
   background:
     linear-gradient(var(--surface-1, #fff), var(--surface-1, #fff)) padding-box,
     conic-gradient(
-      var(--accent-strong, #d94691) 0deg,
+      from 0deg,
+      var(--accent, #ef7cba) 0deg,
       var(--accent-strong, #d94691) 360deg
     ) border-box;
 }

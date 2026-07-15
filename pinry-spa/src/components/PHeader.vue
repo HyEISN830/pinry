@@ -159,16 +159,25 @@
                 <span></span>
               </span>
             </button>
-            <div class="accent-grid">
-              <button
-                v-for="accent in accentOptions"
-                :key="accent.value"
-                class="accent-swatch"
-                type="button"
-                :class="[`is-${accent.value}`, { 'is-active': themeState.accent === accent.value }]"
-                :title="accent.label"
-                @click.stop="setAccent(accent.value)">
-              </button>
+            <div
+              v-for="group in accentGroups"
+              :key="group.kind"
+              class="theme-palette-group">
+              <span class="theme-palette-label">{{ accentGroupLabel(group.kind) }}</span>
+              <div class="accent-grid">
+                <button
+                  v-for="accent in group.options"
+                  :key="accent.value"
+                  class="accent-swatch"
+                  type="button"
+                  :class="[{ 'is-active': themeState.accent === accent.value, 'is-gradient': accent.kind === 'gradient' }]"
+                  :style="{ background: accent.preview }"
+                  :title="accentLabel(accent)"
+                  :aria-label="accentLabel(accent)"
+                  :aria-pressed="themeState.accent === accent.value ? 'true' : 'false'"
+                  @click.stop="setAccent(accent.value)">
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -371,16 +380,25 @@
             <span></span>
           </span>
         </button>
-        <div class="mobile-accent-row">
-          <button
-            v-for="accent in accentOptions"
-            :key="`mobile-${accent.value}`"
-            class="accent-swatch"
-            type="button"
-            :class="[`is-${accent.value}`, { 'is-active': themeState.accent === accent.value }]"
-            :title="accent.label"
-            @click="setAccent(accent.value)">
-          </button>
+        <div
+          v-for="group in accentGroups"
+          :key="`mobile-${group.kind}`"
+          class="theme-palette-group mobile-theme-palette-group">
+          <span class="theme-palette-label">{{ accentGroupLabel(group.kind) }}</span>
+          <div class="mobile-accent-row">
+            <button
+              v-for="accent in group.options"
+              :key="`mobile-${accent.value}`"
+              class="accent-swatch"
+              type="button"
+              :class="[{ 'is-active': themeState.accent === accent.value, 'is-gradient': accent.kind === 'gradient' }]"
+              :style="{ background: accent.preview }"
+              :title="accentLabel(accent)"
+              :aria-label="accentLabel(accent)"
+              :aria-pressed="themeState.accent === accent.value ? 'true' : 'false'"
+              @click="setAccent(accent.value)">
+            </button>
+          </div>
         </div>
         <div class="mobile-language-row">
           <button
@@ -432,7 +450,10 @@ export default {
   },
   data() {
     return {
-      accentOptions: theme.accentOptions,
+      accentGroups: [
+        { kind: 'solid', options: theme.solidThemePresets },
+        { kind: 'gradient', options: theme.gradientThemePresets },
+      ],
       active: false,
       activeDropdown: null,
       dropdownCloseTimer: null,
@@ -507,6 +528,20 @@ export default {
     },
     isMobileSectionOpen(name) {
       return this.mobileSectionOpen === name;
+    },
+    accentGroupLabel(kind) {
+      return kind === 'gradient'
+        ? this.$t('gradientThemesLabel')
+        : this.$t('solidThemesLabel');
+    },
+    accentLabel(accent) {
+      if (this.$i18n.locale === 'zh') {
+        return accent.label;
+      }
+      if (this.$i18n.locale === 'fr') {
+        return accent.labelFr || accent.labelEn;
+      }
+      return accent.labelEn;
     },
     lockMobileScroll() {
       if (this.mobileScrollLock || !this.isMobileViewport()) {
@@ -969,7 +1004,7 @@ export default {
   background: var(--color-accent-soft);
 }
 .theme-popover {
-  min-width: 228px;
+  min-width: 288px;
 }
 .theme-mode,
 .mobile-theme-toggle {
@@ -1004,18 +1039,29 @@ export default {
 }
 .mode-switch.is-on {
   border-color: var(--color-accent);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
 }
 .mode-switch.is-on > span {
-  background: var(--color-accent-strong);
+  background: var(--color-accent-fill);
   transform: translateX(18px);
+}
+.theme-palette-group {
+  display: grid;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs) var(--space-xs) var(--space-xs);
+}
+.theme-palette-label {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 .accent-grid,
 .mobile-accent-row {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: var(--space-xs);
-  padding: var(--space-2xs) var(--space-xs) var(--space-xs);
 }
 .accent-swatch {
   position: relative;
@@ -1054,12 +1100,6 @@ export default {
   background: #fff;
   transform: translate(-50%, -50%);
 }
-.accent-swatch.is-elysia { background: #ef7cba; }
-.accent-swatch.is-eden { background: #d5a344; }
-.accent-swatch.is-mobius { background: #32b47b; }
-.accent-swatch.is-kevin { background: #6ab7ff; }
-.accent-swatch.is-griseo { background: #7c8cff; }
-.accent-swatch.is-pardofelis { background: #f2a65e; }
 .mobile-toggle {
   display: none;
   place-items: center;
@@ -1068,7 +1108,7 @@ export default {
   margin-left: auto;
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-md);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   box-shadow: var(--shadow-xs);
   pointer-events: auto;
 }
@@ -1208,7 +1248,7 @@ export default {
   .mobile-accordion__trigger.is-active {
     border-color: var(--color-accent-border);
     color: var(--color-accent-strong);
-    background: var(--color-accent-soft);
+    background: var(--color-accent-soft-gradient);
     box-shadow: 0 8px 22px var(--color-theme-glow);
   }
   .mobile-accordion__chevron {
@@ -1254,7 +1294,7 @@ export default {
   .mobile-section.is-primary a {
     min-height: 46px;
     border-color: var(--color-accent-border);
-    background: var(--color-accent-soft);
+    background: var(--color-accent-soft-gradient);
   }
   .mobile-section.is-preferences,
   .mobile-section.is-account {
@@ -1263,6 +1303,8 @@ export default {
   .mobile-accent-row {
     grid-template-columns: repeat(6, 28px);
     justify-content: start;
+  }
+  .mobile-theme-palette-group {
     padding: var(--space-2xs);
   }
   .mobile-language-row {

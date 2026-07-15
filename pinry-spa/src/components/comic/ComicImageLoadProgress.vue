@@ -123,7 +123,7 @@ export default {
 }
 .comic-image-load-progress__visual::after {
   inset: 13px;
-  background: var(--color-accent-strong);
+  background: var(--color-accent-fill);
   box-shadow: 0 0 15px var(--color-theme-glow-strong);
   animation: comic-image-loading-core 1.5s var(--motion-ease-standard) infinite;
 }
@@ -174,7 +174,7 @@ export default {
   height: 100%;
   overflow: hidden;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-strong), var(--color-accent));
+  background: var(--color-accent-progress);
   box-shadow: 0 0 14px var(--color-theme-glow-strong);
   transition: width 360ms var(--motion-ease-emphasized);
 }

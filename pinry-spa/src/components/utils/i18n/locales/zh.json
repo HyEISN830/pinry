@@ -180,6 +180,8 @@
   "descriptionLabel": "描述",
   "selectBoardLabel": "选择画板",
   "themeSettingsLabel": "主题",
+  "solidThemesLabel": "单色主题",
+  "gradientThemesLabel": "渐变主题",
   "lightThemeLabel": "浅色主题",
   "darkThemeLabel": "深色主题",
   "languageLabel": "语言",

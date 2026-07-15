@@ -295,7 +295,7 @@ export default {
   border: 1px dashed var(--color-accent-border);
   border-radius: var(--radius-md);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   font-size: 0.86rem;
   font-weight: 850;
 }

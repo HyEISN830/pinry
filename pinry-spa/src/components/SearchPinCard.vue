@@ -107,7 +107,7 @@ export default {
 .search-pin-card__media { position: relative; isolation: isolate; display: block; width: 100%; min-height: 180px; padding: 0; overflow: hidden; border: 0; background: var(--color-surface-2); cursor: zoom-in; text-align: left; }
 .search-pin-card__media::before { position: absolute; z-index: 0; inset: -18px; background-image: var(--search-card-image); background-position: center; background-size: cover; content: ''; filter: blur(18px) saturate(1.14); opacity: 0.38; }
 .search-pin-card__media img { position: relative; z-index: 1; display: block; width: 100%; min-height: 180px; max-height: 400px; object-fit: cover; }
-.search-result-kind { position: absolute; z-index: 2; top: var(--space-xs); left: var(--space-xs); padding: 0.22rem 0.52rem; border-radius: var(--radius-pill); color: var(--color-accent-text); background: var(--color-accent-strong); font-size: 12px; font-weight: 900; }
+.search-result-kind { position: absolute; z-index: 2; top: var(--space-xs); left: var(--space-xs); padding: 0.22rem 0.52rem; border-radius: var(--radius-pill); color: var(--color-accent-text); background: var(--color-accent-fill); font-size: 12px; font-weight: 900; text-shadow: var(--color-accent-text-shadow); }
 .search-pin-card__body { padding: var(--space-sm); }
 .search-pin-card__title { display: -webkit-box; width: 100%; padding: 0; overflow: hidden; border: 0; color: var(--color-text-strong); background: transparent; cursor: zoom-in; font-family: inherit; font-size: 1rem; font-weight: 900; line-height: 1.35; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .search-pin-card__title:hover { color: var(--color-accent-strong); }
@@ -117,7 +117,7 @@ export default {
 .search-pin-card__actions { display: grid; justify-items: start; gap: var(--space-xs); margin-top: var(--space-sm); }
 .search-pin-card__source { display: flex; width: fit-content; max-width: 100%; }
 .search-card-like { display: inline-flex; align-items: center; gap: 0.28rem; min-height: 30px; padding: 0 0.58rem; border: 1px solid var(--color-line-soft); border-radius: var(--radius-pill); color: var(--color-text-muted); background: var(--color-surface-2); cursor: pointer; font-size: 13px; font-weight: 900; }
-.search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-strong); background: var(--color-accent-soft); }
+.search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-strong); background: var(--color-accent-soft-gradient); }
 .search-card-like:disabled { opacity: 0.72; cursor: wait; }
 
 </style>

@@ -854,7 +854,7 @@ export default {
   color: var(--color-accent-text);
   background:
     radial-gradient(circle at 24% 16%, color-mix(in srgb, #fff 42%, transparent), transparent 38%),
-    linear-gradient(135deg, var(--color-accent), var(--color-accent-strong));
+    var(--color-accent-gradient-diagonal);
   box-shadow:
     0 12px 26px var(--color-theme-glow),
     inset 0 1px 0 color-mix(in srgb, #fff 46%, transparent);
@@ -1048,7 +1048,7 @@ html[data-motion='full'] .comic-create-action__shine {
   border-radius: 50%;
   background:
     radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.48), transparent 34%),
-    linear-gradient(145deg, var(--color-accent), var(--color-accent-strong));
+    var(--color-accent-gradient-diagonal);
   box-shadow:
     0 16px 34px color-mix(in srgb, var(--color-theme-glow-strong) 84%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.62);
@@ -1263,7 +1263,7 @@ html[data-motion='full'] .comic-page-button__surface {
   height: 12px;
   border: 1px solid var(--accent-border, rgba(126, 87, 194, 0.22));
   border-radius: 0 0 var(--radius-sm, 8px) var(--radius-sm, 8px);
-  background: var(--accent-soft, #faf7ff);
+  background: var(--accent-soft-gradient, var(--accent-soft, #faf7ff));
   pointer-events: none;
 }
 
@@ -1308,7 +1308,8 @@ html[data-motion='full'] .comic-page-button__surface {
   padding: 0.25rem 0.45rem;
   border-radius: var(--radius-sm, 8px);
   color: var(--accent-text, #fff);
-  background: var(--accent-strong, #7e57c2);
+  background: var(--accent-fill, var(--accent-strong, #7e57c2));
+  text-shadow: var(--accent-text-shadow, none);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.02em;
@@ -1424,7 +1425,7 @@ html[data-motion='full'] .comic-page-button__surface {
   border: 0;
   border-radius: 999px;
   color: var(--accent-strong, #6d4bc1);
-  background: var(--accent-soft, #f2edff);
+  background: var(--accent-soft-gradient, var(--accent-soft, #f2edff));
   font-size: 12px;
   font-weight: 800;
   line-height: 1.35;
@@ -1509,7 +1510,7 @@ html[data-motion='full'] .comic-page-button__surface {
 .comic-like.is-liked {
   color: var(--accent-strong, #7e57c2);
   border-color: var(--accent, #7e57c2);
-  background: var(--accent-soft, rgba(126, 87, 194, 0.14));
+  background: var(--accent-soft-gradient, var(--accent-soft, rgba(126, 87, 194, 0.14)));
 }
 
 .comic-like:hover {

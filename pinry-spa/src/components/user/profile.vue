@@ -238,7 +238,8 @@ export default {
   border: 1px solid var(--color-accent-strong);
   border-radius: var(--radius-sm);
   color: var(--color-accent-text);
-  background: var(--color-accent-strong);
+  text-shadow: var(--color-accent-text-shadow);
+  background: var(--color-accent-fill);
   box-shadow: 0 10px 24px var(--color-theme-glow);
   font-weight: 900;
   transition:
@@ -251,7 +252,7 @@ export default {
 .avatar-upload-button:focus-visible {
   border-color: var(--color-accent-strong);
   color: var(--color-accent-text);
-  background: var(--color-accent);
+  background: var(--color-accent-fill-hover);
   box-shadow: 0 14px 30px var(--color-theme-glow-strong);
   transform: translateY(-2px);
 }

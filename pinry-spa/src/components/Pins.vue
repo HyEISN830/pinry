@@ -999,7 +999,7 @@ $avatar-height: 30px;
       padding: 0.12rem 0.42rem;
       border-radius: 999px;
       color: var(--accent-strong, #1f6feb);
-      background: var(--accent-soft, #eaf3ff);
+      background: var(--accent-soft-gradient, var(--accent-soft, #eaf3ff));
       font-size: 13px;
       font-weight: 800;
       line-height: 1.35;
@@ -1066,7 +1066,7 @@ $avatar-height: 30px;
       border-radius: 12px;
       background:
         radial-gradient(circle, var(--accent, #1f6feb) 0 1.2px, transparent 1.5px) 0 0 / 10px 10px,
-        linear-gradient(135deg, var(--theme-glow), var(--accent-soft));
+        linear-gradient(135deg, var(--theme-glow-start, var(--theme-glow)), var(--theme-glow-end, var(--accent-soft)));
       opacity: 0.72;
     }
     &::after {
@@ -1169,12 +1169,12 @@ $avatar-height: 30px;
     transform: translateY(-1px);
     color: var(--accent-strong, #d94691);
     border-color: var(--accent, #ef7cba);
-    background: var(--accent-soft, rgba(239, 124, 186, 0.16));
+    background: var(--accent-soft-gradient, var(--accent-soft, rgba(239, 124, 186, 0.16)));
   }
   .like-button.is-liked {
     color: var(--accent-strong, #d94691);
     border-color: var(--accent, #ef7cba);
-    background: var(--accent-soft, rgba(239, 124, 186, 0.16));
+    background: var(--accent-soft-gradient, var(--accent-soft, rgba(239, 124, 186, 0.16)));
   }
   .like-button:disabled {
     opacity: 0.72;

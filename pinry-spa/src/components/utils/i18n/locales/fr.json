@@ -180,6 +180,8 @@
     "descriptionLabel": "Description",
     "selectBoardLabel": "Selectionner un tableau",
     "themeSettingsLabel": "Theme",
+    "solidThemesLabel": "Couleurs unies",
+    "gradientThemesLabel": "Palettes degradees",
     "lightThemeLabel": "Theme clair",
     "darkThemeLabel": "Theme sombre",
     "languageLabel": "Langue",

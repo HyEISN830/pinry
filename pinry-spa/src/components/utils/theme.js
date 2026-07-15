@@ -1,17 +1,16 @@
-const THEME_STORAGE_KEY = 'pinry.theme';
+import {
+  getThemePreset,
+  gradientThemePresets,
+  solidThemePresets,
+  themePresets,
+} from './gradientThemePresets';
 
-const accentOptions = [
-  { value: 'elysia', label: 'Elysia' },
-  { value: 'eden', label: 'Eden' },
-  { value: 'mobius', label: 'Mobius' },
-  { value: 'kevin', label: 'Kevin' },
-  { value: 'griseo', label: 'Griseo' },
-  { value: 'pardofelis', label: 'Pardofelis' },
-];
+const THEME_STORAGE_KEY = 'pinry.theme';
+const accentOptions = themePresets;
 
 function normalizeTheme(theme) {
   const mode = theme && theme.mode === 'dark' ? 'dark' : 'light';
-  const accent = theme && accentOptions.some(option => option.value === theme.accent)
+  const accent = theme && getThemePreset(theme.accent)
     ? theme.accent
     : 'elysia';
   return { mode, accent };
@@ -21,7 +20,7 @@ function readTheme() {
   try {
     return normalizeTheme(JSON.parse(localStorage.getItem(THEME_STORAGE_KEY)));
   } catch (error) {
-    return normalizeTheme(error && null);
+    return normalizeTheme(null);
   }
 }
 
@@ -33,8 +32,21 @@ function writeTheme(theme) {
 
 function applyTheme(theme) {
   const normalized = normalizeTheme(theme);
-  document.documentElement.dataset.theme = normalized.mode;
-  document.documentElement.dataset.accent = normalized.accent;
+  if (typeof document === 'undefined') {
+    return normalized;
+  }
+  const preset = getThemePreset(normalized.accent);
+  const root = document.documentElement;
+  const cssVariables = normalized.mode === 'dark'
+    ? preset.cssVariablesDark
+    : preset.cssVariables;
+
+  Object.keys(cssVariables).forEach(
+    variable => root.style.setProperty(variable, cssVariables[variable]),
+  );
+  root.dataset.theme = normalized.mode;
+  root.dataset.accent = normalized.accent;
+  root.dataset.accentKind = preset.kind;
   return normalized;
 }
 
@@ -49,6 +61,9 @@ function saveAndApplyTheme(theme) {
 export default {
   accentOptions,
   applySavedTheme,
+  gradientThemePresets,
   readTheme,
   saveAndApplyTheme,
+  solidThemePresets,
+  themePresets,
 };

@@ -326,7 +326,7 @@ export default {
 .board-action--search.is-active {
   border-color: var(--color-accent-border);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   box-shadow: var(--shadow-xs);
   transform: translateY(-1px);
 }
@@ -337,13 +337,14 @@ export default {
 .board-action--create {
   border-color: var(--color-accent-strong);
   color: var(--color-accent-text);
-  background: var(--color-accent-strong);
+  text-shadow: var(--color-accent-text-shadow);
+  background: var(--color-accent-fill);
   box-shadow: 0 8px 20px var(--color-theme-glow);
 }
 .board-action--create:hover,
 .board-action--create:focus-visible {
   color: var(--color-accent-text);
-  background: var(--color-accent);
+  background: var(--color-accent-fill-hover);
 }
 .board-action--clear {
   flex: 1 1 100%;
@@ -420,7 +421,7 @@ export default {
 .board-search-option.is-selected {
   border-color: var(--color-accent-border);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   transform: translateX(2px);
 }
 .board-search-option:focus-visible {

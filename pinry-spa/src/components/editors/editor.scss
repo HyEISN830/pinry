@@ -119,7 +119,7 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: var(--color-accent-strong);
+      background: var(--color-accent-fill);
       box-shadow: 0 0 0 5px var(--color-accent-soft);
       animation: board-delete-progress-pulse 1.8s var(--motion-ease-standard) infinite;
     }
@@ -129,19 +129,19 @@
       overflow: hidden;
       border-radius: var(--radius-pill);
       color: var(--color-accent-strong);
-      background: var(--color-accent-soft);
+      background: var(--color-accent-soft-gradient);
     }
     .board-delete-progress-bar::-webkit-progress-bar {
-      background: var(--color-accent-soft);
+      background: var(--color-accent-soft-gradient);
     }
     .board-delete-progress-bar::-webkit-progress-value {
       border-radius: inherit;
-      background: linear-gradient(90deg, var(--color-accent), var(--color-accent-strong));
+      background: var(--color-accent-progress);
       transition: width var(--motion-duration-standard) var(--motion-ease-emphasized);
     }
     .board-delete-progress-bar::-moz-progress-bar {
       border-radius: inherit;
-      background: linear-gradient(90deg, var(--color-accent), var(--color-accent-strong));
+      background: var(--color-accent-progress);
     }
   }
   .editor-buttons {

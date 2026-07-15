@@ -896,7 +896,7 @@ export default {
 .pin-preview-actions .source-text-button:focus-visible {
   border-color: var(--color-accent) !important;
   color: var(--color-accent-text) !important;
-  background: var(--color-accent-strong) !important;
+  background: var(--color-accent-fill) !important;
   box-shadow: 0 7px 18px var(--color-theme-glow);
   transform: translate3d(0, -1px, 0);
 }
@@ -1000,7 +1000,7 @@ export default {
 }
 .preview-loading__visual::after {
   inset: 13px;
-  background: var(--color-accent-strong);
+  background: var(--color-accent-fill);
   box-shadow: 0 0 15px var(--color-theme-glow-strong);
   animation: pin-preview-loading-core 1.5s var(--motion-ease-standard) infinite;
 }
@@ -1051,7 +1051,7 @@ export default {
   height: 100%;
   overflow: hidden;
   border-radius: inherit;
-  background: linear-gradient(90deg, var(--color-accent), var(--color-accent-strong), var(--color-accent));
+  background: var(--color-accent-progress);
   box-shadow: 0 0 14px var(--color-theme-glow-strong);
   transition: width 360ms var(--motion-ease-emphasized);
 }

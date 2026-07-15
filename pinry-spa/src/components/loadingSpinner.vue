@@ -87,7 +87,7 @@ export default {
 }
 .app-loader__core {
   inset: 40%;
-  background: var(--color-accent-strong);
+  background: var(--color-accent-fill);
   box-shadow:
     0 0 0 calc(var(--app-loader-size) * 0.045) var(--color-accent-soft),
     0 0 calc(var(--app-loader-size) * 0.31) var(--color-theme-glow-strong);

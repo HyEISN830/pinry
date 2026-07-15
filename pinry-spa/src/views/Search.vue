@@ -591,7 +591,7 @@ export default {
 .search-type-pill.is-active {
   color: var(--color-accent-strong);
   border-color: var(--color-accent-border);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   box-shadow: var(--shadow-xs);
 }
 .search-type-pill:focus-visible,
@@ -606,7 +606,7 @@ export default {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   box-shadow: 0 0 0 4px var(--color-accent-soft);
 }
 .type-dot.is-pin { background: #ef7cba; }
@@ -722,7 +722,7 @@ export default {
   border-color: var(--color-line-soft);
   border-radius: var(--radius-pill);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   font-weight: 900;
   @include hover-scale(1.012, -1px);
   transition:
@@ -735,7 +735,8 @@ export default {
 .search-load-more:hover:not(:disabled) {
   border-color: var(--color-accent-border);
   color: var(--color-accent-text);
-  background: var(--color-accent-strong);
+  text-shadow: var(--color-accent-text-shadow);
+  background: var(--color-accent-fill);
 }
 .result-grid {
   display: grid;

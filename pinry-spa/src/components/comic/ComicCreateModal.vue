@@ -460,7 +460,8 @@ export default {
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-pill);
   color: var(--color-accent-text);
-  background: var(--color-accent-strong);
+  text-shadow: var(--color-accent-text-shadow);
+  background: var(--color-accent-fill);
   box-shadow: 0 4px 12px var(--color-theme-glow-strong);
   font-size: 0.7rem;
   font-weight: 900;

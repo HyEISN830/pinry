@@ -375,7 +375,7 @@ export default {
   place-items: center;
   border-radius: var(--radius-xs);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   pointer-events: none;
   transform: translateY(-50%);
   transition:
@@ -386,7 +386,7 @@ export default {
 
 .token-select.is-open .token-select__icon {
   color: var(--color-accent-text);
-  background: var(--color-accent-strong);
+  background: var(--color-accent-fill);
   transform: translateY(-50%) rotate(180deg) scale(1.04);
 }
 
@@ -468,7 +468,7 @@ export default {
 .token-select__option.is-selected {
   border-color: var(--color-accent-border);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   font-weight: 850;
 }
 
@@ -497,7 +497,8 @@ export default {
 .token-select__option.is-selected .token-select__option-marker {
   border-color: var(--color-accent-strong);
   color: var(--color-accent-text);
-  background: var(--color-accent-strong);
+  text-shadow: var(--color-accent-text-shadow);
+  background: var(--color-accent-fill);
   box-shadow: 0 4px 12px var(--color-theme-glow-strong);
   transform: scale(1.06);
 }

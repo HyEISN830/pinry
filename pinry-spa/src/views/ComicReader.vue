@@ -1488,7 +1488,7 @@ export default {
 .page-tool-button:focus-visible {
   border-color: var(--color-accent-border);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   box-shadow: var(--shadow-xs);
   transform: translateY(-2px);
 }
@@ -1525,7 +1525,8 @@ export default {
 .comic-editor-add-button {
   border-color: var(--color-accent-strong);
   color: var(--color-accent-text);
-  background: var(--color-accent-strong);
+  text-shadow: var(--color-accent-text-shadow);
+  background: var(--color-accent-fill);
   box-shadow: 0 10px 24px var(--color-theme-glow);
 }
 
@@ -1535,14 +1536,14 @@ export default {
 .comic-editor-add-button:focus-visible {
   border-color: var(--color-accent-strong);
   color: var(--color-accent-text);
-  background: var(--color-accent);
+  background: var(--color-accent-fill-hover);
   box-shadow: 0 14px 30px var(--color-theme-glow-strong);
 }
 
 .reader-action-button--secondary.is-active {
   border-color: var(--color-accent-border);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   box-shadow: inset 0 0 0 1px var(--color-accent-border);
 }
 
@@ -1669,7 +1670,7 @@ export default {
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-pill);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
   font-weight: 800;
 }
 
@@ -1688,7 +1689,7 @@ export default {
 .comic-editor ::v-deep .autocomplete .dropdown-item:hover,
 .comic-editor ::v-deep .autocomplete .dropdown-item.is-hovered {
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
 }
 
 .comic-editor__detail-actions,
@@ -1757,7 +1758,7 @@ export default {
   flex: 0 0 auto;
   border-color: var(--color-accent-border);
   color: var(--color-accent-strong);
-  background: var(--color-accent-soft);
+  background: var(--color-accent-soft-gradient);
 }
 
 .comic-file-picker__count {

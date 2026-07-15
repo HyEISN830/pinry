@@ -674,7 +674,7 @@ $avatar-height: 30px;
     height: 18px;
     border: 1px solid var(--accent-border, rgba(31, 111, 235, 0.22));
     border-radius: 0 0 8px 8px;
-    background: var(--accent-soft, #eef3f8);
+    background: var(--accent-soft-gradient, var(--accent-soft, #eef3f8));
   }
   .board-stack::before {
     content: "";
@@ -728,7 +728,7 @@ $avatar-height: 30px;
     overflow: hidden;
     border-radius: 999px;
     color: var(--accent-text, #fff);
-    background: var(--accent-strong, #1f6feb);
+    background: var(--accent-fill, var(--accent-strong, #1f6feb));
     box-shadow: 0 8px 18px rgba(15, 23, 42, 0.16);
     font-size: 12px;
     font-weight: 900;
@@ -783,7 +783,7 @@ $avatar-height: 30px;
     padding: 0 0.55rem;
     border-radius: 999px;
     color: var(--accent-strong, #1f6feb);
-    background: var(--accent-soft, #eaf3ff);
+    background: var(--accent-soft-gradient, var(--accent-soft, #eaf3ff));
     white-space: nowrap;
   }
   .board-meta span {

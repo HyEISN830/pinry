@@ -241,12 +241,12 @@ export default {
   transform: translateY(-1px);
   color: var(--accent-strong, #7e57c2);
   border-color: var(--accent, #7e57c2);
-  background: var(--accent-soft, rgba(126, 87, 194, 0.12));
+  background: var(--accent-soft-gradient, var(--accent-soft, rgba(126, 87, 194, 0.12)));
 }
 .profile-tab.is-active {
   color: var(--accent-strong, #7e57c2);
   border-color: var(--accent, #7e57c2);
-  background: var(--accent-soft, rgba(126, 87, 194, 0.12));
+  background: var(--accent-soft-gradient, var(--accent-soft, rgba(126, 87, 194, 0.12)));
 }
 .profile-tab span {
   max-width: 100%;
