@@ -1487,7 +1487,7 @@ export default {
 .page-tool-button:hover:not(:disabled),
 .page-tool-button:focus-visible {
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   box-shadow: var(--shadow-xs);
   transform: translateY(-2px);
@@ -1542,7 +1542,7 @@ export default {
 
 .reader-action-button--secondary.is-active {
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   box-shadow: inset 0 0 0 1px var(--color-accent-border);
 }
@@ -1669,7 +1669,7 @@ export default {
 .comic-editor ::v-deep .taginput .tag {
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-pill);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   font-weight: 800;
 }
@@ -1688,7 +1688,7 @@ export default {
 
 .comic-editor ::v-deep .autocomplete .dropdown-item:hover,
 .comic-editor ::v-deep .autocomplete .dropdown-item.is-hovered {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
 }
 
@@ -1757,7 +1757,7 @@ export default {
 .comic-file-picker__button {
   flex: 0 0 auto;
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
 }
 

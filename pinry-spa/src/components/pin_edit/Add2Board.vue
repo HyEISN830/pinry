@@ -257,7 +257,7 @@ export default {
   padding: 0.28rem 0.58rem;
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-pill);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: color-mix(in srgb, var(--color-surface-card) 86%, transparent);
   box-shadow: var(--shadow-xs);
   font-size: 0.72rem;
@@ -294,7 +294,7 @@ export default {
   gap: var(--space-xs);
   border: 1px dashed var(--color-accent-border);
   border-radius: var(--radius-md);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   font-size: 0.86rem;
   font-weight: 850;
@@ -309,7 +309,7 @@ export default {
   align-items: center;
   gap: var(--space-2xs);
   margin-top: var(--space-sm);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   font-size: 0.8rem;
   font-weight: 850;
 }

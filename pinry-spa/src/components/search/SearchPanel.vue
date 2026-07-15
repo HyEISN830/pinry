@@ -193,7 +193,7 @@ export default {
   line-height: 1.35;
 }
 .panel-state.is-error {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
 }
 .tag-fetch-loader {
   display: inline-block;

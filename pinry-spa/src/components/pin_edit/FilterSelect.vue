@@ -325,7 +325,7 @@ export default {
 .board-action:focus-visible,
 .board-action--search.is-active {
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   box-shadow: var(--shadow-xs);
   transform: translateY(-1px);
@@ -354,7 +354,7 @@ export default {
 }
 .board-action--clear:hover,
 .board-action--clear:focus-visible {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: transparent;
 }
 .board-search-popup {
@@ -373,7 +373,7 @@ export default {
   align-items: center;
   gap: var(--space-xs);
   margin-bottom: var(--space-sm);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   font-size: 0.82rem;
 }
 .board-search-popup__heading strong {
@@ -420,7 +420,7 @@ export default {
 .board-search-option:focus-visible,
 .board-search-option.is-selected {
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   transform: translateX(2px);
 }

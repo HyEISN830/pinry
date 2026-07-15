@@ -374,7 +374,7 @@ export default {
   height: 28px;
   place-items: center;
   border-radius: var(--radius-xs);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   pointer-events: none;
   transform: translateY(-50%);
@@ -459,7 +459,7 @@ export default {
 .token-select__option:hover,
 .token-select__option.is-active {
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: color-mix(in srgb, var(--color-accent-soft) 74%, var(--color-surface-1));
   box-shadow: 0 7px 18px var(--color-theme-glow);
   transform: translateX(2px);
@@ -467,7 +467,7 @@ export default {
 
 .token-select__option.is-selected {
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   font-weight: 850;
 }

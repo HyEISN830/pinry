@@ -17,7 +17,7 @@
   padding: 0.4rem 0.68rem;
   border: 1px solid var(--accent-border, rgba(74, 144, 226, 0.42));
   border-radius: 999px;
-  color: var(--accent, var(--primary, #4a90e2));
+  color: var(--accent-foreground, var(--primary, #4a90e2));
   background:
     radial-gradient(circle at 18% 0%, var(--theme-glow, rgba(74, 144, 226, 0.2)), transparent 125%),
     var(--surface-card, var(--surface-1, #fff));

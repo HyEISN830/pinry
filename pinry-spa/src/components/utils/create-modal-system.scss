@@ -59,7 +59,7 @@
   place-items: center;
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-md);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   box-shadow: var(--shadow-xs);
 }
@@ -67,7 +67,7 @@
 .pinry-create-modal .create-modal-kicker {
   display: block;
   margin-bottom: 2px;
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   font-size: 0.72rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -107,7 +107,7 @@
 
 .pinry-create-modal .create-modal-close:hover {
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   transform: translateY(-1px);
 }

@@ -782,7 +782,7 @@ $avatar-height: 30px;
     min-height: 30px;
     padding: 0 0.55rem;
     border-radius: 999px;
-    color: var(--accent-strong, #1f6feb);
+    color: var(--accent-foreground, #1f6feb);
     background: var(--accent-soft-gradient, var(--accent-soft, #eaf3ff));
     white-space: nowrap;
   }

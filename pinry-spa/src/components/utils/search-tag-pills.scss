@@ -27,7 +27,7 @@ html body .content-tag-pill.content-tag-pill {
   overflow: hidden;
   border: 1px solid var(--accent-border, var(--color-accent-border, rgba(126, 87, 194, 0.28)));
   border-radius: var(--radius-pill, 999px);
-  color: var(--accent-strong, var(--color-accent-strong, #6d4bc1));
+  color: var(--accent-foreground, var(--color-accent-foreground, #6d4bc1));
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 42%),
     var(--accent-soft-gradient, var(--color-accent-soft-gradient, var(--accent-soft, rgba(126, 87, 194, 0.12))));

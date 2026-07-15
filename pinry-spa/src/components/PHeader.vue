@@ -927,7 +927,7 @@ export default {
 .nav-pill:hover,
 .nav-link.router-link-exact-active,
 .nav-link.router-link-active {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   border-color: var(--color-accent-border);
   background: var(--color-accent-soft);
 }
@@ -999,7 +999,7 @@ export default {
 .nav-popover button:hover,
 .mobile-panel a:hover,
 .mobile-panel button:hover {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   border-color: var(--color-accent-border);
   background: var(--color-accent-soft);
 }
@@ -1318,7 +1318,7 @@ export default {
   .mobile-accordion__trigger:focus-visible,
   .mobile-accordion__trigger.is-active {
     border-color: var(--color-accent-border);
-    color: var(--color-accent-strong);
+    color: var(--color-accent-foreground);
     background: var(--color-accent-soft-gradient);
     box-shadow: 0 8px 22px var(--color-theme-glow);
   }

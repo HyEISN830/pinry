@@ -294,7 +294,7 @@ export default {
   place-items: center;
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-sm);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
 }
 .selected-image-meta__copy {
@@ -348,7 +348,7 @@ export default {
   gap: var(--space-2xs);
 }
 .image-upload-progress__heading strong {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   font-size: 0.78rem;
 }
 .image-upload-progress__track {
@@ -394,7 +394,7 @@ export default {
   transform: none;
 }
 .image-upload-progress.is-complete .image-upload-progress__heading {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
 }
 .image-upload-progress.is-failed .image-upload-progress__fill {
   width: 0 !important;
@@ -430,7 +430,7 @@ export default {
 }
 .image-upload ::v-deep .upload-draggable:hover {
   border-color: var(--color-accent-border);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   box-shadow: var(--shadow-xs);
   transform: translateY(-2px);
 }

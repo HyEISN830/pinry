@@ -38,7 +38,7 @@
 .content-source-link::after {
   content: '↗';
   flex: 0 0 auto;
-  color: var(--accent, #7e57c2);
+  color: var(--accent-foreground, #7e57c2);
   font-size: 0.78em;
   line-height: 1;
   opacity: 0.82;
@@ -151,7 +151,7 @@ html[data-motion='reduce'] .content-source-link {
   html:not([data-motion]) .content-source-link:hover,
   html:not([data-motion]) .content-source-link:focus-visible {
     border-color: var(--accent, #7e57c2);
-    color: var(--accent-strong, #6d4bc1);
+    color: var(--accent-foreground, #6d4bc1);
     background-position: -30% 0, 0 0;
     box-shadow:
       inset 3px 0 0 var(--accent, #7e57c2),
@@ -164,7 +164,7 @@ html[data-motion='reduce'] .content-source-link {
   html[data-motion='full'] .content-source-link:focus-visible::after,
   html:not([data-motion]) .content-source-link:hover::after,
   html:not([data-motion]) .content-source-link:focus-visible::after {
-    color: var(--accent-strong, #6d4bc1);
+    color: var(--accent-foreground, #6d4bc1);
     opacity: 1;
   }
 

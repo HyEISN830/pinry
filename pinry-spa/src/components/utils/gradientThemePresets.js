@@ -23,6 +23,7 @@ function buildGradient(from, to) {
 function buildCssVariables(palette, mode) {
   const isDark = mode === 'dark';
   const gradient = buildGradient(palette.from, palette.to);
+  const foreground = palette.fontColor[mode];
   const softAlpha = isDark ? 0.2 : 0.16;
   const surfaceAlpha = isDark ? 0.17 : 0.12;
   const glowAlpha = isDark ? 0.18 : 0.24;
@@ -35,6 +36,7 @@ function buildCssVariables(palette, mode) {
   return {
     '--accent': palette.from,
     '--accent-strong': palette.to,
+    '--accent-foreground': foreground,
     '--accent-text': palette.accentText,
     '--accent-text-shadow': palette.accentText === '#FFFFFF'
       ? '0 1px 2px rgba(15, 23, 42, 0.24)'
@@ -69,6 +71,10 @@ const solidThemeDefinitions = [
     from: '#EF7CBA',
     to: '#DB4E9C',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#DB4E9C',
+      dark: '#FF9BD1',
+    },
   },
   {
     value: 'eden',
@@ -78,6 +84,10 @@ const solidThemeDefinitions = [
     from: '#D5A344',
     to: '#B88416',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#B88416',
+      dark: '#F2C96D',
+    },
   },
   {
     value: 'mobius',
@@ -87,6 +97,10 @@ const solidThemeDefinitions = [
     from: '#32B47B',
     to: '#168A5A',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#168A5A',
+      dark: '#66D7A5',
+    },
   },
   {
     value: 'kevin',
@@ -96,6 +110,10 @@ const solidThemeDefinitions = [
     from: '#6AB7FF',
     to: '#2788DD',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#2788DD',
+      dark: '#83C7FF',
+    },
   },
   {
     value: 'griseo',
@@ -105,6 +123,10 @@ const solidThemeDefinitions = [
     from: '#7C8CFF',
     to: '#5366E6',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#5366E6',
+      dark: '#A9B4FF',
+    },
   },
   {
     value: 'pardofelis',
@@ -114,6 +136,10 @@ const solidThemeDefinitions = [
     from: '#F2A65E',
     to: '#DC7F24',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#DC7F24',
+      dark: '#FFC07D',
+    },
   },
 ];
 
@@ -126,6 +152,10 @@ const gradientThemeDefinitions = [
     from: '#80E484',
     to: '#2B693F',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#2B693F',
+      dark: '#8BEA9B',
+    },
   },
   {
     value: 'sweet-soft',
@@ -135,6 +165,10 @@ const gradientThemeDefinitions = [
     from: '#E4F6AA',
     to: '#FF81A6',
     accentText: '#3D1325',
+    fontColor: {
+      light: '#FF81A6',
+      dark: '#FF9EBD',
+    },
   },
   {
     value: 'muted-atmosphere',
@@ -144,6 +178,10 @@ const gradientThemeDefinitions = [
     from: '#B8A9C6',
     to: '#2F2B55',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#2F2B55',
+      dark: '#CABDE0',
+    },
   },
   {
     value: 'warm-vitality',
@@ -153,6 +191,10 @@ const gradientThemeDefinitions = [
     from: '#FBE693',
     to: '#FE8E28',
     accentText: '#3D2100',
+    fontColor: {
+      light: '#FE8E28',
+      dark: '#FFC66D',
+    },
   },
   {
     value: 'cool-refined',
@@ -162,6 +204,10 @@ const gradientThemeDefinitions = [
     from: '#C9DDC4',
     to: '#1F5CAC',
     accentText: '#FFFFFF',
+    fontColor: {
+      light: '#1F5CAC',
+      dark: '#9BC9FF',
+    },
   },
   {
     value: 'gentle-clean',
@@ -171,6 +217,10 @@ const gradientThemeDefinitions = [
     from: '#F4DC84',
     to: '#79BEDF',
     accentText: '#17324D',
+    fontColor: {
+      light: '#79BEDF',
+      dark: '#A8DDF4',
+    },
   },
 ];
 

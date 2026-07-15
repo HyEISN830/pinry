@@ -819,7 +819,7 @@ export default {
 }
 .pin-preview-author .author:hover,
 .pin-preview-author .author:focus-visible {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   text-shadow: 0 4px 13px var(--color-theme-glow);
 }
 .pin-preview-author .author:focus-visible {
@@ -877,7 +877,7 @@ export default {
   min-height: 32px;
   border: 1px solid var(--color-accent-border) !important;
   border-radius: var(--radius-sm) !important;
-  color: var(--color-accent-strong) !important;
+  color: var(--color-accent-foreground) !important;
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--color-surface-card) 32%, transparent), transparent 46%),
     var(--color-accent-soft) !important;
@@ -1030,7 +1030,7 @@ export default {
 }
 .preview-loading__headline strong {
   flex: 0 0 auto;
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   font-size: 0.84rem;
   font-variant-numeric: tabular-nums;
 }

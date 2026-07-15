@@ -104,7 +104,7 @@ export default {
   padding: 0.45rem 0.7rem;
   border-radius: 6px;
   background: var(--accent-soft-gradient, var(--accent-soft, #edf5ff));
-  color: var(--accent-strong, #1f6feb);
+  color: var(--accent-foreground, #1f6feb);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;

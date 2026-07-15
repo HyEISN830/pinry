@@ -90,7 +90,7 @@ export default {
   white-space: nowrap;
 }
 .comic-upload-mini__meta strong {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   font-size: 0.7rem;
 }
 .comic-upload-mini__track {

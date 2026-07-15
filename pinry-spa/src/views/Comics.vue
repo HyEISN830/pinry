@@ -1424,7 +1424,7 @@ html[data-motion='full'] .comic-page-button__surface {
   padding: 0.15rem 0.42rem;
   border: 0;
   border-radius: 999px;
-  color: var(--accent-strong, #6d4bc1);
+  color: var(--accent-foreground, #6d4bc1);
   background: var(--accent-soft-gradient, var(--accent-soft, #f2edff));
   font-size: 12px;
   font-weight: 800;
@@ -1481,7 +1481,7 @@ html[data-motion='full'] .comic-page-button__surface {
 
 .comic-source a,
 .comic-source span {
-  color: var(--accent-strong, #7e57c2);
+  color: var(--accent-foreground, #7e57c2);
   font-weight: 700;
 }
 
@@ -1508,7 +1508,7 @@ html[data-motion='full'] .comic-page-button__surface {
 
 .comic-like:hover,
 .comic-like.is-liked {
-  color: var(--accent-strong, #7e57c2);
+  color: var(--accent-foreground, #7e57c2);
   border-color: var(--accent, #7e57c2);
   background: var(--accent-soft-gradient, var(--accent-soft, rgba(126, 87, 194, 0.14)));
 }

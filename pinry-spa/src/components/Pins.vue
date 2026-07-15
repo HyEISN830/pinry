@@ -998,14 +998,14 @@ $avatar-height: 30px;
       max-width: 100%;
       padding: 0.12rem 0.42rem;
       border-radius: 999px;
-      color: var(--accent-strong, #1f6feb);
+      color: var(--accent-foreground, #1f6feb);
       background: var(--accent-soft-gradient, var(--accent-soft, #eaf3ff));
       font-size: 13px;
       font-weight: 800;
       line-height: 1.35;
     }
     a:hover {
-      color: var(--accent-strong, #0f4fb8);
+      color: var(--accent-foreground, #0f4fb8);
       background: var(--surface-accent, #d9eaff);
     }
   }
@@ -1120,7 +1120,7 @@ $avatar-height: 30px;
     display: inline-block;
     margin-right: 0.4rem;
     font-weight: bold;
-    color: var(--accent-strong, #1f6feb);
+    color: var(--accent-foreground, #1f6feb);
   }
   .details {
     @include secondary-font;
@@ -1136,7 +1136,7 @@ $avatar-height: 30px;
     }
   }
   .source-text {
-    color: var(--accent-strong, #1f6feb);
+    color: var(--accent-foreground, #1f6feb);
     font-weight: 600;
   }
   .source-warning {
@@ -1167,12 +1167,12 @@ $avatar-height: 30px;
   }
   .like-button:hover {
     transform: translateY(-1px);
-    color: var(--accent-strong, #d94691);
+    color: var(--accent-foreground, #d94691);
     border-color: var(--accent, #ef7cba);
     background: var(--accent-soft-gradient, var(--accent-soft, rgba(239, 124, 186, 0.16)));
   }
   .like-button.is-liked {
-    color: var(--accent-strong, #d94691);
+    color: var(--accent-foreground, #d94691);
     border-color: var(--accent, #ef7cba);
     background: var(--accent-soft-gradient, var(--accent-soft, rgba(239, 124, 186, 0.16)));
   }

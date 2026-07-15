@@ -153,7 +153,7 @@ export default {
 }
 .comic-image-load-progress__headline strong {
   flex: 0 0 auto;
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   font-size: 0.84rem;
   font-variant-numeric: tabular-nums;
 }

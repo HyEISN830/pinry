@@ -112,7 +112,7 @@
       white-space: nowrap;
     }
     .board-delete-progress-heading strong {
-      color: var(--color-accent-strong);
+      color: var(--color-accent-foreground);
       font-size: 11px;
     }
     .board-delete-progress-dot {
@@ -128,7 +128,7 @@
       margin-bottom: 0;
       overflow: hidden;
       border-radius: var(--radius-pill);
-      color: var(--color-accent-strong);
+      color: var(--color-accent-foreground);
       background: var(--color-accent-soft-gradient);
     }
     .board-delete-progress-bar::-webkit-progress-bar {

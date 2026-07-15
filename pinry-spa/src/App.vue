@@ -79,6 +79,7 @@ export default {
     --shadow-soft: 0 14px 36px rgba(16, 24, 40, 0.12);
     --accent: #e879b9;
     --accent-strong: #d94691;
+    --accent-foreground: #d94691;
     --accent-soft: rgba(232, 121, 185, 0.14);
     --accent-border: rgba(232, 121, 185, 0.34);
     --accent-shadow: 0 16px 38px rgba(217, 70, 145, 0.18);
@@ -147,7 +148,7 @@ export default {
     }
   }
   a {
-    color: var(--accent-strong);
+    color: var(--accent-foreground);
   }
   .button.is-primary {
     border-color: var(--accent-strong);
@@ -166,7 +167,7 @@ export default {
   }
   .button.is-light:hover {
     border-color: var(--accent);
-    color: var(--accent-strong);
+    color: var(--accent-foreground);
     background: var(--accent-soft-gradient);
   }
   .button.is-link,
@@ -245,7 +246,7 @@ export default {
   }
   .dropdown-item:hover,
   .autocomplete .dropdown-item:hover {
-    color: var(--accent-strong);
+    color: var(--accent-foreground);
     background: var(--accent-soft-gradient);
   }
   .tabs.is-toggle li.is-active a {

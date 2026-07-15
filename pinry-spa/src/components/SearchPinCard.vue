@@ -110,14 +110,14 @@ export default {
 .search-result-kind { position: absolute; z-index: 2; top: var(--space-xs); left: var(--space-xs); padding: 0.22rem 0.52rem; border-radius: var(--radius-pill); color: var(--color-accent-text); background: var(--color-accent-fill); font-size: 12px; font-weight: 900; text-shadow: var(--color-accent-text-shadow); }
 .search-pin-card__body { padding: var(--space-sm); }
 .search-pin-card__title { display: -webkit-box; width: 100%; padding: 0; overflow: hidden; border: 0; color: var(--color-text-strong); background: transparent; cursor: zoom-in; font-family: inherit; font-size: 1rem; font-weight: 900; line-height: 1.35; text-align: left; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.search-pin-card__title:hover { color: var(--color-accent-strong); }
+.search-pin-card__title:hover { color: var(--color-accent-foreground); }
 .search-pin-card__author { margin: var(--space-xs) 0 0; color: var(--color-text-muted); font-size: 0.9rem; }
-.search-pin-card__author a { color: var(--color-accent-strong); font-weight: 800; }
+.search-pin-card__author a { color: var(--color-accent-foreground); font-weight: 800; }
 .search-card-tags { margin-top: var(--space-xs); }
 .search-pin-card__actions { display: grid; justify-items: start; gap: var(--space-xs); margin-top: var(--space-sm); }
 .search-pin-card__source { display: flex; width: fit-content; max-width: 100%; }
 .search-card-like { display: inline-flex; align-items: center; gap: 0.28rem; min-height: 30px; padding: 0 0.58rem; border: 1px solid var(--color-line-soft); border-radius: var(--radius-pill); color: var(--color-text-muted); background: var(--color-surface-2); cursor: pointer; font-size: 13px; font-weight: 900; }
-.search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-strong); background: var(--color-accent-soft-gradient); }
+.search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-foreground); background: var(--color-accent-soft-gradient); }
 .search-card-like:disabled { opacity: 0.72; cursor: wait; }
 
 </style>

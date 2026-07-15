@@ -547,7 +547,7 @@ export default {
   padding: var(--space-md);
 }
 .sidebar-eyebrow {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   font-size: 0.75rem;
   font-weight: 950;
   letter-spacing: 0.11em;
@@ -589,7 +589,7 @@ export default {
   @include hover-scale(1.018, -2px);
 }
 .search-type-pill.is-active {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   border-color: var(--color-accent-border);
   background: var(--color-accent-soft-gradient);
   box-shadow: var(--shadow-xs);
@@ -669,7 +669,7 @@ export default {
 }
 .state-card .icon,
 .empty-results .icon {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
 }
 .state-card h2,
 .empty-results h2 {
@@ -721,7 +721,7 @@ export default {
   margin-top: var(--space-md);
   border-color: var(--color-line-soft);
   border-radius: var(--radius-pill);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-foreground);
   background: var(--color-accent-soft-gradient);
   font-weight: 900;
   @include hover-scale(1.012, -1px);
