@@ -94,7 +94,7 @@
                   <a v-if="originalImageUrl" :href="originalImageUrl" target="_blank" rel="noopener">
                     <b-button class="meta-link" type="is-link">{{ $t("originalImageButton") }}</b-button>
                   </a>
-                  <b-button @click="closeAndGoTo" class="meta-link" type="is-success">{{ $t("permalinkButton") }}</b-button>
+                  <b-button @click="sharePin" class="meta-link" type="is-success">{{ $t("permalinkButton") }}</b-button>
                   <b-button
                     @click="openFullView"
                     :disabled="!previewImageUrl || imageLoading"
@@ -185,6 +185,7 @@ import {
   cacheImage,
   getCachedImage,
 } from './utils/originalImageCache';
+import share from './utils/share';
 
 function fileNameFromUrl(url, fallback) {
   if (!url) {
@@ -692,9 +693,9 @@ export default {
       link.click();
       body.removeChild(link);
     },
-    closeAndGoTo() {
-      this.$parent.close();
-      this.$router.push(
+    sharePin() {
+      share.shareRoute(
+        this,
         { name: 'pin', params: { pinId: this.pinItem.id } },
       );
     },
