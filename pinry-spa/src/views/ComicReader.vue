@@ -57,6 +57,13 @@
               <span>{{ loadingAll ? $t("imageLoadingText") : $t("readFullComicButton") }}</span>
             </button>
             <button
+              class="button reader-action-button reader-action-button--secondary"
+              type="button"
+              @click="shareComic">
+              <b-icon icon="share-variant" custom-size="mdi-18px"></b-icon>
+              <span>{{ $t("shareButton") }}</span>
+            </button>
+            <button
               v-if="isOwner"
               class="button reader-action-button reader-action-button--secondary"
               :class="{ 'is-active': editing }"
@@ -316,6 +323,7 @@ import {
 import imageVariant from '../components/utils/imageVariant';
 import niceLinks from '../components/utils/niceLinks';
 import scroll from '../components/utils/scroll';
+import share from '../components/utils/share';
 
 function splitTags(tagText) {
   return tagText.split(/[,\uFF0C]/)
@@ -905,6 +913,15 @@ export default {
       return (url || '').trim();
     },
     niceLinks,
+    shareComic() {
+      if (!this.comic) {
+        return;
+      }
+      share.shareRoute(
+        this,
+        { name: 'comic', params: { comicId: this.comic.id } },
+      );
+    },
     toggleEditing() {
       this.editing = !this.editing;
       if (this.editing) {

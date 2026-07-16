@@ -9,13 +9,23 @@
       <strong>{{ displayCount }}</strong>
       <span>{{ $t("collectionArtworksLabel") }}</span>
     </div>
-    <button
-      v-if="canCreatePin"
-      class="button is-primary collection-action"
-      type="button"
-      @click="$emit('create-pin')">
-      {{ $t("addPinToBoardButton") }}
-    </button>
+    <div v-if="canShare || canCreatePin" class="collection-actions">
+      <button
+        v-if="canShare"
+        class="button collection-action collection-share-action"
+        type="button"
+        @click="$emit('share')">
+        <b-icon icon="share-variant" custom-size="mdi-18px"></b-icon>
+        <span>{{ $t("shareButton") }}</span>
+      </button>
+      <button
+        v-if="canCreatePin"
+        class="button is-primary collection-action"
+        type="button"
+        @click="$emit('create-pin')">
+        {{ $t("addPinToBoardButton") }}
+      </button>
+    </div>
   </section>
 </template>
 
@@ -44,6 +54,10 @@ export default {
       default: false,
     },
     canCreatePin: {
+      type: Boolean,
+      default: false,
+    },
+    canShare: {
       type: Boolean,
       default: false,
     },
@@ -146,16 +160,43 @@ export default {
   color: var(--text-muted, #64748b);
   font-size: 12px;
 }
-.collection-action {
+.collection-actions {
+  display: flex;
   flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-xs, 8px);
+}
+.collection-action {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--space-xs, 8px);
   border-radius: 7px;
   font-weight: 700;
   box-shadow: var(--accent-shadow, 0 8px 18px rgba(31, 111, 235, 0.18));
-  transition: transform .16s ease, box-shadow .16s ease;
+  transition:
+    transform var(--motion-duration-fast, .16s) var(--motion-ease-standard, ease),
+    border-color var(--motion-duration-fast, .16s) var(--motion-ease-standard, ease),
+    color var(--motion-duration-fast, .16s) var(--motion-ease-standard, ease),
+    background var(--motion-duration-fast, .16s) var(--motion-ease-standard, ease),
+    box-shadow var(--motion-duration-fast, .16s) var(--motion-ease-standard, ease);
 }
 .collection-action:hover {
   transform: translateY(-2px);
   box-shadow: var(--accent-shadow, 0 12px 24px rgba(31, 111, 235, 0.24));
+}
+.collection-share-action {
+  border-color: var(--color-accent-border, var(--accent-border));
+  color: var(--color-accent-foreground, var(--accent-foreground));
+  background: var(--color-accent-soft-gradient, var(--accent-soft-gradient));
+  box-shadow: var(--shadow-xs, 0 4px 12px rgba(15, 23, 42, 0.08));
+}
+.collection-share-action:hover,
+.collection-share-action:focus-visible {
+  border-color: var(--color-accent-strong, var(--accent-strong));
+  color: var(--color-accent-text, #fff);
+  background: var(--color-accent-fill, var(--accent-fill));
+  box-shadow: 0 12px 24px var(--color-theme-glow, rgba(31, 111, 235, 0.2));
 }
 
 @media screen and (max-width: 760px) {
@@ -178,6 +219,9 @@ export default {
   }
   .collection-action {
     width: 100%;
+  }
+  .collection-actions {
+    display: grid;
     margin-top: 1rem;
   }
 }

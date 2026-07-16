@@ -8,7 +8,9 @@
       :owner="collection.owner"
       :is-private="collection.private"
       :can-create-pin="canCreatePin"
-      v-on:create-pin="createPinForBoard">
+      :can-share="collection.id !== null"
+      v-on:create-pin="createPinForBoard"
+      v-on:share="shareBoard">
     </CollectionHero>
     <Pins
       :pin-filters="filters"
@@ -23,6 +25,7 @@ import PHeader from '../components/PHeader.vue';
 import Pins from '../components/Pins.vue';
 import CollectionHero from '../components/CollectionHero.vue';
 import modals from '../components/modals';
+import share from '../components/utils/share';
 
 export default {
   name: 'Pins4Board',
@@ -119,6 +122,15 @@ export default {
             name: this.collection.title,
           },
         },
+      );
+    },
+    shareBoard() {
+      if (this.collection.id === null) {
+        return;
+      }
+      share.shareRoute(
+        this,
+        { name: 'board', params: { boardId: this.collection.id } },
       );
     },
   },

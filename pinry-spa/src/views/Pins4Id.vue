@@ -1,7 +1,11 @@
 <template>
-  <div class="pins-for-tag">
+  <div class="pin-share-page">
     <PHeader></PHeader>
-    <Pins :pin-filters="filters"></Pins>
+    <Pins
+      :pin-filters="filters"
+      :single-pin-view="true"
+      :auto-open-preview="true">
+    </Pins>
   </div>
 </template>
 
@@ -35,6 +39,9 @@ export default {
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
+.pin-share-page {
+  min-height: 100vh;
+  background: transparent;
+}
 </style>

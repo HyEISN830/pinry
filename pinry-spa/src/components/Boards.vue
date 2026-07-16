@@ -26,18 +26,21 @@
                 <div
                   class="board-card motion-hover-scale"
                   @mouseenter="currentEditBoard = item.id"
+                  @touchstart="handleBoardTouch(item)"
                   @mouseleave="currentEditBoard = null">
                   <span class="board-card-glare" aria-hidden="true"></span>
                   <div class="board-stack" aria-hidden="true"></div>
                 <BoardEditorUI
-                  v-show="shouldShowEdit(item)"
+                  v-show="shouldShowTools(item)"
                   :board="item"
+                  :can-manage="isBoardOwner(item)"
                   v-on:board-delete-succeed="reset"
                   v-on:board-save-succeed="reset"
                 ></BoardEditorUI>
                 <router-link
                   class="board-card-link"
-                  :to="{ name: 'board', params: { boardId: item.id } }">
+                  :to="{ name: 'board', params: { boardId: item.id } }"
+                  @click.native="handleBoardNavigation(item, $event)">
                   <div class="card-image">
                     <div
                       class="board-image-shell"
@@ -195,6 +198,8 @@ function initialData() {
     fillViewportTimer: null,
     masonryKey: 0,
     resizeTimer: null,
+    suppressBoardNavigationId: null,
+    suppressBoardNavigationTimer: null,
     masonryLayoutRaf: null,
     masonryLayoutTimers: [],
     status: {
@@ -237,7 +242,7 @@ export default {
   },
   // R6 route/category switching layout guard
   watch: {
-    '$route.fullPath': function () {
+    '$route.fullPath': function routeFullPathChanged() {
       this.queueMasonryLayout();
     },
     filters() {
@@ -375,6 +380,10 @@ export default {
       );
     },
     reset() {
+      if (this.suppressBoardNavigationTimer) {
+        window.clearTimeout(this.suppressBoardNavigationTimer);
+        this.suppressBoardNavigationTimer = null;
+      }
       if (this.lazyObserver) {
         this.lazyObserver.disconnect();
         this.lazyObserver = null;
@@ -388,14 +397,39 @@ export default {
       );
       this.initialize();
     },
-    shouldShowEdit(board) {
-      if (!this.editorMeta.user.loggedIn) {
-        return false;
-      }
-      if (this.editorMeta.user.meta.username !== board.author) {
-        return false;
-      }
+    isBoardOwner(board) {
+      return this.editorMeta.user.loggedIn
+        && this.editorMeta.user.meta.username === board.author;
+    },
+    shouldShowTools(board) {
       return this.currentEditBoard === board.id;
+    },
+    handleBoardTouch(board) {
+      const wasVisible = this.shouldShowTools(board);
+      this.currentEditBoard = board.id;
+      if (this.suppressBoardNavigationTimer) {
+        window.clearTimeout(this.suppressBoardNavigationTimer);
+      }
+      this.suppressBoardNavigationId = wasVisible ? null : board.id;
+      if (this.suppressBoardNavigationId === null) {
+        return;
+      }
+      this.suppressBoardNavigationTimer = window.setTimeout(() => {
+        this.suppressBoardNavigationId = null;
+        this.suppressBoardNavigationTimer = null;
+      }, 700);
+    },
+    handleBoardNavigation(board, event) {
+      if (this.suppressBoardNavigationId !== board.id) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      this.suppressBoardNavigationId = null;
+      if (this.suppressBoardNavigationTimer) {
+        window.clearTimeout(this.suppressBoardNavigationTimer);
+        this.suppressBoardNavigationTimer = null;
+      }
     },
     createLazyObserver() {
       if (this.lazyObserver || !window.IntersectionObserver) {
@@ -604,6 +638,9 @@ export default {
     }
     if (this.fillViewportTimer) {
       window.clearTimeout(this.fillViewportTimer);
+    }
+    if (this.suppressBoardNavigationTimer) {
+      window.clearTimeout(this.suppressBoardNavigationTimer);
     }
     window.removeEventListener('resize', this.handleResize);
   },

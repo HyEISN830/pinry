@@ -157,7 +157,22 @@
         </button>
       </div>
       <div class="full-image-stage">
-        <img :src="previewImageUrl" alt="Image">
+        <div class="full-image-media">
+          <img :src="previewImageUrl" alt="Image">
+          <video
+            v-if="canPlayFullMotionPhoto"
+            ref="fullMotionVideo"
+            class="full-motion-video"
+            :class="{ 'is-active': fullMotionVideoActive }"
+            :src="pinItem.motion_photo.video"
+            muted
+            playsinline
+            preload="metadata"
+            @play="fullMotionVideoActive = true"
+            @ended="onFullMotionVideoEnded"
+            @error="onFullMotionVideoError">
+          </video>
+        </div>
       </div>
     </div>
   </div>
@@ -202,6 +217,9 @@ export default {
       imageBlob: null,
       bodyOverflowSnapshot: null,
       fullViewOpen: false,
+      fullMotionReplayTimer: null,
+      fullMotionVideoActive: false,
+      fullMotionVideoFailed: false,
       imageContentType: 'application/octet-stream',
       imageLoadFailed: false,
       imageLoading: true,
@@ -256,6 +274,13 @@ export default {
         && !this.motionVideoFailed
       );
     },
+    canPlayFullMotionPhoto() {
+      return !!(
+        this.pinItem.motion_photo
+        && this.pinItem.motion_photo.video
+        && !this.fullMotionVideoFailed
+      );
+    },
     isLandscapePreview() {
       return this.previewNaturalWidth > this.previewNaturalHeight;
     },
@@ -301,6 +326,13 @@ export default {
     if (this.motionReplayTimer) {
       window.clearTimeout(this.motionReplayTimer);
     }
+    if (this.fullMotionReplayTimer) {
+      window.clearTimeout(this.fullMotionReplayTimer);
+    }
+    const { fullMotionVideo } = this.$refs;
+    if (fullMotionVideo) {
+      fullMotionVideo.pause();
+    }
     document.removeEventListener('keydown', this.onKeydown);
     this.unlockBodyScroll();
   },
@@ -325,13 +357,33 @@ export default {
       if (!this.previewImageUrl || this.imageLoading) {
         return;
       }
+      if (this.motionReplayTimer) {
+        window.clearTimeout(this.motionReplayTimer);
+        this.motionReplayTimer = null;
+      }
+      const { motionVideo } = this.$refs;
+      if (motionVideo) {
+        motionVideo.pause();
+        this.motionVideoActive = false;
+      }
       this.fullViewOpen = true;
+      this.$nextTick(this.playFullMotionVideo);
     },
     closeFullView() {
       if (!this.fullViewOpen) {
         return;
       }
+      if (this.fullMotionReplayTimer) {
+        window.clearTimeout(this.fullMotionReplayTimer);
+        this.fullMotionReplayTimer = null;
+      }
+      const { fullMotionVideo } = this.$refs;
+      if (fullMotionVideo) {
+        fullMotionVideo.pause();
+      }
+      this.fullMotionVideoActive = false;
       this.fullViewOpen = false;
+      this.$nextTick(this.playMotionVideo);
     },
     onKeydown(event) {
       if (event.key === 'Escape') {
@@ -557,7 +609,7 @@ export default {
       );
     },
     playMotionVideo() {
-      if (!this.hasMotionPhoto || this.imageLoading) {
+      if (!this.hasMotionPhoto || this.imageLoading || this.fullViewOpen) {
         return;
       }
       const video = this.$refs.motionVideo;
@@ -587,6 +639,43 @@ export default {
         this.playMotionVideo,
         2000,
       );
+    },
+    playFullMotionVideo() {
+      if (!this.fullViewOpen || !this.canPlayFullMotionPhoto) {
+        return;
+      }
+      const video = this.$refs.fullMotionVideo;
+      if (!video) {
+        return;
+      }
+      if (this.fullMotionReplayTimer) {
+        window.clearTimeout(this.fullMotionReplayTimer);
+        this.fullMotionReplayTimer = null;
+      }
+      video.currentTime = 0;
+      const promise = video.play();
+      if (promise && promise.catch) {
+        promise.catch(
+          () => {
+            this.fullMotionVideoActive = false;
+            this.fullMotionVideoFailed = true;
+          },
+        );
+      }
+    },
+    onFullMotionVideoEnded() {
+      this.fullMotionVideoActive = false;
+      if (!this.fullViewOpen || !this.canPlayFullMotionPhoto) {
+        return;
+      }
+      this.fullMotionReplayTimer = window.setTimeout(
+        this.playFullMotionVideo,
+        2000,
+      );
+    },
+    onFullMotionVideoError() {
+      this.fullMotionVideoActive = false;
+      this.fullMotionVideoFailed = true;
     },
     downloadImage() {
       if (!this.imageBlob || !this.previewImageUrl) {
@@ -1174,14 +1263,33 @@ export default {
   padding: 1.25rem;
   overscroll-behavior: contain;
 }
+.full-image-media {
+  position: relative;
+  display: block;
+  width: max-content;
+  margin: 0 auto;
+}
 .full-image-stage img {
   display: block;
   width: auto;
   max-width: none;
   height: auto;
   max-height: none;
-  margin: 0 auto;
   box-shadow: 0 18px 54px rgba(0, 0, 0, 0.45);
+}
+.full-motion-video {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--motion-duration-standard) var(--motion-ease-standard);
+}
+.full-motion-video.is-active {
+  opacity: 1;
 }
 @media screen and (max-width: 720px) {
   .pin-preview-meta {

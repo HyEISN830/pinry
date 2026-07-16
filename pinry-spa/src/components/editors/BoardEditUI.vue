@@ -5,6 +5,22 @@
         class="icon-container"
         v-source-tooltip
         type="button"
+        :data-tooltip="$t('shareBoardTooltip')"
+        :aria-label="$t('shareBoardTooltip')"
+        :disabled="deleting"
+        @click.stop="shareBoard"
+        @touchstart.stop="noop">
+        <b-icon
+          type="is-light"
+          icon="share-variant"
+          custom-size="mdi-22px">
+        </b-icon>
+      </button>
+      <button
+        v-if="canManage"
+        class="icon-container"
+        v-source-tooltip
+        type="button"
         :data-tooltip="$t('deleteBoardTooltip')"
         :aria-label="$t('deleteBoardTooltip')"
         :disabled="deleting"
@@ -17,6 +33,7 @@
           </b-icon>
       </button>
       <button
+        v-if="canManage"
         class="icon-container"
         v-source-tooltip
         type="button"
@@ -55,6 +72,7 @@
 <script>
 import API from '../api';
 import modals from '../modals';
+import share from '../utils/share';
 
 
 const REMOVE_BATCH_SIZE = 10;
@@ -67,6 +85,10 @@ export default {
         return {};
       },
       type: Object,
+    },
+    canManage: {
+      type: Boolean,
+      default: false,
     },
   },
   data() {
@@ -84,13 +106,22 @@ export default {
       this.$emit('board-save-succeed');
     },
     editBoard() {
-      if (this.deleting) {
+      if (this.deleting || !this.canManage) {
         return;
       }
       modals.openBoardEdit(
         this,
         this.board,
         this.onBoardSaved,
+      );
+    },
+    shareBoard() {
+      if (this.deleting || !this.board.id) {
+        return;
+      }
+      share.shareRoute(
+        this,
+        { name: 'board', params: { boardId: this.board.id } },
       );
     },
     fetchAffectedPinIds(offset = 0, affectedPinIds = []) {
@@ -159,7 +190,7 @@ export default {
         );
     },
     deleteBoard() {
-      if (this.deleting) {
+      if (this.deleting || !this.canManage) {
         return;
       }
       modals.openActionConfirm(

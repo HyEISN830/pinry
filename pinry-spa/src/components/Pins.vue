@@ -1,5 +1,5 @@
 <template>
-  <div class="pins">
+  <div class="pins" :class="{ 'is-single-pin-view': singlePinView }">
     <section class="section">
       <div id="pins-container" class="container" v-if="blocks">
         <div
@@ -49,6 +49,7 @@
                        v-if="item.imageVisible && item.url"
                        :src="item.url"
                        @load="onPinImageLoaded(item.id)"
+                       @error="onPinImageFailed(item.id)"
                        @click="openPreview(item, $event)"
                        :alt="item.description || $t('imageUnavailableText')"
                        class="pin-preview-image">
@@ -238,6 +239,18 @@ function getResponsiveGridMetrics(containerWidth) {
   return { columns, gutterWidth, itemWidth };
 }
 
+function getSinglePinGridMetrics(containerWidth) {
+  const safeWidth = Math.max(0, containerWidth || 0);
+  const desktopWidth = Math.min(
+    480,
+    Math.max(340, Math.round(safeWidth * 0.4)),
+  );
+  const itemWidth = safeWidth <= 540
+    ? safeWidth
+    : Math.min(safeWidth, desktopWidth);
+  return { columns: 1, gutterWidth: 0, itemWidth };
+}
+
 function isDocumentScrollable() {
   const { body, documentElement: doc } = document;
   const scrollHeight = Math.max(
@@ -261,6 +274,8 @@ function initialData() {
     resizeTimer: null,
     masonryLayoutRaf: null,
     masonryLayoutTimers: [],
+    autoPreviewOpenedId: null,
+    autoPreviewTimer: null,
     suppressNextPreviewId: null,
     suppressPreviewTimer: null,
     status: {
@@ -301,6 +316,14 @@ export default {
           boardFilter: null,
         };
       },
+    },
+    singlePinView: {
+      type: Boolean,
+      default: false,
+    },
+    autoOpenPreview: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {
@@ -482,6 +505,40 @@ export default {
       );
       this.blocksMap[itemId].style.height = 'auto';
       this.scheduleViewportFillCheck();
+      this.scheduleAutoPreview(itemId);
+    },
+    onPinImageFailed(itemId) {
+      if (!this.blocksMap[itemId]) {
+        return;
+      }
+      this.blocksMap[itemId].class = Object.assign(
+        {},
+        this.blocksMap[itemId].class,
+        { 'image-loaded': true },
+      );
+      this.blocksMap[itemId].style.height = 'auto';
+      this.scheduleAutoPreview(itemId);
+    },
+    scheduleAutoPreview(itemId) {
+      if (
+        !this.autoOpenPreview
+        || this.autoPreviewOpenedId === itemId
+        || this.autoPreviewTimer
+      ) {
+        return;
+      }
+      const pinItem = this.blocksMap[itemId];
+      if (!pinItem) {
+        return;
+      }
+      this.autoPreviewTimer = window.setTimeout(() => {
+        this.autoPreviewTimer = null;
+        if (!this.blocksMap[itemId] || this.autoPreviewOpenedId === itemId) {
+          return;
+        }
+        this.autoPreviewOpenedId = itemId;
+        this.openPreview(pinItem);
+      }, 420);
     },
     measureGridWhenReady() {
       this.$nextTick(() => {
@@ -533,7 +590,9 @@ export default {
       if (!containerWidth) {
         return false;
       }
-      const metrics = getResponsiveGridMetrics(containerWidth);
+      const metrics = this.singlePinView
+        ? getSinglePinGridMetrics(containerWidth)
+        : getResponsiveGridMetrics(containerWidth);
       const signature = `${metrics.itemWidth}-${metrics.gutterWidth}-${metrics.columns}`;
       if (signature === this.gridSignature) {
         return false;
@@ -723,6 +782,10 @@ export default {
       this.reset();
     },
     reset() {
+      if (this.autoPreviewTimer) {
+        window.clearTimeout(this.autoPreviewTimer);
+        this.autoPreviewTimer = null;
+      }
       if (this.lazyObserver) {
         this.lazyObserver.disconnect();
         this.lazyObserver = null;
@@ -780,6 +843,10 @@ export default {
             this.measureGridWhenReady();
             this.observeLazyImages();
             this.scheduleViewportFillCheck();
+            const [singlePin] = this.blocks;
+            if (singlePin && !singlePin.url) {
+              this.scheduleAutoPreview(singlePin.id);
+            }
           });
         },
         () => {
@@ -845,6 +912,9 @@ export default {
     if (this.suppressPreviewTimer) {
       window.clearTimeout(this.suppressPreviewTimer);
     }
+    if (this.autoPreviewTimer) {
+      window.clearTimeout(this.autoPreviewTimer);
+    }
     window.removeEventListener('resize', this.handleResize);
   },
 };
@@ -858,6 +928,14 @@ export default {
 .pins-masonry-grid {
   margin-right: auto;
   margin-left: auto;
+}
+
+.pins.is-single-pin-view .section {
+  padding-top: clamp(1.5rem, 4vw, 3.5rem);
+}
+
+.pins.is-single-pin-view .pin-masonry {
+  margin-bottom: 2rem;
 }
 
 .grid-sizer,
