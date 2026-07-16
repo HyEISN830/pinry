@@ -7,11 +7,13 @@
       </PageTransition>
     </main>
     <BackToTopProgress></BackToTopProgress>
+    <GalleryPageOpening :route-key="routeTransitionKey"></GalleryPageOpening>
   </div>
 </template>
 
 <script>
 import BackToTopProgress from './components/BackToTopProgress.vue';
+import GalleryPageOpening from './components/transitions/GalleryPageOpening.vue';
 import PHeader from './components/PHeader.vue';
 import PageTransition from './components/transitions/PageTransition.vue';
 import bus from './components/utils/bus';
@@ -21,6 +23,7 @@ export default {
   name: 'app',
   components: {
     BackToTopProgress,
+    GalleryPageOpening,
     PHeader,
     PageTransition,
   },
