@@ -6,6 +6,7 @@
   "NewComicTitle": "创建 Comic",
   "loginTitle": "登录",
   "loginButton": "登录",
+  "loginFailedMessage": "暂时无法登录，请检查网络后重试。",
   "closeButton": "关闭",
   "cancelButton": "取消",
   "end": "没有更多啦",

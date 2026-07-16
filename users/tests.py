@@ -43,6 +43,7 @@ class CombinedAuthBackendTest(TestCase):
 
 
 class CreateUserTest(TestCase):
+    @override_settings(ALLOW_NEW_REGISTRATIONS=True)
     def test_create_post(self):
         data = {
             'username': 'jdoe',
@@ -70,6 +71,7 @@ class CreateUserTest(TestCase):
             data=data,
         )
         self.assertEqual(response.status_code, 401)
+        self.assertFalse(User.objects.filter(username='jdoe').exists())
 
 
 class LogoutViewTest(TestCase):

@@ -9,6 +9,10 @@
   backdrop-filter: blur(10px) saturate(1.06);
 }
 
+.pinry-create-modal .modal-background {
+  animation: create-modal-backdrop-in var(--motion-duration-standard) var(--motion-ease-standard) both;
+}
+
 .pinry-create-modal .modal-content {
   width: auto;
   max-width: none;
@@ -30,6 +34,18 @@
     radial-gradient(circle at bottom right, var(--color-theme-glow-end), transparent 46%),
     var(--color-surface-card);
   box-shadow: var(--shadow-floating);
+}
+
+.modal.pinry-auth-modal {
+  z-index: calc(var(--z-modal) + 60) !important;
+}
+
+.pinry-auth-modal .modal-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
 }
 
 .pinry-create-modal .create-modal-head {
@@ -167,8 +183,27 @@
 }
 
 html[data-motion='reduce'] .pinry-create-modal .create-modal-close,
-html[data-motion='reduce'] .pinry-create-modal .create-modal-foot .button {
+html[data-motion='reduce'] .pinry-create-modal .create-modal-foot .button,
+html[data-motion='reduce'] .pinry-create-modal .modal-background {
   transition: none;
+  animation: none;
+}
+
+html[data-motion='reduce'] .pinry-auth-modal .auth-modal-card,
+html[data-motion='reduce'] .pinry-auth-modal .auth-modal-icon::after,
+html[data-motion='reduce'] .pinry-auth-modal .auth-modal-intro > .icon,
+html[data-motion='reduce'] .pinry-auth-modal .auth-modal-orbit {
+  animation: none;
+}
+
+@keyframes create-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @media screen and (max-width: 640px) {

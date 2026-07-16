@@ -213,13 +213,6 @@
           v-show="!user.loggedIn"
           class="nav-pill"
           type="button"
-          @click="signUp">
-          {{ $t("signUpLink") }}
-        </button>
-        <button
-          v-show="!user.loggedIn"
-          class="nav-pill"
-          type="button"
           @click="logIn">
           {{ $t("logInLink") }}
         </button>
@@ -412,7 +405,6 @@
       </section>
 
       <section class="mobile-section is-account">
-        <button v-show="!user.loggedIn" type="button" @click="signUp">{{ $t("signUpLink") }}</button>
         <button v-show="!user.loggedIn" type="button" @click="logIn">{{ $t("logInLink") }}</button>
         <button v-show="user.loggedIn" type="button" @click="logOut">{{ $t("logOutLink") }}</button>
       </section>
@@ -639,9 +631,6 @@ export default {
     onLoginSucceed() {
       this.initializeUser(true);
     },
-    onSignUpSucceed() {
-      this.initializeUser(true);
-    },
     logOut() {
       api.User.logOut().then(
         () => {
@@ -674,10 +663,6 @@ export default {
         this.user.meta.username,
         comic => this.$router.push({ name: 'comic', params: { comicId: comic.id } }),
       );
-    },
-    signUp() {
-      this.closeMenu();
-      modals.openSignUp(this, this.onSignUpSucceed);
     },
     toggleReduceMotion() {
       this.reduceMotion = motionPreference.saveAndApplyMotionPreference(!this.reduceMotion);

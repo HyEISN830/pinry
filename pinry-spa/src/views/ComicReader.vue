@@ -315,6 +315,7 @@ import {
 } from '../components/utils/originalImageCache';
 import imageVariant from '../components/utils/imageVariant';
 import niceLinks from '../components/utils/niceLinks';
+import scroll from '../components/utils/scroll';
 
 function splitTags(tagText) {
   return tagText.split(/[,\uFF0C]/)
@@ -361,7 +362,7 @@ export default {
       filteredTagOptions: [],
       fullPageObserver: null,
       fullPageMeasureFrame: null,
-      fullReaderBodyOverflowSnapshot: null,
+      fullReaderScrollLock: null,
       fullReaderScrollElement: null,
       fullReaderOpen: false,
       currentFullPageOrder: 1,
@@ -639,20 +640,50 @@ export default {
       this.unlockFullReaderScroll();
     },
     lockFullReaderScroll() {
-      if (this.fullReaderBodyOverflowSnapshot !== null) {
+      if (this.fullReaderScrollLock !== null) {
         return;
       }
-      const { body } = document;
-      this.fullReaderBodyOverflowSnapshot = body.style.overflow;
+      const { body, documentElement } = document;
+      const scrollTop = Math.max(
+        0,
+        window.pageYOffset || documentElement.scrollTop || 0,
+      );
+      this.fullReaderScrollLock = {
+        bodyLeft: body.style.left,
+        bodyOverflow: body.style.overflow,
+        bodyPosition: body.style.position,
+        bodyRight: body.style.right,
+        bodyTop: body.style.top,
+        bodyWidth: body.style.width,
+        documentOverflow: documentElement.style.overflow,
+        documentOverscrollBehavior: documentElement.style.overscrollBehavior,
+        scrollTop,
+      };
+      documentElement.style.overflow = 'hidden';
+      documentElement.style.overscrollBehavior = 'none';
       body.style.overflow = 'hidden';
+      body.style.position = 'fixed';
+      body.style.top = `-${scrollTop}px`;
+      body.style.right = '0';
+      body.style.left = '0';
+      body.style.width = '100%';
     },
     unlockFullReaderScroll() {
-      if (this.fullReaderBodyOverflowSnapshot === null) {
+      if (this.fullReaderScrollLock === null) {
         return;
       }
-      const { body } = document;
-      body.style.overflow = this.fullReaderBodyOverflowSnapshot;
-      this.fullReaderBodyOverflowSnapshot = null;
+      const { body, documentElement } = document;
+      const lock = this.fullReaderScrollLock;
+      documentElement.style.overflow = lock.documentOverflow;
+      documentElement.style.overscrollBehavior = lock.documentOverscrollBehavior;
+      body.style.overflow = lock.bodyOverflow;
+      body.style.position = lock.bodyPosition;
+      body.style.top = lock.bodyTop;
+      body.style.right = lock.bodyRight;
+      body.style.left = lock.bodyLeft;
+      body.style.width = lock.bodyWidth;
+      this.fullReaderScrollLock = null;
+      scroll.restoreScrollPosition(lock.scrollTop);
     },
     disconnectFullPageObserver() {
       if (this.fullPageObserver) {
@@ -1224,11 +1255,18 @@ export default {
   inset: 0;
   overflow-x: hidden;
   overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   color: #f8fafc;
   background: #080b12;
   overscroll-behavior: contain;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
+}
+.comic-full-reader::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 .full-reader-bar {
   position: sticky;

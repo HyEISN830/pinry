@@ -6,6 +6,7 @@
     "NewComicTitle": "Nouveau comic",
     "loginTitle": "Connexion",
     "loginButton": "Connexion",
+    "loginFailedMessage": "Connexion impossible. Verifiez votre connexion et reessayez.",
     "closeButton": "Fermer",
     "cancelButton": "Annuler",
     "end": "Fin",

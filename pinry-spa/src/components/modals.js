@@ -1,6 +1,5 @@
 import PinCreateModal from './pin_edit/PinCreateModal.vue';
 import LoginForm from './LoginForm.vue';
-import SignUpForm from './SignUpForm.vue';
 import BoardEdit from './BoardEdit.vue';
 import Add2Board from './pin_edit/Add2Board.vue';
 import ComicCreateModal from './comic/ComicCreateModal.vue';
@@ -135,25 +134,19 @@ function openBoardEdit(vm, board, onSaved) {
 }
 
 function openLogin(vm, onSucceed) {
-  vm.$buefy.modal.open({
-    parent: vm,
-    component: LoginForm,
-    hasModalCard: true,
-    events: {
-      'login.succeed': onSucceed,
+  return openPreservingScroll(
+    vm,
+    {
+      parent: vm,
+      component: LoginForm,
+      hasModalCard: true,
+      canCancel: ['escape', 'outside'],
+      customClass: 'pinry-create-modal pinry-auth-modal',
+      events: {
+        'login.succeed': onSucceed,
+      },
     },
-  });
-}
-
-function openSignUp(vm, onSignUpSucceed) {
-  vm.$buefy.modal.open({
-    parent: vm,
-    component: SignUpForm,
-    hasModalCard: true,
-    events: {
-      'signup.succeed': onSignUpSucceed,
-    },
-  });
+  );
 }
 
 export default {
@@ -164,5 +157,4 @@ export default {
   openActionConfirm,
   openPinEdit,
   openLogin,
-  openSignUp,
 };
