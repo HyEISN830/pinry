@@ -1260,6 +1260,22 @@ $avatar-height: 30px;
   }
 }
 
+.card-state.is-empty {
+  max-width: 460px;
+  margin: var(--space-lg, 24px) auto;
+  padding: var(--space-xl, 32px);
+  border: 1px solid var(--color-border-soft, rgba(148, 163, 184, 0.24));
+  border-radius: var(--radius-card, 22px);
+  color: var(--color-text-muted, #6b7280);
+  background: var(--color-surface-card, #fff);
+  box-shadow: var(--shadow-card, 0 18px 50px rgba(15, 23, 42, 0.12));
+  text-align: center;
+}
+
+.card-state.is-empty p {
+  margin: 0;
+}
+
 @keyframes placeholderPulse {
   0% { background-position: 100% 0; }
   100% { background-position: -100% 0; }
