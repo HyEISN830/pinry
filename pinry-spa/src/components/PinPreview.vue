@@ -91,7 +91,7 @@
                     {{ sourceText(pinItem.referer) }}
                   </span>
                   <span v-else class="meta-link source-missing-pill">{{ $t("missingSourceNotice") }}</span>
-                  <a v-if="pinItem.original_image_url" :href="pinItem.original_image_url" target="_blank" rel="noopener">
+                  <a v-if="originalImageUrl" :href="originalImageUrl" target="_blank" rel="noopener">
                     <b-button class="meta-link" type="is-link">{{ $t("originalImageButton") }}</b-button>
                   </a>
                   <b-button @click="closeAndGoTo" class="meta-link" type="is-success">{{ $t("permalinkButton") }}</b-button>
@@ -221,6 +221,9 @@ export default {
   computed: {
     activePreviewUrl() {
       return this.previewImageUrl || this.pinItem.url;
+    },
+    originalImageUrl() {
+      return API.Pin.originalImageUrl(this.pinItem.image_id);
     },
     previewBackdropStyle() {
       const source = this.pinItem.url || this.previewImageUrl;

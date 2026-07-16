@@ -50,6 +50,14 @@ class Image(models.Model):
     height = models.PositiveIntegerField(default=0, editable=False)
     width = models.PositiveIntegerField(default=0, editable=False)
 
+    class Meta:
+        indexes = [
+            models.Index(
+                fields=['image'],
+                name='django_images_image_path_idx',
+            ),
+        ]
+
     def get_by_size(self, size):
         return self.thumbnail_set.get(size=size)
 

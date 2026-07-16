@@ -143,8 +143,11 @@ const Pin = {
     const url = `${API_PREFIX}pins/${pinId}/like/`;
     return axios.post(url);
   },
+  originalImageUrl(imageId) {
+    return imageId ? `${API_PREFIX}images/${imageId}/original/` : null;
+  },
   fetchOriginalImage(imageId, signal) {
-    const url = `${API_PREFIX}images/${imageId}/original/`;
+    const url = this.originalImageUrl(imageId);
     const options = { credentials: 'same-origin' };
     if (signal) {
       options.signal = signal;

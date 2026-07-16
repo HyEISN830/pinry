@@ -3,3 +3,4 @@ from .views import *
 from .likes import *
 from .image_fetch import *
 from .chunked_uploads import *
+from .original_images import *
