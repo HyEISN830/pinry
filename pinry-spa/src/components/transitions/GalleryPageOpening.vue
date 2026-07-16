@@ -377,10 +377,4 @@ export default {
 html[data-motion="reduce"] .gallery-page-opening {
   display: none;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .gallery-page-opening {
-    display: none;
-  }
-}
 </style>
