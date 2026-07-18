@@ -9,11 +9,13 @@
     <div class="gallery-page-opening__curtain is-upper">
       <span class="gallery-page-opening__weave"></span>
       <span class="gallery-page-opening__motif"></span>
+      <span class="gallery-page-opening__curtain-sky"></span>
       <span class="gallery-page-opening__sheen"></span>
     </div>
     <div class="gallery-page-opening__curtain is-lower">
       <span class="gallery-page-opening__weave"></span>
       <span class="gallery-page-opening__motif"></span>
+      <span class="gallery-page-opening__curtain-sky"></span>
       <span class="gallery-page-opening__sheen"></span>
     </div>
 
@@ -128,10 +130,12 @@ export default {
 <style scoped lang="scss">
 .gallery-page-opening {
   --opening-angle: 14deg;
-  --opening-curtain-base: color-mix(in srgb, #fff 68%, var(--color-accent));
-  --opening-curtain-mid: color-mix(in srgb, #fff 58%, var(--color-accent));
-  --opening-curtain-shade: color-mix(in srgb, #fff 45%, var(--color-accent-strong));
-  --opening-pattern: color-mix(in srgb, #fff 18%, var(--color-accent));
+  --opening-curtain-base: color-mix(in srgb, var(--color-surface-card) 72%, var(--color-accent));
+  --opening-curtain-mid: color-mix(in srgb, var(--color-surface-card) 66%, var(--color-accent-strong));
+  --opening-curtain-shade: color-mix(in srgb, var(--color-surface-card) 84%, var(--color-accent));
+  --opening-curtain-star: color-mix(in srgb, #fff 62%, var(--color-accent));
+  --opening-curtain-meteor: color-mix(in srgb, #fff 42%, var(--color-accent-strong));
+  --opening-pattern: color-mix(in srgb, var(--color-surface-card) 22%, var(--color-accent));
   position: fixed;
   z-index: var(--z-page-opening, 1000);
   inset: 0;
@@ -174,9 +178,10 @@ export default {
   height: auto;
   overflow: hidden;
   background:
-    radial-gradient(circle at 48% 34%, rgba(255, 255, 255, 0.42), transparent 52%),
-    linear-gradient(145deg, var(--opening-curtain-base), color-mix(in srgb, var(--opening-curtain-mid) 72%, transparent)),
-    color-mix(in srgb, var(--color-surface-card) 58%, transparent);
+    radial-gradient(circle at 48% 34%, rgba(255, 255, 255, 0.28), transparent 52%),
+    radial-gradient(circle at 82% 72%, var(--color-theme-glow), transparent 46%),
+    linear-gradient(145deg, color-mix(in srgb, var(--opening-curtain-base) 92%, transparent), color-mix(in srgb, var(--opening-curtain-mid) 84%, transparent)),
+    var(--color-accent-soft-gradient);
   box-shadow:
     inset 0 0 140px color-mix(in srgb, var(--color-theme-glow) 30%, transparent),
     inset 0 0 0 1px rgba(255, 255, 255, 0.32);
@@ -187,23 +192,24 @@ export default {
     brightness(1.06)
     drop-shadow(0 0 42px var(--color-theme-glow));
   transform-origin: center;
-  will-change: transform;
+  will-change: clip-path, transform;
 }
 
 .gallery-page-opening__curtain.is-upper {
-  clip-path: polygon(0 0, 100% 0, 100% 60%, 100% 60%, 0 20%);
+  clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 30%, 12.5% 25%, 0 20%);
   transform: translate3d(0, 0, 0);
-  animation: diagonal-curtain-upper 1900ms linear both;
+  animation: diagonal-curtain-upper 1520ms linear 80ms both;
 }
 
 .gallery-page-opening__curtain.is-lower {
-  clip-path: polygon(0 20%, 0 20%, 100% 60%, 100% 100%, 0 100%);
+  clip-path: polygon(0 20%, 12.5% 25%, 25% 30%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%);
   transform: translate3d(0, 0, 0);
-  animation: diagonal-curtain-lower 1900ms linear both;
+  animation: diagonal-curtain-lower 1520ms linear 80ms both;
 }
 
 .gallery-page-opening__weave,
 .gallery-page-opening__motif,
+.gallery-page-opening__curtain-sky,
 .gallery-page-opening__sheen {
   position: absolute;
   inset: 0;
@@ -229,6 +235,60 @@ export default {
   filter: blur(0.6px);
   -webkit-mask-image: radial-gradient(ellipse at center, #000 12%, rgba(0, 0, 0, 0.82) 58%, transparent 94%);
   mask-image: radial-gradient(ellipse at center, #000 12%, rgba(0, 0, 0, 0.82) 58%, transparent 94%);
+}
+
+.gallery-page-opening__curtain-sky {
+  inset: -8%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle, var(--opening-curtain-star) 0 0.8px, transparent 1.8px) 0 0 / 92px 86px,
+    radial-gradient(circle, color-mix(in srgb, var(--opening-curtain-star) 72%, transparent) 0 1px, transparent 2px) 19px 31px / 137px 121px,
+    radial-gradient(circle, color-mix(in srgb, var(--color-accent) 58%, transparent) 0 1.2px, transparent 2.5px) 47px 12px / 181px 156px;
+  filter: blur(0.2px) drop-shadow(0 0 7px var(--color-theme-glow));
+  opacity: 0.24;
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 8%, rgba(0, 0, 0, 0.82) 64%, transparent 98%);
+  mask-image: radial-gradient(ellipse at center, #000 8%, rgba(0, 0, 0, 0.82) 64%, transparent 98%);
+  animation: diagonal-curtain-sky-drift 1900ms ease-out both;
+}
+
+.gallery-page-opening__curtain-sky::before,
+.gallery-page-opening__curtain-sky::after {
+  position: absolute;
+  left: -32vw;
+  width: clamp(90px, 14vw, 220px);
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--color-theme-glow-strong) 58%, var(--opening-curtain-meteor));
+  box-shadow:
+    0 0 8px var(--color-theme-glow),
+    0 0 18px color-mix(in srgb, var(--color-theme-glow-strong) 68%, transparent);
+  content: "";
+  opacity: 0;
+  transform: rotate(var(--opening-angle)) translateX(-12vw) scaleX(0.48);
+  transform-origin: right center;
+  animation: diagonal-curtain-meteor 1460ms ease-out 140ms both;
+}
+
+.gallery-page-opening__curtain-sky::before {
+  top: 26%;
+}
+
+.gallery-page-opening__curtain-sky::after {
+  top: 68%;
+  width: clamp(68px, 10vw, 160px);
+  animation-delay: 330ms;
+  animation-duration: 1320ms;
+}
+
+.gallery-page-opening__curtain.is-lower .gallery-page-opening__curtain-sky::before {
+  top: 18%;
+  animation-delay: 250ms;
+}
+
+.gallery-page-opening__curtain.is-lower .gallery-page-opening__curtain-sky::after {
+  top: 62%;
+  animation-delay: 430ms;
 }
 
 .gallery-page-opening__sheen {
@@ -425,27 +485,66 @@ export default {
 }
 
 @keyframes diagonal-curtain-upper {
-  0%, 8% {
-    clip-path: polygon(0 0, 100% 0, 100% 60%, 100% 60%, 0 20%);
-    transform: translate3d(0, 0, 0);
-    animation-timing-function: cubic-bezier(0.32, 0.04, 0.22, 1);
-  }
-  24% { clip-path: polygon(0 0, 100% 0, 100% 60%, 100% 60%, 0 20%); transform: translate3d(0, 0, 0); }
-  42% { clip-path: polygon(0 0, 100% 0, 100% 60%, 56% 38%, 0 12%); transform: translate3d(0, -5%, 0); }
-  58% { clip-path: polygon(0 0, 100% 0, 100% 52%, 82% 48%, 0 3%); transform: translate3d(0, -22%, 0); }
-  78%, 100% { clip-path: polygon(0 0, 100% 0, 100% 40%, 100% 40%, 0 0); transform: translate3d(0, -104%, 0); }
+  0%, 16% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 30%, 12.5% 25%, 0 20%); transform: translate3d(0, 0, 0); }
+  24% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 30%, 12.5% 25%, 0 17%); transform: translate3d(0, 0, 0); }
+  32% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 28%, 12.5% 18%, 0 6%); transform: translate3d(0, 0, 0); }
+  40% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 32%, 25% 21%, 12.5% 7%, 0 -7%); transform: translate3d(0, 0, 0); }
+  48% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 44%, 50% 35%, 37.5% 23%, 25% 9%, 12.5% -6%, 0 -14%); transform: translate3d(0, 0, 0); }
+  56% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 48%, 62.5% 38%, 50% 25%, 37.5% 11%, 25% -3%, 12.5% -9%, 0 -14%); transform: translate3d(0, 0, 0); }
+  64% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 52%, 75% 41%, 62.5% 28%, 50% 14%, 37.5% 2%, 25% -4%, 12.5% -9%, 0 -14%); transform: translate3d(0, 0, 0); }
+  72% { clip-path: polygon(0 0, 100% 0, 100% 56%, 87.5% 44%, 75% 29%, 62.5% 15%, 50% 6%, 37.5% 1%, 25% -4%, 12.5% -9%, 0 -14%); transform: translate3d(0, 0, 0); }
+  82% { clip-path: polygon(0 0, 100% 0, 100% 26%, 87.5% 21%, 75% 16%, 62.5% 11%, 50% 6%, 37.5% 1%, 25% -4%, 12.5% -9%, 0 -14%); transform: translate3d(0, -28%, 0); }
+  100% { clip-path: polygon(0 0, 100% 0, 100% 26%, 87.5% 21%, 75% 16%, 62.5% 11%, 50% 6%, 37.5% 1%, 25% -4%, 12.5% -9%, 0 -14%); transform: translate3d(0, -108%, 0); }
 }
 
 @keyframes diagonal-curtain-lower {
-  0%, 8% {
-    clip-path: polygon(0 20%, 0 20%, 100% 60%, 100% 100%, 0 100%);
-    transform: translate3d(0, 0, 0);
-    animation-timing-function: cubic-bezier(0.32, 0.04, 0.22, 1);
-  }
-  24% { clip-path: polygon(0 20%, 0 20%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
-  42% { clip-path: polygon(0 28%, 56% 44%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 5%, 0); }
-  58% { clip-path: polygon(0 37%, 82% 55%, 100% 68%, 100% 100%, 0 100%); transform: translate3d(0, 22%, 0); }
-  78%, 100% { clip-path: polygon(0 52%, 100% 76%, 100% 76%, 100% 100%, 0 100%); transform: translate3d(0, 104%, 0); }
+  0%, 16% { clip-path: polygon(0 20%, 12.5% 25%, 25% 30%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  24% { clip-path: polygon(0 23%, 12.5% 25%, 25% 30%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  32% { clip-path: polygon(0 34%, 12.5% 32%, 25% 32%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  40% { clip-path: polygon(0 47%, 12.5% 43%, 25% 39%, 37.5% 38%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  48% { clip-path: polygon(0 54%, 12.5% 56%, 25% 51%, 37.5% 47%, 50% 45%, 62.5% 46%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  56% { clip-path: polygon(0 54%, 12.5% 59%, 25% 63%, 37.5% 59%, 50% 55%, 62.5% 52%, 75% 52%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  64% { clip-path: polygon(0 54%, 12.5% 59%, 25% 64%, 37.5% 68%, 50% 66%, 62.5% 62%, 75% 59%, 87.5% 58%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  72% { clip-path: polygon(0 54%, 12.5% 59%, 25% 64%, 37.5% 69%, 50% 74%, 62.5% 75%, 75% 71%, 87.5% 66%, 100% 64%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  82% { clip-path: polygon(0 54%, 12.5% 59%, 25% 64%, 37.5% 69%, 50% 74%, 62.5% 79%, 75% 84%, 87.5% 89%, 100% 94%, 100% 100%, 0 100%); transform: translate3d(0, 28%, 0); }
+  100% { clip-path: polygon(0 54%, 12.5% 59%, 25% 64%, 37.5% 69%, 50% 74%, 62.5% 79%, 75% 84%, 87.5% 89%, 100% 94%, 100% 100%, 0 100%); transform: translate3d(0, 108%, 0); }
+}
+
+@keyframes diagonal-curtain-upper-portrait {
+  0%, 26% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 30%, 12.5% 25%, 0 20%); transform: translate3d(0, 0, 0); }
+  32% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 30%, 12.5% 25%, 0 17%); transform: translate3d(0, 0, 0); }
+  38% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 28%, 12.5% 18%, 0 6%); transform: translate3d(0, 0, 0); }
+  44% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 32%, 25% 21%, 12.5% 7%, 0 -7%); transform: translate3d(0, 0, 0); }
+  50% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 44%, 50% 35%, 37.5% 23%, 25% 9%, 12.5% -6%, 0 -14%); transform: translate3d(0, 0, 0); }
+  56% { clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 48%, 62.5% 38%, 50% 25%, 37.5% 11%, 25% -3%, 12.5% -9%, 0 -14%); transform: translate3d(0, 0, 0); }
+  62% { clip-path: polygon(0 0, 100% 0, 100% 56%, 87.5% 44%, 75% 29%, 62.5% 15%, 50% 6%, 37.5% 1%, 25% -4%, 12.5% -9%, 0 -14%); transform: translate3d(0, 0, 0); }
+  72% { clip-path: polygon(0 0, 100% 0, 100% 26%, 87.5% 21%, 75% 16%, 62.5% 11%, 50% 6%, 37.5% 1%, 25% -4%, 12.5% -9%, 0 -14%); transform: translate3d(0, -28%, 0); }
+  86%, 100% { clip-path: polygon(0 0, 100% 0, 100% 26%, 87.5% 21%, 75% 16%, 62.5% 11%, 50% 6%, 37.5% 1%, 25% -4%, 12.5% -9%, 0 -14%); transform: translate3d(0, -108%, 0); }
+}
+
+@keyframes diagonal-curtain-lower-portrait {
+  0%, 26% { clip-path: polygon(0 20%, 12.5% 25%, 25% 30%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  32% { clip-path: polygon(0 23%, 12.5% 25%, 25% 30%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  38% { clip-path: polygon(0 34%, 12.5% 32%, 25% 32%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  44% { clip-path: polygon(0 47%, 12.5% 43%, 25% 39%, 37.5% 38%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  50% { clip-path: polygon(0 54%, 12.5% 56%, 25% 51%, 37.5% 47%, 50% 45%, 62.5% 46%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  56% { clip-path: polygon(0 54%, 12.5% 59%, 25% 63%, 37.5% 59%, 50% 55%, 62.5% 52%, 75% 52%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  62% { clip-path: polygon(0 54%, 12.5% 59%, 25% 64%, 37.5% 69%, 50% 74%, 62.5% 75%, 75% 71%, 87.5% 66%, 100% 64%, 100% 100%, 0 100%); transform: translate3d(0, 0, 0); }
+  72% { clip-path: polygon(0 54%, 12.5% 59%, 25% 64%, 37.5% 69%, 50% 74%, 62.5% 79%, 75% 84%, 87.5% 89%, 100% 94%, 100% 100%, 0 100%); transform: translate3d(0, 28%, 0); }
+  86%, 100% { clip-path: polygon(0 54%, 12.5% 59%, 25% 64%, 37.5% 69%, 50% 74%, 62.5% 79%, 75% 84%, 87.5% 89%, 100% 94%, 100% 100%, 0 100%); transform: translate3d(0, 108%, 0); }
+}
+
+@keyframes diagonal-curtain-sky-drift {
+  0% { opacity: 0.16; transform: translate3d(-1.2%, -0.4%, 0) scale(1); }
+  48% { opacity: 0.3; transform: translate3d(0.7%, 0.4%, 0) scale(1.015); }
+  100% { opacity: 0.08; transform: translate3d(1.8%, 1%, 0) scale(1.03); }
+}
+
+@keyframes diagonal-curtain-meteor {
+  0%, 10% { opacity: 0; transform: rotate(var(--opening-angle)) translateX(-12vw) scaleX(0.48); }
+  28% { opacity: 0.28; }
+  72% { opacity: 0.18; }
+  100% { opacity: 0; transform: rotate(var(--opening-angle)) translateX(152vw) scaleX(1); }
 }
 
 @keyframes diagonal-curtain-sheen {
@@ -523,6 +622,14 @@ export default {
 @media screen and (orientation: portrait) {
   .gallery-page-opening {
     --opening-angle: 41deg;
+  }
+
+  .gallery-page-opening__curtain.is-upper {
+    animation-name: diagonal-curtain-upper-portrait;
+  }
+
+  .gallery-page-opening__curtain.is-lower {
+    animation-name: diagonal-curtain-lower-portrait;
   }
 
   .gallery-page-opening__comet-tail.is-soft {
