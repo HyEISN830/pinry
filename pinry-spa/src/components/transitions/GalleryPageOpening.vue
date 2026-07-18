@@ -32,7 +32,6 @@ import motionPreference from '../utils/motionPreference';
 import GalleryOpeningRenderer from './galleryOpeningRenderer';
 
 const OPENING_DURATION = 1900;
-const PAGE_REVEAL_CLASS = 'gallery-page-opening-reveal';
 
 export default {
   name: 'GalleryPageOpening',
@@ -65,7 +64,6 @@ export default {
   mounted() {
     this.observeMotionPreference();
     if (this.visible) {
-      this.startPageReveal();
       this.startRenderer();
       this.scheduleHide();
     }
@@ -74,7 +72,6 @@ export default {
     this.playGeneration += 1;
     this.clearHideTimer();
     this.stopObservingMotionPreference();
-    this.clearPageReveal();
     this.stopRenderer();
   },
   methods: {
@@ -103,7 +100,6 @@ export default {
       }
       this.playGeneration += 1;
       this.clearHideTimer();
-      this.clearPageReveal();
       this.stopRenderer();
       this.visible = false;
     },
@@ -121,28 +117,9 @@ export default {
           return;
         }
         this.stopRenderer();
-        this.clearPageReveal();
         this.visible = false;
         this.hideTimer = null;
       }, OPENING_DURATION);
-    },
-    startPageReveal() {
-      if (typeof document === 'undefined') {
-        return;
-      }
-      const root = document.documentElement;
-      const revealTarget = document.querySelector('.page-transition-shell');
-      root.classList.remove(PAGE_REVEAL_CLASS);
-      if (revealTarget) {
-        revealTarget.getBoundingClientRect();
-      }
-      root.classList.add(PAGE_REVEAL_CLASS);
-    },
-    clearPageReveal() {
-      if (typeof document === 'undefined') {
-        return;
-      }
-      document.documentElement.classList.remove(PAGE_REVEAL_CLASS);
     },
     startRenderer() {
       this.stopRenderer();
@@ -167,7 +144,6 @@ export default {
       const generation = this.playGeneration + 1;
       this.playGeneration = generation;
       this.clearHideTimer();
-      this.clearPageReveal();
       this.stopRenderer();
       if (motionPreference.isReducedMotionEnabled()) {
         this.visible = false;
@@ -179,7 +155,6 @@ export default {
         if (generation !== this.playGeneration || !this.visible) {
           return;
         }
-        this.startPageReveal();
         this.startRenderer();
         this.scheduleHide(generation);
       });
@@ -207,8 +182,6 @@ export default {
   --opening-nebula-x-to: 0.7%;
   --opening-nebula-y-from: -0.45%;
   --opening-nebula-y-to: -1.2%;
-  --opening-seam-near-y: 1.5px;
-  --opening-seam-mid-y: 4px;
   --opening-space-deep: color-mix(in srgb, #070d1b 76%, var(--color-accent));
   --opening-space-mid: color-mix(in srgb, #14213b 70%, var(--color-accent-strong));
   --opening-star-cool: color-mix(in srgb, #f5fbff 82%, var(--color-accent));
@@ -216,8 +189,11 @@ export default {
   position: fixed;
   z-index: var(--z-page-opening, 1000);
   inset: 0;
+  contain: layout paint;
   isolation: isolate;
   overflow: hidden;
+  background-color: #0b1020;
+  background-color: var(--opening-space-deep);
   pointer-events: auto;
   touch-action: none;
   animation: diagonal-opening-lifetime 1900ms linear both;
@@ -244,10 +220,7 @@ export default {
   background:
     linear-gradient(calc(90deg + var(--opening-angle)), transparent 12%, color-mix(in srgb, var(--color-theme-glow) 20%, transparent) 46%, color-mix(in srgb, #e8d9ff 8%, transparent) 58%, transparent 84%),
     radial-gradient(ellipse at center, color-mix(in srgb, var(--color-theme-glow) 18%, transparent), transparent 68%);
-  background-position: -18% 50%;
-  background-size: 160% 160%;
-  -webkit-backdrop-filter: blur(2.6px) saturate(0.8) brightness(0.97);
-  backdrop-filter: blur(2.6px) saturate(0.8) brightness(0.97);
+  filter: blur(12px) saturate(0.9);
   animation: diagonal-opening-soft-focus 1900ms ease-out both;
 }
 
@@ -273,15 +246,12 @@ export default {
   filter:
     saturate(1.02)
     brightness(0.99)
-    drop-shadow(0 var(--opening-seam-near-y) 0.8px rgba(255, 255, 255, 0.12))
-    drop-shadow(1px var(--opening-seam-mid-y) 3px color-mix(in srgb, var(--color-theme-glow) 18%, transparent))
-    drop-shadow(0 0 24px transparent);
+    drop-shadow(0 0 22px var(--color-theme-glow));
   transform-origin: center;
   will-change: clip-path, transform;
 }
 
-.gallery-page-opening__curtain::before,
-.gallery-page-opening__curtain::after {
+.gallery-page-opening__curtain::before {
   position: absolute;
   content: "";
   pointer-events: none;
@@ -296,21 +266,9 @@ export default {
     radial-gradient(ellipse at 48% 30%, color-mix(in srgb, #c9a6ff 25%, transparent), transparent 42%),
     radial-gradient(ellipse at 78% 62%, color-mix(in srgb, #ff9fcc 22%, transparent), transparent 39%),
     linear-gradient(112deg, transparent 15%, color-mix(in srgb, #91eeff 13%, transparent) 31%, color-mix(in srgb, #ddc3ff 16%, transparent) 48%, color-mix(in srgb, #ffb2d9 12%, transparent) 62%, transparent 82%);
-  filter: blur(10px) saturate(1.16);
+  filter: saturate(1.1);
   opacity: 0.58;
   animation: diagonal-curtain-nebula-drift 1900ms cubic-bezier(0.2, 0.68, 0.28, 1) both;
-}
-
-.gallery-page-opening__curtain::after {
-  z-index: 1;
-  inset: -14%;
-  background:
-    linear-gradient(calc(90deg + var(--opening-angle)), transparent 24%, color-mix(in srgb, #9eeeff 9%, transparent) 39%, rgba(255, 255, 255, 0.13) 47%, color-mix(in srgb, #efbdff 13%, transparent) 54%, color-mix(in srgb, #ffb6d8 9%, transparent) 62%, transparent 76%),
-    radial-gradient(ellipse at 36% 48%, rgba(255, 255, 255, 0.1), transparent 46%),
-    radial-gradient(ellipse at 72% 40%, color-mix(in srgb, var(--color-theme-glow-strong) 24%, transparent), transparent 44%);
-  filter: blur(6px) saturate(1.14);
-  opacity: 0.44;
-  animation: diagonal-curtain-veil-lustre 1900ms ease-out both;
 }
 
 .gallery-page-opening__curtain.is-upper {
@@ -328,9 +286,7 @@ export default {
   --opening-sky-y-to: -1.1%;
   clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 30%, 12.5% 25%, 0 20%);
   transform: translate3d(0, 0, 0);
-  animation:
-    diagonal-curtain-upper 1520ms linear 80ms both,
-    diagonal-curtain-edge-lustre 1520ms linear 80ms both;
+  animation: diagonal-curtain-upper 1520ms linear 80ms both;
 }
 
 .gallery-page-opening__curtain.is-lower {
@@ -342,17 +298,13 @@ export default {
   --opening-nebula-x-to: -0.65%;
   --opening-nebula-y-from: 0.4%;
   --opening-nebula-y-to: 1.1%;
-  --opening-seam-near-y: -1.5px;
-  --opening-seam-mid-y: -4px;
   --opening-motif-y-from: 0.3%;
   --opening-motif-y-to: 1%;
   --opening-sky-y-from: 0.4%;
   --opening-sky-y-to: 1.2%;
   clip-path: polygon(0 20%, 12.5% 25%, 25% 30%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%);
   transform: translate3d(0, 0, 0);
-  animation:
-    diagonal-curtain-lower 1520ms linear 80ms both,
-    diagonal-curtain-edge-lustre 1520ms linear 80ms both;
+  animation: diagonal-curtain-lower 1520ms linear 80ms both;
 }
 
 .gallery-page-opening__weave,
@@ -547,8 +499,18 @@ export default {
 }
 
 @keyframes diagonal-opening-lifetime {
-  0%, 97% { visibility: visible; }
-  100% { visibility: hidden; }
+  0%, 12% {
+    visibility: visible;
+    background-color: var(--opening-space-deep);
+  }
+  18%, 97% {
+    visibility: visible;
+    background-color: transparent;
+  }
+  100% {
+    visibility: hidden;
+    background-color: transparent;
+  }
 }
 
 @keyframes diagonal-curtain-upper {
@@ -601,53 +563,11 @@ export default {
   86%, 100% { clip-path: polygon(0 54%, 12.5% 59%, 25% 64%, 37.5% 69%, 50% 74%, 62.5% 79%, 75% 84%, 87.5% 89%, 100% 94%, 100% 100%, 0 100%); transform: translate3d(0, 108%, 0); }
 }
 
-@keyframes diagonal-curtain-edge-lustre {
-  0%, 14% {
-    filter:
-      saturate(1.02)
-      brightness(0.99)
-      drop-shadow(0 var(--opening-seam-near-y) 0.8px rgba(255, 255, 255, 0.12))
-      drop-shadow(1px var(--opening-seam-mid-y) 3px color-mix(in srgb, var(--color-theme-glow) 18%, transparent))
-      drop-shadow(0 0 24px transparent);
-  }
-  25% {
-    filter:
-      saturate(1.03)
-      brightness(1)
-      drop-shadow(0 var(--opening-seam-near-y) 0.8px rgba(255, 255, 255, 0.68))
-      drop-shadow(1px var(--opening-seam-mid-y) 4px color-mix(in srgb, #cbbdff 54%, transparent))
-      drop-shadow(0 0 24px color-mix(in srgb, var(--color-theme-glow) 76%, transparent));
-  }
-  66% {
-    filter:
-      saturate(1.02)
-      brightness(0.995)
-      drop-shadow(0 var(--opening-seam-near-y) 0.8px rgba(255, 255, 255, 0.58))
-      drop-shadow(1px var(--opening-seam-mid-y) 4px color-mix(in srgb, #bfeaff 40%, transparent))
-      drop-shadow(0 0 22px color-mix(in srgb, var(--color-theme-glow) 62%, transparent));
-  }
-  88%, 100% {
-    filter:
-      saturate(1)
-      brightness(0.99)
-      drop-shadow(0 var(--opening-seam-near-y) 0.8px rgba(255, 255, 255, 0))
-      drop-shadow(1px var(--opening-seam-mid-y) 4px transparent)
-      drop-shadow(0 0 20px transparent);
-  }
-}
-
 @keyframes diagonal-curtain-nebula-drift {
   0% { opacity: 0.38; transform: translate3d(var(--opening-nebula-x-from), var(--opening-nebula-y-from), 0) scale(1.01) rotate(-0.35deg); }
   38% { opacity: 0.62; transform: translate3d(0, 0, 0) scale(1.025) rotate(0deg); }
   72% { opacity: 0.48; transform: translate3d(var(--opening-nebula-x-to), var(--opening-nebula-y-to), 0) scale(1.045) rotate(0.3deg); }
   100% { opacity: 0.18; transform: translate3d(var(--opening-nebula-x-to), var(--opening-nebula-y-to), 0) scale(1.06) rotate(0.45deg); }
-}
-
-@keyframes diagonal-curtain-veil-lustre {
-  0%, 10% { opacity: 0.24; transform: translate3d(-1.2%, 0, 0) scale(0.99); }
-  43% { opacity: 0.5; transform: translate3d(0.25%, 0, 0) scale(1.012); }
-  70% { opacity: 0.34; transform: translate3d(1.1%, 0, 0) scale(1.026); }
-  100% { opacity: 0.1; transform: translate3d(1.7%, 0, 0) scale(1.04); }
 }
 
 @keyframes diagonal-curtain-sky-drift {
@@ -717,22 +637,10 @@ export default {
 }
 
 @keyframes diagonal-opening-soft-focus {
-  0%, 14% {
-    opacity: 0.3;
-    background-position: -18% 50%;
-  }
-  48% {
-    opacity: 0.18;
-    background-position: 48% 50%;
-  }
-  78% {
-    opacity: 0.06;
-    background-position: 102% 50%;
-  }
-  100% {
-    opacity: 0;
-    background-position: 118% 50%;
-  }
+  0%, 14% { opacity: 0.3; }
+  48% { opacity: 0.18; }
+  78% { opacity: 0.06; }
+  100% { opacity: 0; }
 }
 
 @media screen and (orientation: portrait) {
@@ -742,26 +650,24 @@ export default {
   }
 
   .gallery-page-opening__curtain.is-upper {
-    animation-name: diagonal-curtain-upper-portrait, diagonal-curtain-edge-lustre;
+    animation-name: diagonal-curtain-upper-portrait;
   }
 
   .gallery-page-opening__curtain.is-lower {
-    animation-name: diagonal-curtain-lower-portrait, diagonal-curtain-edge-lustre;
+    animation-name: diagonal-curtain-lower-portrait;
   }
 
 }
 
 @media screen and (max-width: 760px) {
   .gallery-page-opening::after {
-    -webkit-backdrop-filter: blur(1.8px) saturate(0.84) brightness(0.98);
-    backdrop-filter: blur(1.8px) saturate(0.84) brightness(0.98);
+    filter: blur(8px) saturate(0.88);
   }
 
   .gallery-page-opening__curtain::before {
-    filter: blur(8px) saturate(1.08);
+    filter: saturate(1.06);
   }
 
-  .gallery-page-opening__curtain::after,
   .gallery-page-opening__motif::after {
     display: none;
   }
@@ -781,56 +687,5 @@ export default {
 
 html[data-motion="reduce"] .gallery-page-opening {
   display: none;
-}
-</style>
-
-<style lang="scss">
-html.gallery-page-opening-reveal {
-  overflow-x: hidden;
-  scrollbar-color: transparent transparent;
-}
-
-html.gallery-page-opening-reveal::-webkit-scrollbar-thumb,
-html.gallery-page-opening-reveal::-webkit-scrollbar-track,
-html.gallery-page-opening-reveal::-webkit-scrollbar-button {
-  background: transparent;
-}
-
-html.gallery-page-opening-reveal .app-route-content {
-  overflow-x: hidden;
-  overflow-x: clip;
-}
-
-html.gallery-page-opening-reveal .page-transition-shell {
-  transform-origin: 50% 0;
-  backface-visibility: hidden;
-  will-change: opacity, transform;
-  animation: gallery-page-opening-page-reveal 1900ms cubic-bezier(0.2, 0.68, 0.25, 1) both;
-}
-
-html[data-motion="reduce"].gallery-page-opening-reveal .page-transition-shell {
-  opacity: 1;
-  transform: none;
-  will-change: auto;
-  animation: none;
-}
-
-@keyframes gallery-page-opening-page-reveal {
-  0%, 14% {
-    opacity: 0.96;
-    transform: translate3d(0, 0, 0) scale(1.01);
-  }
-  42% {
-    opacity: 0.975;
-    transform: translate3d(0, 0, 0) scale(1.006);
-  }
-  66% {
-    opacity: 0.994;
-    transform: translate3d(0, 0, 0) scale(1.0015);
-  }
-  82%, 100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
 }
 </style>

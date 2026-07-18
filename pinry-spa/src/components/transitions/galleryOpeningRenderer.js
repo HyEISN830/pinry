@@ -5,6 +5,7 @@ const MOVEMENT_END = 0.82;
 const MAX_PIXEL_RATIO = 2;
 const MAX_BACKING_PIXELS = 8294400;
 const MAX_PARTICLE_DELTA = 120;
+const MAX_TRAIL_CATCHUP = 120;
 const TRAIL_LIFETIME = 1120;
 const TRAIL_SAMPLE_INTERVAL = 16;
 const AFTERGLOW_ENTRY_DURATION = 90;
@@ -184,6 +185,7 @@ export default class GalleryOpeningRenderer {
     this.afterglowMotes = [];
     this.particles = [];
     this.pixelRatio = 1;
+    this.resizePending = false;
     this.spawnAccumulator = 0;
     this.spawnedParticles = 0;
     this.startTime = null;
@@ -192,6 +194,7 @@ export default class GalleryOpeningRenderer {
     this.width = 0;
     this.handleResize = this.handleResize.bind(this);
     this.renderFrame = this.renderFrame.bind(this);
+    this.scheduleResize = this.scheduleResize.bind(this);
   }
 
   start() {
@@ -201,7 +204,7 @@ export default class GalleryOpeningRenderer {
     this.stop();
     this.theme = getThemeColors();
     this.handleResize();
-    window.addEventListener('resize', this.handleResize, { passive: true });
+    window.addEventListener('resize', this.scheduleResize, { passive: true });
     this.startTime = window.performance.now();
     this.lastFrameTime = this.startTime;
     this.frameId = window.requestAnimationFrame(this.renderFrame);
@@ -212,7 +215,8 @@ export default class GalleryOpeningRenderer {
       window.cancelAnimationFrame(this.frameId);
       this.frameId = null;
     }
-    window.removeEventListener('resize', this.handleResize);
+    window.removeEventListener('resize', this.scheduleResize);
+    this.resizePending = false;
     this.startTime = null;
     this.lastFrameTime = null;
     this.lastTrailTime = -Infinity;
@@ -224,6 +228,10 @@ export default class GalleryOpeningRenderer {
     if (this.context && this.width && this.height) {
       this.context.clearRect(0, 0, this.width, this.height);
     }
+  }
+
+  scheduleResize() {
+    this.resizePending = true;
   }
 
   handleResize() {
@@ -352,10 +360,17 @@ export default class GalleryOpeningRenderer {
   }
 
   updateTrail(elapsed) {
+    if (Number.isFinite(this.lastTrailTime)
+      && elapsed - this.lastTrailTime > MAX_TRAIL_CATCHUP) {
+      this.trail = this.trail.filter(
+        point => elapsed - point.time < MAX_TRAIL_CATCHUP,
+      );
+      this.lastTrailTime = elapsed - MAX_TRAIL_CATCHUP;
+    }
     const oldestSampleTime = Math.max(COMET_DELAY, elapsed - TRAIL_LIFETIME);
     let sampleTime = Number.isFinite(this.lastTrailTime)
       ? Math.max(this.lastTrailTime + TRAIL_SAMPLE_INTERVAL, oldestSampleTime)
-      : oldestSampleTime;
+      : Math.max(oldestSampleTime, elapsed - MAX_TRAIL_CATCHUP);
     while (sampleTime <= elapsed) {
       const sampledComet = this.getCometState(sampleTime);
       if (sampledComet.localProgress > 0) {
@@ -983,6 +998,10 @@ export default class GalleryOpeningRenderer {
   }
 
   renderFrame(timestamp) {
+    if (this.resizePending) {
+      this.resizePending = false;
+      this.handleResize();
+    }
     const elapsed = timestamp - this.startTime;
     const frameDelta = Math.max(0, timestamp - this.lastFrameTime);
     const particleDelta = Math.min(MAX_PARTICLE_DELTA, frameDelta);
