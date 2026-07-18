@@ -7,7 +7,12 @@ const MAX_BACKING_PIXELS = 8294400;
 const MAX_PARTICLE_DELTA = 120;
 const TRAIL_LIFETIME = 1120;
 const TRAIL_SAMPLE_INTERVAL = 16;
+const AFTERGLOW_ENTRY_DURATION = 90;
+const AFTERGLOW_LINGER_DURATION = 270;
 const WHITE = [255, 255, 255];
+const PEARL_WHITE = [255, 250, 253];
+const PEARL_COOL = [198, 226, 255];
+const PEARL_WARM = [255, 207, 237];
 const AIRFLOW_LANES = [
   {
     alpha: 0.19,
@@ -52,6 +57,11 @@ function smoothstep(start, end, value) {
 
 function pulseAround(value, center, radius) {
   return 1 - smoothstep(0, radius, Math.abs(value - center));
+}
+
+function seededUnit(index, salt) {
+  const value = Math.sin(((index + 1) * 12.9898) + (salt * 78.233)) * 43758.5453;
+  return value - Math.floor(value);
 }
 
 function parseHexColor(value) {
@@ -137,6 +147,7 @@ function createGeometry(width, height) {
   const travelRadius = Math.max(width, height) * 0.72;
   return {
     angle,
+    afterglowBudget: isPortrait || width < 760 ? 5 : 10,
     center: {
       x: width * 0.5,
       y: height * 0.4,
@@ -170,6 +181,7 @@ export default class GalleryOpeningRenderer {
     this.height = 0;
     this.lastFrameTime = null;
     this.lastTrailTime = -Infinity;
+    this.afterglowMotes = [];
     this.particles = [];
     this.pixelRatio = 1;
     this.spawnAccumulator = 0;
@@ -206,6 +218,7 @@ export default class GalleryOpeningRenderer {
     this.lastTrailTime = -Infinity;
     this.spawnAccumulator = 0;
     this.spawnedParticles = 0;
+    this.afterglowMotes = [];
     this.particles = [];
     this.trail = [];
     if (this.context && this.width && this.height) {
@@ -217,7 +230,10 @@ export default class GalleryOpeningRenderer {
     const width = this.canvas.clientWidth || window.innerWidth;
     const height = this.canvas.clientHeight || window.innerHeight;
     const pixelRatio = getPixelRatio(width, height);
-    if (width === this.width && height === this.height && pixelRatio === this.pixelRatio) {
+    if (width === this.width
+      && height === this.height
+      && pixelRatio === this.pixelRatio
+      && this.afterglowMotes.length) {
       return;
     }
     const previousGeometry = this.geometry;
@@ -230,6 +246,7 @@ export default class GalleryOpeningRenderer {
     this.canvas.height = Math.max(1, Math.round(height * pixelRatio));
     this.context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     this.geometry = createGeometry(width, height);
+    this.afterglowMotes = this.createAfterglowMotes();
     if (!previousGeometry
       || previousGeometry.isPortrait !== this.geometry.isPortrait
       || !previousWidth
@@ -274,6 +291,56 @@ export default class GalleryOpeningRenderer {
       x: this.geometry.center.x + (this.geometry.direction.x * distance),
       y: this.geometry.center.y + (this.geometry.direction.y * distance),
     };
+  }
+
+  createAfterglowMotes() {
+    const { direction, normal } = this.geometry;
+    const shortEdge = Math.min(this.width, this.height);
+    const edgePadding = Math.min(42, shortEdge * 0.08);
+    const alongSpan = Math.min(
+      (this.width - (edgePadding * 2)) / Math.max(0.2, Math.abs(direction.x)),
+      (this.height - (edgePadding * 2)) / Math.max(0.2, Math.abs(direction.y)),
+    ) * 0.78;
+    const lateralSpan = shortEdge * 0.24;
+    const mobileScale = this.geometry.isPortrait || this.width < 760 ? 0.72 : 1;
+    const motes = [];
+
+    for (let index = 0; index < this.geometry.afterglowBudget; index += 1) {
+      const along = (seededUnit(index, 1) - 0.5) * alongSpan;
+      const lateral = (seededUnit(index, 2) - 0.5) * lateralSpan;
+      const accentColor = mixColor(
+        this.theme.start,
+        this.theme.end,
+        seededUnit(index, 4),
+      );
+      const pearlColor = mixColor(PEARL_COOL, PEARL_WARM, seededUnit(index, 8));
+      const x = clamp(
+        this.geometry.center.x + (direction.x * along) + (normal.x * lateral),
+        edgePadding,
+        this.width - edgePadding,
+      );
+      const y = clamp(
+        this.geometry.center.y + (direction.y * along) + (normal.y * lateral),
+        edgePadding,
+        this.height - edgePadding,
+      );
+      motes.push({
+        alpha: 0.2 + (seededUnit(index, 3) * 0.16),
+        color: mixColor(accentColor, pearlColor, 0.62),
+        delay: seededUnit(index, 5) * 52,
+        driftX: (seededUnit(index, 6) - 0.5) * 16 * mobileScale,
+        driftY: -(6 + (seededUnit(index, 7) * 12)) * mobileScale,
+        phase: seededUnit(index, 9) * Math.PI * 2,
+        radius: (6 + (seededUnit(index, 10) * 8)) * mobileScale,
+        scaleX: 0.82 + (seededUnit(index, 11) * 0.44),
+        scaleY: 0.84 + (seededUnit(index, 12) * 0.34),
+        softness: 0.18 + (seededUnit(index, 13) * 0.18),
+        x,
+        y,
+      });
+    }
+
+    return motes;
   }
 
   isNearViewport(comet) {
@@ -505,6 +572,52 @@ export default class GalleryOpeningRenderer {
     context.restore();
   }
 
+  strokePearlCutEdges(elapsed, options) {
+    const points = this.trail.filter(point => elapsed - point.time <= options.lifetime);
+    if (points.length < 2) {
+      return;
+    }
+    const { context } = this;
+    const [firstRecord] = points;
+    const lastRecord = points.slice(-1)[0];
+    const cool = mixColor(PEARL_COOL, this.theme.start, 0.16);
+    const warm = mixColor(PEARL_WARM, this.theme.end, 0.16);
+
+    context.save();
+    context.globalCompositeOperation = 'lighter';
+    context.filter = options.blur ? `blur(${options.blur}px)` : 'none';
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.lineWidth = options.width;
+
+    for (let side = -1; side <= 1; side += 2) {
+      const first = this.getCutEdgePoint(firstRecord, elapsed, options, side);
+      const last = this.getCutEdgePoint(lastRecord, elapsed, options, side);
+      const sideColor = side < 0 ? cool : warm;
+      const counterColor = side < 0 ? warm : cool;
+      const gradient = context.createLinearGradient(first.x, first.y, last.x, last.y);
+      gradient.addColorStop(0, rgba(sideColor, 0));
+      gradient.addColorStop(0.3, rgba(sideColor, options.alpha * 0.22));
+      gradient.addColorStop(0.64, rgba(PEARL_WHITE, options.alpha * 0.78));
+      gradient.addColorStop(0.86, rgba(counterColor, options.alpha * 0.52));
+      gradient.addColorStop(1, rgba(PEARL_WHITE, options.alpha * 0.82));
+      context.strokeStyle = gradient;
+      context.beginPath();
+      context.moveTo(first.x, first.y);
+      let previous = first;
+      for (let index = 1; index < points.length; index += 1) {
+        const current = this.getCutEdgePoint(points[index], elapsed, options, side);
+        const middleX = (previous.x + current.x) * 0.5;
+        const middleY = (previous.y + current.y) * 0.5;
+        context.quadraticCurveTo(previous.x, previous.y, middleX, middleY);
+        previous = current;
+      }
+      context.lineTo(last.x, last.y);
+      context.stroke();
+    }
+    context.restore();
+  }
+
   drawTrails(elapsed) {
     const portraitScale = this.geometry.isPortrait ? 0.78 : 1;
     const lifecycleAlpha = 1 - smoothstep(this.duration - 320, this.duration, elapsed);
@@ -619,6 +732,14 @@ export default class GalleryOpeningRenderer {
       turbulence: 1.5,
       width: this.geometry.isPortrait ? 9 : 12,
     });
+    this.strokePearlCutEdges(elapsed, {
+      alpha: 0.58 * pulse,
+      blur: 2.6,
+      lifetime: 165,
+      separation: separation * 0.88,
+      turbulence: 0.8,
+      width: this.geometry.isPortrait ? 3.2 : 4.2,
+    });
     this.strokeCutEdges(elapsed, {
       alpha: 0.96 * pulse,
       blur: 0.8,
@@ -686,6 +807,92 @@ export default class GalleryOpeningRenderer {
     const lifecycleAlpha = 1 - smoothstep(this.duration - 360, this.duration, elapsed);
     for (let index = 0; index < this.particles.length; index += 1) {
       this.drawParticle(this.particles[index], elapsed, lifecycleAlpha);
+    }
+  }
+
+  drawAfterglowBloom(lifecycleAlpha, progress) {
+    const { context } = this;
+    const mobileScale = this.geometry.isPortrait ? 0.78 : 1;
+    const radius = Math.min(this.width, this.height) * 0.17;
+    const offset = radius * (0.18 + (progress * 0.12));
+    const center = {
+      x: this.geometry.center.x + (this.geometry.direction.x * offset),
+      y: this.geometry.center.y + (this.geometry.direction.y * offset),
+    };
+
+    context.save();
+    context.globalCompositeOperation = 'lighter';
+    context.globalAlpha = lifecycleAlpha * 0.32;
+    context.translate(center.x, center.y);
+    context.rotate(this.geometry.angle);
+    context.scale(2.2 * mobileScale, 0.62);
+    const gradient = context.createRadialGradient(0, 0, 0, 0, 0, radius);
+    gradient.addColorStop(0, rgba(PEARL_WHITE, 0.22));
+    gradient.addColorStop(0.28, rgba(this.theme.start, 0.14));
+    gradient.addColorStop(0.66, rgba(this.theme.end, 0.07));
+    gradient.addColorStop(1, rgba(this.theme.end, 0));
+    context.filter = `blur(${Math.max(5, radius * 0.04)}px)`;
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(0, 0, radius, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
+  drawAfterglowMote(mote, elapsed, start, lifecycleAlpha) {
+    const { context } = this;
+    const localStart = start + mote.delay;
+    const progress = clamp((elapsed - localStart) / (this.duration - localStart));
+    const entry = smoothstep(0, 0.2, progress);
+    const drift = smoothstep(0, 1, progress);
+    const twinkle = 0.9 + (Math.sin((elapsed * 0.009) + mote.phase) * 0.1);
+    const alpha = lifecycleAlpha * entry * twinkle * mote.alpha;
+    if (alpha <= 0.004) {
+      return;
+    }
+    const x = mote.x + (mote.driftX * drift);
+    const y = mote.y + (mote.driftY * drift);
+
+    context.save();
+    context.globalCompositeOperation = 'lighter';
+    context.globalAlpha = alpha;
+    context.translate(x, y);
+    context.scale(mote.scaleX, mote.scaleY);
+    const gradient = context.createRadialGradient(0, 0, 0, 0, 0, mote.radius);
+    gradient.addColorStop(0, rgba(PEARL_WHITE, 0.52));
+    gradient.addColorStop(0.22, rgba(mote.color, 0.36));
+    gradient.addColorStop(0.68, rgba(mote.color, 0.14));
+    gradient.addColorStop(0.86, rgba(PEARL_WHITE, 0.18));
+    gradient.addColorStop(1, rgba(mote.color, 0));
+    context.filter = `blur(${mote.radius * mote.softness}px)`;
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(0, 0, mote.radius, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
+  drawAfterglow(elapsed) {
+    const fadeStart = this.duration - AFTERGLOW_LINGER_DURATION;
+    const start = fadeStart - AFTERGLOW_ENTRY_DURATION;
+    if (elapsed < start) {
+      return;
+    }
+    const entry = smoothstep(start, fadeStart, elapsed);
+    const fade = 1 - smoothstep(fadeStart, this.duration, elapsed);
+    const lifecycleAlpha = entry * fade;
+    if (lifecycleAlpha <= 0.004) {
+      return;
+    }
+    const progress = clamp((elapsed - start) / (this.duration - start));
+    this.drawAfterglowBloom(lifecycleAlpha, progress);
+    for (let index = 0; index < this.afterglowMotes.length; index += 1) {
+      this.drawAfterglowMote(
+        this.afterglowMotes[index],
+        elapsed,
+        start,
+        lifecycleAlpha,
+      );
     }
   }
 
@@ -772,6 +979,7 @@ export default class GalleryOpeningRenderer {
     this.drawCutGlow(elapsed);
     this.drawParticles(elapsed);
     this.drawHead(comet, elapsed);
+    this.drawAfterglow(elapsed);
   }
 
   renderFrame(timestamp) {
