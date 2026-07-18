@@ -135,12 +135,18 @@ export default {
 <style scoped lang="scss">
 .gallery-page-opening {
   --opening-angle: 14deg;
-  --opening-curtain-base: color-mix(in srgb, var(--color-surface-card) 72%, var(--color-accent));
-  --opening-curtain-mid: color-mix(in srgb, var(--color-surface-card) 66%, var(--color-accent-strong));
   --opening-curtain-shade: color-mix(in srgb, var(--color-surface-card) 84%, var(--color-accent));
-  --opening-curtain-star: color-mix(in srgb, #fff 62%, var(--color-accent));
   --opening-curtain-meteor: color-mix(in srgb, #fff 42%, var(--color-accent-strong));
-  --opening-pattern: color-mix(in srgb, var(--color-surface-card) 22%, var(--color-accent));
+  --opening-constellation-line: color-mix(in srgb, #fff 16%, var(--color-accent));
+  --opening-sheen-peak: 0.28;
+  --opening-sky-y-from: -0.35%;
+  --opening-sky-y-to: -1.1%;
+  --opening-motif-y-from: -0.25%;
+  --opening-motif-y-to: -0.9%;
+  --opening-space-deep: color-mix(in srgb, #070d1b 76%, var(--color-accent));
+  --opening-space-mid: color-mix(in srgb, #14213b 70%, var(--color-accent-strong));
+  --opening-star-cool: color-mix(in srgb, #f5fbff 82%, var(--color-accent));
+  --opening-star-warm: color-mix(in srgb, #ffe7b0 66%, var(--color-accent-strong));
   position: fixed;
   z-index: var(--z-page-opening, 1000);
   inset: 0;
@@ -183,30 +189,37 @@ export default {
   height: auto;
   overflow: hidden;
   background:
-    radial-gradient(circle at 48% 34%, rgba(255, 255, 255, 0.28), transparent 52%),
-    radial-gradient(circle at 82% 72%, var(--color-theme-glow), transparent 46%),
-    linear-gradient(145deg, color-mix(in srgb, var(--opening-curtain-base) 92%, transparent), color-mix(in srgb, var(--opening-curtain-mid) 84%, transparent)),
-    var(--color-accent-soft-gradient);
+    radial-gradient(ellipse at 16% 12%, color-mix(in srgb, var(--color-theme-glow-start) 78%, transparent), transparent 42%),
+    radial-gradient(ellipse at 84% 78%, color-mix(in srgb, var(--color-theme-glow-end) 72%, transparent), transparent 44%),
+    radial-gradient(ellipse at 52% 46%, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 54%),
+    linear-gradient(145deg, var(--opening-space-deep), var(--opening-space-mid) 52%, color-mix(in srgb, var(--opening-space-deep) 88%, #02050d));
   box-shadow:
-    inset 0 0 140px color-mix(in srgb, var(--color-theme-glow) 30%, transparent),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.32);
-  -webkit-backdrop-filter: blur(12px) saturate(0.86) brightness(1.08);
-  backdrop-filter: blur(12px) saturate(0.86) brightness(1.08);
+    inset 0 0 180px rgba(1, 4, 14, 0.42),
+    inset 0 0 92px color-mix(in srgb, var(--color-theme-glow) 18%, transparent),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.12);
   filter:
-    saturate(0.82)
-    brightness(1.06)
-    drop-shadow(0 0 42px var(--color-theme-glow));
+    saturate(0.96)
+    brightness(0.98)
+    drop-shadow(0 0 36px var(--color-theme-glow));
   transform-origin: center;
   will-change: clip-path, transform;
 }
 
 .gallery-page-opening__curtain.is-upper {
+  --opening-motif-y-from: -0.25%;
+  --opening-motif-y-to: -0.9%;
+  --opening-sky-y-from: -0.35%;
+  --opening-sky-y-to: -1.1%;
   clip-path: polygon(0 0, 100% 0, 100% 60%, 87.5% 55%, 75% 50%, 62.5% 45%, 50% 40%, 37.5% 35%, 25% 30%, 12.5% 25%, 0 20%);
   transform: translate3d(0, 0, 0);
   animation: diagonal-curtain-upper 1520ms linear 80ms both;
 }
 
 .gallery-page-opening__curtain.is-lower {
+  --opening-motif-y-from: 0.3%;
+  --opening-motif-y-to: 1%;
+  --opening-sky-y-from: 0.4%;
+  --opening-sky-y-to: 1.2%;
   clip-path: polygon(0 20%, 12.5% 25%, 25% 30%, 37.5% 35%, 50% 40%, 62.5% 45%, 75% 50%, 87.5% 55%, 100% 60%, 100% 100%, 0 100%);
   transform: translate3d(0, 0, 0);
   animation: diagonal-curtain-lower 1520ms linear 80ms both;
@@ -221,94 +234,129 @@ export default {
 }
 
 .gallery-page-opening__weave {
-  opacity: 0.22;
+  opacity: 0.12;
   background:
-    repeating-linear-gradient(96deg, transparent 0 29px, rgba(255, 255, 255, 0.24) 30px, transparent 34px),
-    repeating-linear-gradient(-7deg, transparent 0 14px, color-mix(in srgb, var(--opening-curtain-shade) 13%, transparent) 15px, transparent 20px),
-    var(--color-accent-gradient-diagonal);
-  filter: blur(0.45px) saturate(0.72);
+    repeating-linear-gradient(97deg, transparent 0 36px, rgba(255, 255, 255, 0.08) 37px, transparent 40px),
+    repeating-linear-gradient(-8deg, transparent 0 22px, color-mix(in srgb, var(--opening-curtain-shade) 10%, transparent) 23px, transparent 27px),
+    linear-gradient(145deg, color-mix(in srgb, var(--opening-space-mid) 18%, transparent), transparent 46%, color-mix(in srgb, var(--opening-space-deep) 24%, transparent));
+  filter: blur(0.3px) saturate(0.78);
   mix-blend-mode: soft-light;
 }
 
 .gallery-page-opening__motif {
-  inset: 3%;
+  inset: 1%;
   background:
-    radial-gradient(circle at 9% 18%, var(--opening-curtain-star) 0 1.2px, transparent 2.5px),
-    radial-gradient(circle at 27% 66%, color-mix(in srgb, var(--opening-curtain-star) 72%, transparent) 0 1px, transparent 2.2px),
-    radial-gradient(circle at 43% 31%, color-mix(in srgb, #fff 54%, var(--color-accent)) 0 1.4px, transparent 2.7px),
-    radial-gradient(circle at 61% 76%, color-mix(in srgb, var(--opening-curtain-star) 68%, transparent) 0 0.9px, transparent 2px),
-    radial-gradient(circle at 78% 24%, color-mix(in srgb, #fff 42%, var(--color-accent-strong)) 0 1.3px, transparent 2.6px),
-    radial-gradient(circle at 91% 58%, color-mix(in srgb, var(--opening-curtain-star) 64%, transparent) 0 1px, transparent 2.2px),
-    linear-gradient(31deg, transparent 49.55%, color-mix(in srgb, var(--opening-pattern) 17%, transparent) 49.8% 50.2%, transparent 50.45%) 8% 16% / 46% 42% no-repeat,
-    linear-gradient(-37deg, transparent 49.58%, color-mix(in srgb, #fff 12%, transparent) 49.84% 50.16%, transparent 50.42%) 68% 58% / 38% 36% no-repeat;
-  opacity: 0.22;
-  filter: blur(0.35px);
-  -webkit-mask-image: radial-gradient(ellipse at center, #000 12%, rgba(0, 0, 0, 0.82) 58%, transparent 94%);
-  mask-image: radial-gradient(ellipse at center, #000 12%, rgba(0, 0, 0, 0.82) 58%, transparent 94%);
+    radial-gradient(circle at 8% 72%, color-mix(in srgb, var(--opening-star-cool) 62%, transparent) 0 0.8px, transparent 2px),
+    radial-gradient(circle at 29% 48%, color-mix(in srgb, var(--opening-star-warm) 52%, transparent) 0 0.7px, transparent 1.9px),
+    radial-gradient(circle at 48% 14%, color-mix(in srgb, var(--opening-star-cool) 72%, transparent) 0 1px, transparent 2.3px),
+    radial-gradient(circle at 59% 86%, color-mix(in srgb, var(--opening-star-cool) 48%, transparent) 0 0.7px, transparent 1.8px),
+    radial-gradient(circle at 78% 36%, color-mix(in srgb, var(--opening-star-warm) 58%, transparent) 0 0.9px, transparent 2.1px),
+    radial-gradient(circle at 94% 18%, color-mix(in srgb, var(--opening-star-cool) 56%, transparent) 0 0.8px, transparent 2px);
+  opacity: 0.24;
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-theme-glow) 64%, transparent));
+  mix-blend-mode: screen;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 10%, rgba(0, 0, 0, 0.9) 68%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, #000 10%, rgba(0, 0, 0, 0.9) 68%, transparent 100%);
   animation: diagonal-curtain-motif-drift 1900ms ease-out both;
+}
+
+.gallery-page-opening__motif::before,
+.gallery-page-opening__motif::after {
+  position: absolute;
+  width: 34%;
+  height: 31%;
+  background:
+    radial-gradient(circle at 5% 58%, var(--opening-star-cool) 0 1.1px, transparent 2.4px),
+    radial-gradient(circle at 21% 28%, var(--opening-star-warm) 0 0.8px, transparent 2px),
+    radial-gradient(circle at 40% 52%, var(--opening-star-cool) 0 1.35px, transparent 2.7px),
+    radial-gradient(circle at 57% 18%, color-mix(in srgb, var(--opening-star-cool) 76%, transparent) 0 0.9px, transparent 2.1px),
+    radial-gradient(circle at 73% 44%, var(--opening-star-warm) 0 1.1px, transparent 2.4px),
+    radial-gradient(circle at 93% 26%, var(--opening-star-cool) 0 0.85px, transparent 2.1px),
+    linear-gradient(30deg, transparent 49.3%, var(--opening-constellation-line) 49.72% 50.28%, transparent 50.7%) 4% 25% / 21% 42% no-repeat,
+    linear-gradient(128deg, transparent 49.3%, var(--opening-constellation-line) 49.72% 50.28%, transparent 50.7%) 19% 26% / 25% 30% no-repeat,
+    linear-gradient(35deg, transparent 49.3%, var(--opening-constellation-line) 49.72% 50.28%, transparent 50.7%) 38% 15% / 23% 40% no-repeat,
+    linear-gradient(126deg, transparent 49.3%, var(--opening-constellation-line) 49.72% 50.28%, transparent 50.7%) 55% 17% / 22% 30% no-repeat,
+    linear-gradient(74deg, transparent 49.3%, var(--opening-constellation-line) 49.72% 50.28%, transparent 50.7%) 71% 22% / 24% 26% no-repeat;
+  content: "";
+}
+
+.gallery-page-opening__motif::before {
+  top: 8%;
+  left: 6%;
+}
+
+.gallery-page-opening__motif::after {
+  right: 4%;
+  bottom: 9%;
+  opacity: 0.74;
+  transform: rotate(168deg) scale(0.88);
+}
+
+.gallery-page-opening__curtain.is-lower .gallery-page-opening__motif::before {
+  transform: translate3d(4%, 8%, 0) rotate(-8deg);
+}
+
+.gallery-page-opening__curtain.is-lower .gallery-page-opening__motif::after {
+  transform: rotate(154deg) scale(0.82);
 }
 
 .gallery-page-opening__curtain-sky {
   inset: -8%;
   overflow: hidden;
   background:
-    radial-gradient(circle, var(--opening-curtain-star) 0 0.8px, transparent 1.8px) 0 0 / 92px 86px,
-    radial-gradient(circle, color-mix(in srgb, var(--opening-curtain-star) 72%, transparent) 0 1px, transparent 2px) 19px 31px / 137px 121px,
-    radial-gradient(circle, color-mix(in srgb, var(--color-accent) 58%, transparent) 0 1.2px, transparent 2.5px) 47px 12px / 181px 156px;
-  filter: blur(0.2px) drop-shadow(0 0 7px var(--color-theme-glow));
-  opacity: 0.18;
+    radial-gradient(circle, color-mix(in srgb, var(--opening-star-cool) 54%, transparent) 0 0.55px, transparent 1.45px) 7px 11px / 113px 97px,
+    radial-gradient(circle, color-mix(in srgb, var(--opening-star-warm) 58%, transparent) 0 0.78px, transparent 1.8px) 31px 43px / 181px 157px,
+    radial-gradient(circle, color-mix(in srgb, var(--opening-star-cool) 72%, transparent) 0 1.05px, transparent 2.25px) 79px 19px / 263px 223px,
+    radial-gradient(circle, #fff 0 1.25px, color-mix(in srgb, var(--opening-star-cool) 56%, transparent) 1.5px 3.6px, transparent 6.4px) 151px 73px / 397px 331px;
+  opacity: 0.3;
   mix-blend-mode: screen;
-  -webkit-mask-image: radial-gradient(ellipse at center, #000 8%, rgba(0, 0, 0, 0.82) 64%, transparent 98%);
-  mask-image: radial-gradient(ellipse at center, #000 8%, rgba(0, 0, 0, 0.82) 64%, transparent 98%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 8%, rgba(0, 0, 0, 0.9) 68%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, #000 8%, rgba(0, 0, 0, 0.9) 68%, transparent 100%);
   animation: diagonal-curtain-sky-drift 1900ms ease-out both;
+}
+
+.gallery-page-opening__curtain.is-lower .gallery-page-opening__curtain-sky {
+  background-position: 41px 23px, 13px 61px, 107px 37px, 229px 111px;
 }
 
 .gallery-page-opening__curtain-sky::before,
 .gallery-page-opening__curtain-sky::after {
   position: absolute;
-  left: -32vw;
-  width: clamp(90px, 14vw, 220px);
-  height: 2px;
+  left: -26vw;
+  width: clamp(92px, 12vw, 190px);
+  height: 1px;
   border-radius: 999px;
   background: linear-gradient(90deg, transparent, var(--color-theme-glow-strong) 58%, var(--opening-curtain-meteor));
   box-shadow:
-    0 0 8px var(--color-theme-glow),
-    0 0 18px color-mix(in srgb, var(--color-theme-glow-strong) 68%, transparent);
+    0 0 7px var(--color-theme-glow),
+    0 0 14px color-mix(in srgb, var(--color-theme-glow-strong) 54%, transparent);
   content: "";
   opacity: 0;
   transform: rotate(var(--opening-angle)) translateX(-12vw) scaleX(0.48);
   transform-origin: right center;
-  animation: diagonal-curtain-meteor 1460ms ease-out 140ms both;
+  animation: diagonal-curtain-meteor 1380ms ease-out 180ms both;
 }
 
 .gallery-page-opening__curtain-sky::before {
-  top: 26%;
+  top: 22%;
 }
 
 .gallery-page-opening__curtain-sky::after {
-  top: 68%;
-  width: clamp(68px, 10vw, 160px);
-  animation-delay: 330ms;
-  animation-duration: 1320ms;
+  display: none;
 }
 
 .gallery-page-opening__curtain.is-lower .gallery-page-opening__curtain-sky::before {
-  top: 18%;
-  animation-delay: 250ms;
-}
-
-.gallery-page-opening__curtain.is-lower .gallery-page-opening__curtain-sky::after {
-  top: 62%;
-  animation-delay: 430ms;
+  top: 68%;
+  animation-delay: 360ms;
 }
 
 .gallery-page-opening__sheen {
   inset: -10%;
   background:
-    radial-gradient(ellipse at 48% 18%, rgba(255, 255, 255, 0.38), transparent 54%),
-    linear-gradient(112deg, transparent 18%, rgba(255, 255, 255, 0.28) 42%, transparent 66%);
-  filter: blur(20px);
-  opacity: 0.48;
+    radial-gradient(ellipse at 48% 18%, rgba(255, 255, 255, 0.18), transparent 54%),
+    linear-gradient(112deg, transparent 18%, rgba(255, 255, 255, 0.11) 42%, transparent 66%);
+  filter: blur(16px);
+  opacity: 0.26;
   mix-blend-mode: screen;
   animation: diagonal-curtain-sheen 1520ms ease-out both;
 }
@@ -387,28 +435,30 @@ export default {
 }
 
 @keyframes diagonal-curtain-sky-drift {
-  0% { opacity: 0.16; transform: translate3d(-1.2%, -0.4%, 0) scale(1); }
-  48% { opacity: 0.3; transform: translate3d(0.7%, 0.4%, 0) scale(1.015); }
-  100% { opacity: 0.08; transform: translate3d(1.8%, 1%, 0) scale(1.03); }
+  0% { opacity: 0.3; transform: translate3d(-0.6%, var(--opening-sky-y-from), 0) scale(1); }
+  42% { opacity: 0.44; transform: translate3d(0.1%, 0, 0) scale(1.008); }
+  74% { opacity: 0.3; transform: translate3d(0.7%, var(--opening-sky-y-to), 0) scale(1.014); }
+  100% { opacity: 0.12; transform: translate3d(1.2%, var(--opening-sky-y-to), 0) scale(1.018); }
 }
 
 @keyframes diagonal-curtain-meteor {
   0%, 10% { opacity: 0; transform: rotate(var(--opening-angle)) translateX(-12vw) scaleX(0.48); }
-  28% { opacity: 0.18; }
-  72% { opacity: 0.1; }
+  30% { opacity: 0.34; }
+  72% { opacity: 0.16; }
   100% { opacity: 0; transform: rotate(var(--opening-angle)) translateX(152vw) scaleX(1); }
 }
 
 @keyframes diagonal-curtain-motif-drift {
-  0% { opacity: 0.12; transform: translate3d(-0.6%, -0.3%, 0) scale(1); }
-  48% { opacity: 0.22; transform: translate3d(0.35%, 0.2%, 0) scale(1.008); }
-  100% { opacity: 0.08; transform: translate3d(0.9%, 0.55%, 0) scale(1.016); }
+  0% { opacity: 0.18; transform: translate3d(-0.4%, var(--opening-motif-y-from), 0) scale(1); }
+  36% { opacity: 0.3; transform: translate3d(0.2%, 0, 0) scale(1.005); }
+  58% { opacity: 0.34; transform: translate3d(0.7%, var(--opening-motif-y-to), 0) scale(1.01); }
+  100% { opacity: 0.1; transform: translate3d(1.4%, var(--opening-motif-y-to), 0) scale(1.016); }
 }
 
 @keyframes diagonal-curtain-sheen {
-  0%, 10% { opacity: 0.22; transform: translate3d(-3%, 0, 0) scale(0.96); }
-  48% { opacity: 0.48; transform: translate3d(2%, 0, 0) scale(1.02); }
-  100% { opacity: 0.12; transform: translate3d(6%, 0, 0) scale(1.08); }
+  0%, 10% { opacity: 0.1; transform: translate3d(-3%, 0, 0) scale(0.96); }
+  48% { opacity: var(--opening-sheen-peak); transform: translate3d(2%, 0, 0) scale(1.02); }
+  100% { opacity: 0.06; transform: translate3d(6%, 0, 0) scale(1.08); }
 }
 
 @keyframes diagonal-opening-bloom {
@@ -427,6 +477,7 @@ export default {
 @media screen and (orientation: portrait) {
   .gallery-page-opening {
     --opening-angle: 41deg;
+    --opening-sheen-peak: 0.22;
   }
 
   .gallery-page-opening__curtain.is-upper {
@@ -437,10 +488,23 @@ export default {
     animation-name: diagonal-curtain-lower-portrait;
   }
 
-  .gallery-page-opening__motif {
-    opacity: 0.18;
+}
+
+@media screen and (max-width: 760px) {
+  .gallery-page-opening__curtain {
+    filter:
+      saturate(0.94)
+      brightness(0.97)
+      drop-shadow(0 0 28px var(--color-theme-glow));
   }
 
+  .gallery-page-opening__motif::after {
+    display: none;
+  }
+
+  .gallery-page-opening__sheen {
+    filter: blur(12px);
+  }
 }
 
 html[data-motion="reduce"] .gallery-page-opening {

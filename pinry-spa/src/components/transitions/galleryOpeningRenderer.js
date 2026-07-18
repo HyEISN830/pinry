@@ -8,6 +8,38 @@ const MAX_PARTICLE_DELTA = 120;
 const TRAIL_LIFETIME = 1120;
 const TRAIL_SAMPLE_INTERVAL = 16;
 const WHITE = [255, 255, 255];
+const AIRFLOW_LANES = [
+  {
+    alpha: 0.19,
+    dash: [],
+    lead: 54,
+    offset: 18,
+    phase: 0,
+    spread: 10,
+    wake: 80,
+    width: 0.9,
+  },
+  {
+    alpha: 0.14,
+    dash: [32, 24],
+    lead: 68,
+    offset: 30,
+    phase: 11,
+    spread: 14,
+    wake: 108,
+    width: 0.78,
+  },
+  {
+    alpha: 0.1,
+    dash: [20, 31],
+    lead: 82,
+    offset: 43,
+    phase: 23,
+    spread: 17,
+    wake: 134,
+    width: 0.68,
+  },
+];
 
 function clamp(value, minimum = 0, maximum = 1) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -505,6 +537,77 @@ export default class GalleryOpeningRenderer {
     });
   }
 
+  drawAirflow(comet, elapsed) {
+    if (comet.alpha <= 0.01 || !this.isNearViewport(comet)) {
+      return;
+    }
+    const entry = smoothstep(0.11, 0.22, comet.localProgress);
+    const exit = 1 - smoothstep(0.67, 0.84, comet.localProgress);
+    const breathing = 0.94 + (Math.sin(elapsed * 0.011) * 0.06);
+    const alpha = comet.alpha * entry * exit * breathing;
+    if (alpha <= 0.005) {
+      return;
+    }
+
+    const { context } = this;
+    const scale = this.geometry.isPortrait ? 0.72 : 1;
+    const alphaScale = this.geometry.isPortrait ? 0.84 : 1;
+    const laneCount = this.geometry.isPortrait || this.width < 760 ? 2 : 3;
+    context.save();
+    context.globalCompositeOperation = 'lighter';
+    context.translate(comet.x, comet.y);
+    context.rotate(this.geometry.angle);
+    const gradient = context.createLinearGradient(-142 * scale, 0, 90 * scale, 0);
+    gradient.addColorStop(0, rgba(this.theme.start, 0));
+    gradient.addColorStop(0.27, rgba(this.theme.start, 0.48));
+    gradient.addColorStop(0.61, rgba(WHITE, 0.9));
+    gradient.addColorStop(0.84, rgba(this.theme.end, 0.54));
+    gradient.addColorStop(1, rgba(this.theme.end, 0));
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.strokeStyle = gradient;
+    context.shadowBlur = 4.5 * scale;
+    context.shadowColor = rgba(this.theme.end, 0.48);
+
+    for (let laneIndex = 0; laneIndex < laneCount; laneIndex += 1) {
+      const lane = AIRFLOW_LANES[laneIndex];
+      const lead = lane.lead * scale;
+      const offset = lane.offset * scale;
+      const spread = lane.spread * scale;
+      const wake = lane.wake * scale;
+      const lanePulse = 0.95 + (Math.sin((elapsed * 0.009) + lane.phase) * 0.05);
+      context.globalAlpha = alpha * alphaScale * lane.alpha * lanePulse;
+      context.lineWidth = lane.width * scale;
+      context.setLineDash(lane.dash.length
+        ? [lane.dash[0] * scale, lane.dash[1] * scale]
+        : []);
+      context.lineDashOffset = (-elapsed * 0.052 * scale) + lane.phase;
+
+      for (let side = -1; side <= 1; side += 2) {
+        context.beginPath();
+        context.moveTo(-wake, side * offset * 0.58);
+        context.bezierCurveTo(
+          -wake * 0.52,
+          side * offset * 0.68,
+          -lead * 0.1,
+          side * (offset + (spread * 0.86)),
+          lead * 0.42,
+          side * (offset + spread),
+        );
+        context.bezierCurveTo(
+          lead * 0.72,
+          side * (offset + (spread * 0.92)),
+          lead * 0.94,
+          side * (offset + (spread * 0.32)),
+          lead,
+          side * offset * 0.72,
+        );
+        context.stroke();
+      }
+    }
+    context.restore();
+  }
+
   drawCutGlow(elapsed) {
     const pulse = 0.84 + (Math.sin(elapsed * 0.014) * 0.1);
     const separation = this.geometry.isPortrait ? 14 : 18;
@@ -665,6 +768,7 @@ export default class GalleryOpeningRenderer {
     const { context } = this;
     context.clearRect(0, 0, this.width, this.height);
     this.drawTrails(elapsed);
+    this.drawAirflow(comet, elapsed);
     this.drawCutGlow(elapsed);
     this.drawParticles(elapsed);
     this.drawHead(comet, elapsed);
