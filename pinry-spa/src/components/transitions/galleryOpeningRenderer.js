@@ -10,10 +10,18 @@ const TRAIL_LIFETIME = 1120;
 const TRAIL_SAMPLE_INTERVAL = 16;
 const AFTERGLOW_ENTRY_DURATION = 90;
 const AFTERGLOW_LINGER_DURATION = 270;
+const VEIL_REVEAL_START = 260;
+const VEIL_REVEAL_END = 1300;
+const VEIL_FADE_START = 1180;
+const VEIL_FADE_END = 1650;
 const WHITE = [255, 255, 255];
 const PEARL_WHITE = [255, 250, 253];
 const PEARL_COOL = [198, 226, 255];
 const PEARL_WARM = [255, 207, 237];
+const DEEP_SPACE_TOP = [5, 7, 20];
+const DEEP_SPACE_MIDDLE = [11, 9, 28];
+const DEEP_SPACE_BOTTOM = [4, 7, 19];
+const DEEP_SPACE_EDGE = [2, 3, 10];
 const AIRFLOW_LANES = [
   {
     alpha: 0.19,
@@ -191,6 +199,8 @@ export default class GalleryOpeningRenderer {
     this.startTime = null;
     this.theme = getThemeColors();
     this.trail = [];
+    this.veilCanvas = null;
+    this.veilContext = null;
     this.width = 0;
     this.handleResize = this.handleResize.bind(this);
     this.renderFrame = this.renderFrame.bind(this);
@@ -207,6 +217,7 @@ export default class GalleryOpeningRenderer {
     window.addEventListener('resize', this.scheduleResize, { passive: true });
     this.startTime = window.performance.now();
     this.lastFrameTime = this.startTime;
+    this.draw(this.getCometState(0), 0);
     this.frameId = window.requestAnimationFrame(this.renderFrame);
   }
 
@@ -227,6 +238,10 @@ export default class GalleryOpeningRenderer {
     this.trail = [];
     if (this.context && this.width && this.height) {
       this.context.clearRect(0, 0, this.width, this.height);
+    }
+    if (this.veilCanvas) {
+      this.veilCanvas.width = 1;
+      this.veilCanvas.height = 1;
     }
   }
 
@@ -255,6 +270,7 @@ export default class GalleryOpeningRenderer {
     this.context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     this.geometry = createGeometry(width, height);
     this.afterglowMotes = this.createAfterglowMotes();
+    this.rebuildVeil();
     if (!previousGeometry
       || previousGeometry.isPortrait !== this.geometry.isPortrait
       || !previousWidth
@@ -284,6 +300,64 @@ export default class GalleryOpeningRenderer {
       x: particle.x * scaleX,
       y: particle.y * scaleY,
     }));
+  }
+
+  rebuildVeil() {
+    if (!this.veilCanvas) {
+      this.veilCanvas = document.createElement('canvas');
+      this.veilContext = this.veilCanvas.getContext('2d');
+    }
+    if (!this.veilContext) {
+      return;
+    }
+    this.veilCanvas.width = Math.max(1, Math.round(this.width));
+    this.veilCanvas.height = Math.max(1, Math.round(this.height));
+    const { veilContext } = this;
+    veilContext.setTransform(1, 0, 0, 1, 0, 0);
+    veilContext.clearRect(0, 0, this.width, this.height);
+    const baseAlpha = this.geometry.isPortrait || this.width < 760 ? 0.95 : 0.93;
+
+    const baseGradient = veilContext.createLinearGradient(
+      this.width * 0.08,
+      0,
+      this.width * 0.92,
+      this.height,
+    );
+    baseGradient.addColorStop(0, rgba(DEEP_SPACE_TOP, baseAlpha));
+    baseGradient.addColorStop(0.52, rgba(DEEP_SPACE_MIDDLE, baseAlpha));
+    baseGradient.addColorStop(1, rgba(DEEP_SPACE_BOTTOM, baseAlpha));
+    veilContext.fillStyle = baseGradient;
+    veilContext.fillRect(0, 0, this.width, this.height);
+
+    const themeWash = veilContext.createLinearGradient(
+      0,
+      this.height * 0.18,
+      this.width,
+      this.height * 0.74,
+    );
+    themeWash.addColorStop(0, rgba(this.theme.start, 0.08));
+    themeWash.addColorStop(0.46, rgba(this.theme.start, 0.02));
+    themeWash.addColorStop(0.7, rgba(this.theme.end, 0.035));
+    themeWash.addColorStop(1, rgba(this.theme.end, 0.09));
+    veilContext.fillStyle = themeWash;
+    veilContext.fillRect(0, 0, this.width, this.height);
+
+    const centerX = this.width * 0.5;
+    const centerY = this.height * 0.42;
+    const vignetteRadius = Math.hypot(this.width, this.height) * 0.58;
+    const vignette = veilContext.createRadialGradient(
+      centerX,
+      centerY,
+      Math.min(this.width, this.height) * 0.08,
+      centerX,
+      centerY,
+      vignetteRadius,
+    );
+    vignette.addColorStop(0, rgba(DEEP_SPACE_EDGE, 0));
+    vignette.addColorStop(0.58, rgba(DEEP_SPACE_EDGE, 0.04));
+    vignette.addColorStop(1, rgba(DEEP_SPACE_EDGE, 0.36));
+    veilContext.fillStyle = vignette;
+    veilContext.fillRect(0, 0, this.width, this.height);
   }
 
   getCometState(elapsed) {
@@ -911,6 +985,89 @@ export default class GalleryOpeningRenderer {
     }
   }
 
+  drawVeil(elapsed) {
+    if (!this.veilCanvas || !this.veilContext) {
+      return;
+    }
+    const alpha = 1 - smoothstep(VEIL_FADE_START, VEIL_FADE_END, elapsed);
+    if (alpha <= 0.001) {
+      return;
+    }
+    const { context } = this;
+    context.save();
+    context.globalCompositeOperation = 'source-over';
+    context.globalAlpha = alpha;
+    context.drawImage(
+      this.veilCanvas,
+      0,
+      0,
+      this.width,
+      this.height,
+    );
+    context.restore();
+  }
+
+  drawVeilReveal(elapsed) {
+    if (elapsed >= VEIL_FADE_END) {
+      return;
+    }
+    const comet = this.getCometState(elapsed);
+    if (comet.movementProgress <= 0) {
+      return;
+    }
+    const revealStart = this.getCometState(
+      COMET_DELAY + (COMET_DURATION * MOVEMENT_START),
+    );
+    const expansion = smoothstep(VEIL_REVEAL_START, VEIL_REVEAL_END, elapsed);
+    const shortEdge = Math.min(this.width, this.height);
+    const minimumWidth = clamp(shortEdge * 0.055, 34, 54);
+    const maximumWidth = clamp(shortEdge * 0.22, 96, 220);
+    const featherWidth = clamp(shortEdge * 0.04, 20, 42);
+    const revealWidth = minimumWidth
+      + ((maximumWidth - minimumWidth) * expansion);
+    const outerWidth = revealWidth + (featherWidth * 2);
+    const headLag = (outerWidth * 0.5)
+      + (this.geometry.isPortrait ? 18 : 24);
+    const travelled = this.geometry.travelRadius * 2 * comet.movementProgress;
+    if (travelled <= headLag) {
+      return;
+    }
+    const revealHead = {
+      x: comet.x - (this.geometry.direction.x * headLag),
+      y: comet.y - (this.geometry.direction.y * headLag),
+    };
+    const featherStop = featherWidth / outerWidth;
+    const middleX = (revealStart.x + revealHead.x) * 0.5;
+    const middleY = (revealStart.y + revealHead.y) * 0.5;
+    const { context } = this;
+    const featherGradient = context.createLinearGradient(
+      middleX - (this.geometry.normal.x * outerWidth * 0.5),
+      middleY - (this.geometry.normal.y * outerWidth * 0.5),
+      middleX + (this.geometry.normal.x * outerWidth * 0.5),
+      middleY + (this.geometry.normal.y * outerWidth * 0.5),
+    );
+    featherGradient.addColorStop(0, rgba(WHITE, 0));
+    featherGradient.addColorStop(featherStop * 0.28, rgba(WHITE, 0.08));
+    featherGradient.addColorStop(featherStop * 0.62, rgba(WHITE, 0.32));
+    featherGradient.addColorStop(featherStop, rgba(WHITE, 1));
+    featherGradient.addColorStop(1 - featherStop, rgba(WHITE, 1));
+    featherGradient.addColorStop(1 - (featherStop * 0.62), rgba(WHITE, 0.32));
+    featherGradient.addColorStop(1 - (featherStop * 0.28), rgba(WHITE, 0.08));
+    featherGradient.addColorStop(1, rgba(WHITE, 0));
+
+    context.save();
+    context.globalCompositeOperation = 'destination-out';
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    context.lineWidth = outerWidth;
+    context.strokeStyle = featherGradient;
+    context.beginPath();
+    context.moveTo(revealStart.x, revealStart.y);
+    context.lineTo(revealHead.x, revealHead.y);
+    context.stroke();
+    context.restore();
+  }
+
   drawBloom(comet, radius, color, alpha, blur, scaleX, scaleY) {
     const { context } = this;
     context.save();
@@ -989,6 +1146,8 @@ export default class GalleryOpeningRenderer {
   draw(comet, elapsed) {
     const { context } = this;
     context.clearRect(0, 0, this.width, this.height);
+    this.drawVeil(elapsed);
+    this.drawVeilReveal(elapsed);
     this.drawTrails(elapsed);
     this.drawAirflow(comet, elapsed);
     this.drawCutGlow(elapsed);
