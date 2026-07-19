@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from taggit.models import Tag
 
-from core.likes import like_actor_keys
+from core.likes import like_actor_keys, view_actor_keys
 from core.models import ChunkedUpload, Image, Board, Comic, ComicPage, MotionPhoto
 from core.models import ImageFetchJob, Pin
 from django_images.models import Thumbnail
@@ -216,6 +216,8 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
             "boards",
             "likes_count",
             "viewer_liked",
+            "viewed_count",
+            "viewer_viewed",
         )
 
     submitter = UserSerializer(read_only=True)
@@ -233,6 +235,8 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
     boards = serializers.SerializerMethodField(read_only=True)
     likes_count = serializers.SerializerMethodField(read_only=True)
     viewer_liked = serializers.SerializerMethodField(read_only=True)
+    viewed_count = serializers.SerializerMethodField(read_only=True)
+    viewer_viewed = serializers.SerializerMethodField(read_only=True)
     image_fetch_status = serializers.SerializerMethodField(read_only=True)
     image_fetch_error = serializers.SerializerMethodField(read_only=True)
     image_fetch_job_id = serializers.SerializerMethodField(read_only=True)
@@ -245,7 +249,8 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
         return PinBoardSerializer(boards, many=True, context=self.context).data
 
     def get_likes_count(self, instance):
-        return getattr(instance, 'likes_count', instance.likes.count())
+        count = getattr(instance, 'likes_count', None)
+        return count if count is not None else instance.likes.count()
 
     def get_viewer_liked(self, instance):
         liked = getattr(instance, 'viewer_liked', None)
@@ -256,6 +261,21 @@ class PinSerializer(serializers.HyperlinkedModelSerializer):
             return False
         return instance.likes.filter(
             actor_key__in=like_actor_keys(request),
+        ).exists()
+
+    def get_viewed_count(self, instance):
+        count = getattr(instance, 'viewed_count', None)
+        return count if count is not None else instance.views.count()
+
+    def get_viewer_viewed(self, instance):
+        viewed = getattr(instance, 'viewer_viewed', None)
+        if viewed is not None:
+            return viewed
+        request = self.context.get('request')
+        if request is None:
+            return False
+        return instance.views.filter(
+            actor_key__in=view_actor_keys(request),
         ).exists()
 
     def get_image_fetch_status(self, instance):
@@ -416,6 +436,8 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
             'pages_to_reorder',
             'likes_count',
             'viewer_liked',
+            'viewed_count',
+            'viewer_viewed',
         )
         read_only_fields = ('submitter', 'published')
 
@@ -446,6 +468,8 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
     )
     likes_count = serializers.SerializerMethodField(read_only=True)
     viewer_liked = serializers.SerializerMethodField(read_only=True)
+    viewed_count = serializers.SerializerMethodField(read_only=True)
+    viewer_viewed = serializers.SerializerMethodField(read_only=True)
 
     def get_total_pages(self, instance):
         return instance.pages.count()
@@ -457,7 +481,8 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
         return ComicPageSerializer(page, context=self.context).data
 
     def get_likes_count(self, instance):
-        return getattr(instance, 'likes_count', instance.likes.count())
+        count = getattr(instance, 'likes_count', None)
+        return count if count is not None else instance.likes.count()
 
     def get_viewer_liked(self, instance):
         liked = getattr(instance, 'viewer_liked', None)
@@ -468,6 +493,21 @@ class ComicSerializer(serializers.HyperlinkedModelSerializer):
             return False
         return instance.likes.filter(
             actor_key__in=like_actor_keys(request),
+        ).exists()
+
+    def get_viewed_count(self, instance):
+        count = getattr(instance, 'viewed_count', None)
+        return count if count is not None else instance.views.count()
+
+    def get_viewer_viewed(self, instance):
+        viewed = getattr(instance, 'viewer_viewed', None)
+        if viewed is not None:
+            return viewed
+        request = self.context.get('request')
+        if request is None:
+            return False
+        return instance.views.filter(
+            actor_key__in=view_actor_keys(request),
         ).exists()
 
     @staticmethod

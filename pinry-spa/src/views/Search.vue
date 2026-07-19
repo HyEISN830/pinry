@@ -117,16 +117,11 @@
             <div class="section-head">
               <h2>{{ $t("pinsLink") }}</h2>
             </div>
-            <div class="result-grid pin-results">
-              <SearchPinCard
-                v-for="pin in buckets.pins.results"
-                :key="`pin-${pin.id}`"
-                :pin="pin"
-                :like-busy="pin.likeBusy"
-                @preview="openPinPreview"
-                @toggle-like="togglePinLike">
-              </SearchPinCard>
-            </div>
+            <SearchPinMasonry
+              :pins="buckets.pins.results"
+              @preview="openPinPreview"
+              @toggle-like="togglePinLike">
+            </SearchPinMasonry>
             <button
               v-if="buckets.pins.has_next"
               class="button is-light search-load-more"
@@ -197,9 +192,9 @@
 import API from '../components/api';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
-import SearchPinCard from '../components/SearchPinCard.vue';
 import SearchBoardCard from '../components/SearchBoardCard.vue';
 import SearchComicMasonry from '../components/SearchComicMasonry.vue';
+import SearchPinMasonry from '../components/SearchPinMasonry.vue';
 import PinPreview from '../components/PinPreview.vue';
 import createPinDisplayItem from '../components/utils/pinDisplayItem';
 import scroll from '../components/utils/scroll';
@@ -254,7 +249,7 @@ export default {
   components: {
     PHeader,
     loadingSpinner,
-    SearchPinCard,
+    SearchPinMasonry,
     SearchBoardCard,
     SearchComicMasonry,
   },
@@ -465,12 +460,16 @@ export default {
           component: PinPreview,
           props: {
             pinItem: createPinDisplayItem(pin),
+            statsTarget: pin,
           },
           scroll: 'keep',
           customClass: 'pin-preview-at-home',
         },
       );
-      previewModal.$once('close', restoreScroll);
+      previewModal.$once('close', () => {
+        restoreScroll();
+        this.saveCachedSearch();
+      });
     },
     shouldShowBucket(name) {
       return this.activeType === 'all' || bucketKeyForType(this.activeType) === name;
@@ -743,9 +742,6 @@ export default {
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: var(--space-md);
 }
-.pin-results {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-}
 @media screen and (max-width: 860px) {
   .search-shell {
     padding-top: calc(62px + var(--space-lg));
@@ -773,8 +769,7 @@ export default {
     align-items: flex-start;
     flex-direction: column;
   }
-  .result-grid,
-  .pin-results {
+  .result-grid {
     grid-template-columns: 1fr;
   }
 }

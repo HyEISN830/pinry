@@ -111,6 +111,23 @@
                     {{ $t("downloadButton") }}
                   </b-button>
                 </div>
+                <div class="pin-preview-stats" :aria-label="$t('pinStatsLabel')">
+                  <button
+                    class="pin-preview-like content-like-pill"
+                    type="button"
+                    :class="{ 'is-liked': pinItem.viewer_liked }"
+                    :aria-pressed="pinItem.viewer_liked ? 'true' : 'false'"
+                    :disabled="likeBusy"
+                    :title="pinItem.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                    @click.stop="toggleLike">
+                    <b-icon :icon="pinItem.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
+                    <span>{{ formatCount(pinItem.likes_count) }}</span>
+                  </button>
+                  <span class="pin-preview-viewed" :title="$t('viewedLabel')">
+                    <b-icon icon="eye-outline" size="is-small" aria-hidden="true"></b-icon>
+                    <span>{{ formatCount(pinItem.viewed_count) }}</span>
+                  </span>
+                </div>
                 <div v-if="pinItem.tags.length > 0" class="pin-preview-tag-container">
                   <div class="pin-preview-tags">
                     <router-link
@@ -186,6 +203,8 @@ import {
   getCachedImage,
 } from './utils/originalImageCache';
 import share from './utils/share';
+import format from './utils/format';
+import viewed from './utils/viewed';
 
 function fileNameFromUrl(url, fallback) {
   if (!url) {
@@ -210,7 +229,10 @@ function sourceText(url) {
 
 export default {
   name: 'PinPreview',
-  props: ['pinItem'],
+  props: {
+    pinItem: { type: Object, required: true },
+    statsTarget: { type: Object, default: null },
+  },
   data() {
     return {
       downloadLoaded: 0,
@@ -235,6 +257,7 @@ export default {
       motionReplayTimer: null,
       motionVideoActive: false,
       motionVideoFailed: false,
+      likeBusy: false,
     };
   },
   computed: {
@@ -311,6 +334,7 @@ export default {
     this.loadOriginalImage();
   },
   mounted() {
+    this.recordViewed();
     this.lockBodyScroll();
     document.addEventListener('keydown', this.onKeydown);
     window.addEventListener('resize', this.handlePreviewResize);
@@ -338,6 +362,47 @@ export default {
     this.unlockBodyScroll();
   },
   methods: {
+    formatCount(value) {
+      return format.formatCount(value);
+    },
+    syncStats(stats) {
+      if (!this.statsTarget || this.statsTarget === this.pinItem) return;
+      Object.keys(stats || {}).forEach(
+        key => this.$set(this.statsTarget, key, stats[key]),
+      );
+    },
+    recordViewed() {
+      viewed.markPin(
+        this.pinItem && this.pinItem.id,
+        () => API.Pin.markViewed(this.pinItem.id),
+      ).then((resp) => {
+        if (!resp || !resp.data) return;
+        this.$set(this.pinItem, 'viewed_count', resp.data.viewed_count);
+        this.$set(this.pinItem, 'viewer_viewed', resp.data.viewer_viewed);
+        this.syncStats({
+          viewed_count: resp.data.viewed_count,
+          viewer_viewed: resp.data.viewer_viewed,
+        });
+      }).catch(() => {});
+    },
+    toggleLike() {
+      if (this.likeBusy || !this.pinItem || !this.pinItem.id) return;
+      this.likeBusy = true;
+      API.Pin.toggleLike(this.pinItem.id).then(
+        (resp) => {
+          this.$set(this.pinItem, 'viewer_liked', resp.data.viewer_liked);
+          this.$set(this.pinItem, 'likes_count', resp.data.likes_count);
+          this.syncStats({
+            likes_count: resp.data.likes_count,
+            viewer_liked: resp.data.viewer_liked,
+            viewed_count: this.pinItem.viewed_count,
+            viewer_viewed: this.pinItem.viewer_viewed,
+          });
+          this.likeBusy = false;
+        },
+        () => { this.likeBusy = false; },
+      );
+    },
     lockBodyScroll() {
       if (this.bodyOverflowSnapshot !== null) {
         return;
@@ -958,6 +1023,45 @@ export default {
   justify-content: flex-start;
   gap: 0.42rem;
   min-width: 0;
+}
+.pin-preview-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  order: 1;
+  gap: 0.48rem;
+  min-width: 0;
+}
+.pin-preview-like {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 32px;
+  padding: 0 0.58rem;
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+.pin-preview-like:hover,
+.pin-preview-like.is-liked {
+  border-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+  background: var(--color-accent-soft-gradient);
+}
+.pin-preview-like:disabled { opacity: 0.72; cursor: wait; }
+.pin-preview-viewed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 32px;
+  padding: 0 0.48rem;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 800;
 }
 .pin-preview-actions > a,
 .pin-preview-actions > span {

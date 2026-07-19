@@ -256,5 +256,7 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'likes_minute': '30/min',
         'likes_day': '300/day',
+        'views_minute': '120/min',
+        'views_day': '2000/day',
     },
 }

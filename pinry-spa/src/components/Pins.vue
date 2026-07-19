@@ -140,20 +140,26 @@
                   <div class="source-warning" v-if="!hasSource(item.referer)">
                     {{ $t("missingSourceNotice") }}
                   </div>
-                  <button
-                    class="like-button content-like-pill"
-                    type="button"
-                    :class="{ 'is-liked': item.viewer_liked }"
-                    :aria-pressed="item.viewer_liked ? 'true' : 'false'"
-                    :disabled="item.likeBusy"
-                    :title="item.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
-                    @click.stop="togglePinLike(item)">
-                    <b-icon
-                      :icon="item.viewer_liked ? 'heart' : 'heart-outline'"
-                      size="is-small">
-                    </b-icon>
-                    <span>{{ formatLikeCount(item.likes_count) }}</span>
-                  </button>
+                  <div class="pin-stats">
+                    <button
+                      class="like-button content-like-pill"
+                      type="button"
+                      :class="{ 'is-liked': item.viewer_liked }"
+                      :aria-pressed="item.viewer_liked ? 'true' : 'false'"
+                      :disabled="item.likeBusy"
+                      :title="item.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                      @click.stop="togglePinLike(item)">
+                      <b-icon
+                        :icon="item.viewer_liked ? 'heart' : 'heart-outline'"
+                        size="is-small">
+                      </b-icon>
+                      <span>{{ formatLikeCount(item.likes_count) }}</span>
+                    </button>
+                    <span class="viewed-count" :title="$t('viewedLabel')">
+                      <b-icon icon="eye-outline" size="is-small" aria-hidden="true"></b-icon>
+                      <span>{{ formatLikeCount(item.viewed_count) }}</span>
+                    </span>
+                  </div>
                 </div>
                 </div>
               </div>
@@ -1242,6 +1248,26 @@ $avatar-height: 30px;
     font-size: 13px;
     font-weight: 800;
     transition: transform .16s ease, color .16s ease, background .16s ease, border-color .16s ease;
+  }
+  .pin-stats {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.48rem;
+    margin: 0 12px 12px 47px;
+  }
+  .pin-stats .like-button {
+    margin: 0;
+  }
+  .viewed-count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    min-height: 30px;
+    padding: 0 0.48rem;
+    color: var(--text-muted, #64748b);
+    font-size: 13px;
+    font-weight: 800;
   }
   .like-button:hover {
     transform: translateY(-1px);

@@ -107,6 +107,10 @@ const Comic = {
     const url = `${API_PREFIX}comics/${comicId}/like/`;
     return axios.post(url);
   },
+  markViewed(comicId) {
+    const url = `${API_PREFIX}comics/${comicId}/viewed/`;
+    return axios.post(url);
+  },
 };
 
 const Pin = {
@@ -141,6 +145,10 @@ const Pin = {
   },
   toggleLike(pinId) {
     const url = `${API_PREFIX}pins/${pinId}/like/`;
+    return axios.post(url);
+  },
+  markViewed(pinId) {
+    const url = `${API_PREFIX}pins/${pinId}/viewed/`;
     return axios.post(url);
   },
   originalImageUrl(imageId) {

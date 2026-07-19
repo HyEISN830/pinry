@@ -111,3 +111,26 @@ def like_actor_keys(request):
         if actor_key not in keys:
             keys.append(actor_key)
     return keys
+
+
+# View records live in separate tables, so they can safely reuse the exact
+# viewer identity used by likes. This keeps login/IP migration and legacy-key
+# compatibility identical for both interactions.
+def view_ip_hash(request):
+    return like_ip_hash(request)
+
+
+def anonymous_view_actor_key(request):
+    return anonymous_like_actor_key(request)
+
+
+def legacy_view_actor_key(request):
+    return legacy_like_actor_key(request)
+
+
+def view_actor_key(request):
+    return like_actor_key(request)
+
+
+def view_actor_keys(request):
+    return like_actor_keys(request)

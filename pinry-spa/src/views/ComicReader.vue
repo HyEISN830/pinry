@@ -46,6 +46,20 @@
                 {{ tag }}
               </router-link>
             </div>
+            <div class="reader-stats" :aria-label="$t('comicStatsLabel')">
+              <button
+                class="reader-stat reader-like content-like-pill"
+                type="button"
+                :class="{ 'is-liked': comic.viewer_liked }"
+                :aria-pressed="comic.viewer_liked ? 'true' : 'false'"
+                :disabled="likeBusy"
+                :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                @click="toggleLike">
+                <b-icon :icon="comic.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
+                {{ formatCount(comic.likes_count) }}
+              </button>
+              <span class="reader-stat"><b-icon icon="eye-outline" size="is-small"></b-icon>{{ formatCount(comic.viewed_count) }}</span>
+            </div>
           </div>
           <div class="reader-actions">
             <button
@@ -321,9 +335,11 @@ import {
   getCachedImage,
 } from '../components/utils/originalImageCache';
 import imageVariant from '../components/utils/imageVariant';
+import format from '../components/utils/format';
 import niceLinks from '../components/utils/niceLinks';
 import scroll from '../components/utils/scroll';
 import share from '../components/utils/share';
+import viewed from '../components/utils/viewed';
 
 function splitTags(tagText) {
   return tagText.split(/[,\uFF0C]/)
@@ -377,6 +393,7 @@ export default {
       insertMode: 'after',
       insertPageId: null,
       loadedPages: {},
+      likeBusy: false,
       loading: true,
       loadingAll: false,
       allPagesLoadPromise: null,
@@ -460,6 +477,21 @@ export default {
     this.unlockFullReaderScroll();
   },
   methods: {
+    formatCount(value) {
+      return format.formatCount(value);
+    },
+    toggleLike() {
+      if (this.likeBusy || !this.comic || !this.comic.id) return;
+      this.likeBusy = true;
+      API.Comic.toggleLike(this.comic.id).then(
+        (response) => {
+          this.$set(this.comic, 'viewer_liked', response.data.viewer_liked);
+          this.$set(this.comic, 'likes_count', response.data.likes_count);
+          this.likeBusy = false;
+        },
+        () => { this.likeBusy = false; },
+      );
+    },
     fetchUser() {
       API.User.fetchUserInfo().then(
         (user) => {
@@ -477,6 +509,14 @@ export default {
       API.Comic.get(this.$route.params.comicId).then(
         (resp) => {
           this.comic = resp.data;
+          viewed.markComic(
+            this.comic.id,
+            () => API.Comic.markViewed(this.comic.id),
+          ).then((viewResp) => {
+            if (!viewResp || !viewResp.data) return;
+            this.$set(this.comic, 'viewed_count', viewResp.data.viewed_count);
+            this.$set(this.comic, 'viewer_viewed', viewResp.data.viewer_viewed);
+          }).catch(() => {});
           this.loading = false;
           this.editForm.description = this.comic.description || '';
           this.editForm.referer = this.comic.referer || '';
@@ -1180,6 +1220,39 @@ export default {
 }
 .reader-tags {
   margin-top: 0.55rem;
+}
+.reader-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.65rem;
+}
+.reader-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 30px;
+  padding: 0 0.48rem;
+  border: 1px solid #e7ebf2;
+  border-radius: 999px;
+  color: #64748b;
+  background: #f8fafc;
+  font-size: 13px;
+  font-weight: 800;
+}
+.reader-like {
+  cursor: pointer;
+}
+.reader-like:hover,
+.reader-like.is-liked {
+  border-color: var(--color-accent, var(--accent, #7e57c2));
+  color: var(--color-accent-foreground, var(--accent-foreground, #7e57c2));
+  background: var(--color-accent-soft-gradient, var(--accent-soft, #f2edff));
+}
+.reader-like:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 .comic-editor {
   margin-bottom: 1rem;

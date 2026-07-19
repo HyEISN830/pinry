@@ -49,6 +49,8 @@ export default function createPinDisplayItem(pin) {
   item.referer = source.referer || '';
   item.likes_count = source.likes_count || 0;
   item.viewer_liked = !!source.viewer_liked;
+  item.viewed_count = source.viewed_count || 0;
+  item.viewer_viewed = !!source.viewer_viewed;
   item.likeBusy = false;
   item.orgianl_width = pinImage.width || thumbnailWidth;
   item.style = {

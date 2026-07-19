@@ -16,10 +16,31 @@ from rest_framework.viewsets import GenericViewSet
 from taggit.models import Tag
 
 from core import serializers as api
-from core.likes import like_actor_key, like_actor_keys, like_ip_hash
-from core.models import Image, Pin, Board, Comic, PinLike, ComicLike
+from core.likes import (
+    like_actor_key,
+    like_actor_keys,
+    like_ip_hash,
+    view_actor_key,
+    view_actor_keys,
+    view_ip_hash,
+)
+from core.models import (
+    Image,
+    Pin,
+    Board,
+    Comic,
+    PinLike,
+    ComicLike,
+    PinView,
+    ComicView,
+)
 from core.permissions import IsOwnerOrReadOnly, OwnerOnlyIfPrivate
-from core.throttles import LikeDailyRateThrottle, LikeMinuteRateThrottle
+from core.throttles import (
+    LikeDailyRateThrottle,
+    LikeMinuteRateThrottle,
+    ViewDailyRateThrottle,
+    ViewMinuteRateThrottle,
+)
 from core.upload_views import ChunkedUploadViewSet
 from core.serializers import (
     filter_private_pin,
@@ -36,6 +57,18 @@ def annotate_like_state(query, like_model, object_field, request):
     return query.annotate(
         likes_count=Count('likes', distinct=True),
         viewer_liked=Exists(like_model.objects.filter(**like_filter)),
+        viewed_count=Count('views', distinct=True),
+        viewer_viewed=Exists(
+            {
+                'pin': PinView,
+                'comic': ComicView,
+            }[object_field].objects.filter(
+                **{
+                    '{}_id'.format(object_field): OuterRef('pk'),
+                    'actor_key__in': view_actor_keys(request),
+                },
+            ),
+        ),
     )
 
 
@@ -74,6 +107,53 @@ def toggle_like(request, obj, like_model, object_field):
             'liked': liked,
             'viewer_liked': liked,
             'likes_count': count,
+        },
+    )
+
+
+def record_view(request, obj, view_model, object_field):
+    """Record one view per actor, matching the like identity de-dup rules."""
+    actor_key = view_actor_key(request)
+    filters = {
+        object_field: obj,
+        'actor_key': actor_key,
+    }
+    existing_views = view_model.objects.filter(
+        **{
+            object_field: obj,
+            'actor_key__in': view_actor_keys(request),
+        },
+    )
+    viewed = existing_views.exists()
+    if not viewed:
+        defaults = {
+            'ip_hash': view_ip_hash(request),
+        }
+        if request.user.is_authenticated:
+            defaults['user'] = request.user
+        try:
+            _, created = view_model.objects.get_or_create(
+                defaults=defaults,
+                **filters
+            )
+        except IntegrityError:
+            created = False
+        # A concurrent request may win the unique constraint with the same
+        # canonical actor key.  Re-check all compatible keys so that race
+        # handling remains idempotent and never reports a false negative.
+        viewed = bool(created) or view_model.objects.filter(
+            **{
+                object_field: obj,
+                'actor_key__in': view_actor_keys(request),
+            },
+        ).exists()
+
+    count = view_model.objects.filter(**{object_field: obj}).count()
+    return Response(
+        {
+            'viewed': viewed,
+            'viewer_viewed': viewed,
+            'viewed_count': count,
         },
     )
 
@@ -162,6 +242,15 @@ class PinViewSet(viewsets.ModelViewSet):
     def like(self, request, pk=None):
         return toggle_like(request, self.get_object(), PinLike, 'pin')
 
+    @action(
+        detail=True,
+        methods=['post'],
+        permission_classes=[OwnerOnlyIfPrivate("submitter")],
+        throttle_classes=[ViewMinuteRateThrottle, ViewDailyRateThrottle],
+    )
+    def viewed(self, request, pk=None):
+        return record_view(request, self.get_object(), PinView, 'pin')
+
 
 class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = api.BoardSerializer
@@ -201,6 +290,15 @@ class ComicViewSet(viewsets.ModelViewSet):
     )
     def like(self, request, pk=None):
         return toggle_like(request, self.get_object(), ComicLike, 'comic')
+
+    @action(
+        detail=True,
+        methods=['post'],
+        permission_classes=[OwnerOnlyIfPrivate("submitter")],
+        throttle_classes=[ViewMinuteRateThrottle, ViewDailyRateThrottle],
+    )
+    def viewed(self, request, pk=None):
+        return record_view(request, self.get_object(), ComicView, 'comic')
 
 
 class BoardAutoCompleteViewSet(

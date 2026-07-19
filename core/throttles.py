@@ -20,3 +20,11 @@ class LikeMinuteRateThrottle(LikeRateThrottle):
 
 class LikeDailyRateThrottle(LikeRateThrottle):
     scope = 'likes_day'
+
+
+class ViewMinuteRateThrottle(LikeRateThrottle):
+    scope = 'views_minute'
+
+
+class ViewDailyRateThrottle(LikeRateThrottle):
+    scope = 'views_day'

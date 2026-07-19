@@ -67,11 +67,17 @@
             @click.stop>{{ sourceText }}</span>
         </div>
         <div v-else class="comic-source is-warning">{{ $t('missingSourceNotice') }}</div>
-        <button class="comic-like content-like-pill" type="button" :class="{ 'is-liked': comic.viewer_liked }" :aria-pressed="comic.viewer_liked ? 'true' : 'false'"
-          :disabled="likeBusy" :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')" @click.stop="$emit('toggle-like', comic)">
-          <b-icon :icon="comic.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
-          <span>{{ formattedLikes }}</span>
-        </button>
+        <div class="comic-stats" :aria-label="$t('comicStatsLabel')">
+          <button class="comic-like content-like-pill" type="button" :class="{ 'is-liked': comic.viewer_liked }" :aria-pressed="comic.viewer_liked ? 'true' : 'false'"
+            :disabled="likeBusy" :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')" @click.stop="$emit('toggle-like', comic)">
+            <b-icon :icon="comic.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
+            <span>{{ formattedLikes }}</span>
+          </button>
+          <span class="comic-viewed" :title="$t('viewedLabel')">
+            <b-icon icon="eye-outline" size="is-small" aria-hidden="true"></b-icon>
+            <span>{{ formattedViewed }}</span>
+          </span>
+        </div>
       </div>
     </div>
   </article>
@@ -116,6 +122,7 @@ export default {
     isWebSource() { return /^https?:\/\//i.test((this.comic.referer || '').trim()); },
     sourceText() { return (this.comic.referer || '').trim(); },
     formattedLikes() { return format.formatCount(this.comic.likes_count); },
+    formattedViewed() { return format.formatCount(this.comic.viewed_count); },
   },
   mounted() {
     this.notifyLayoutSettled();
@@ -218,6 +225,8 @@ export default {
 .comic-tags { display:flex; flex-wrap:wrap; gap:.32rem; max-height:3.25rem; margin-top:8px; overflow:hidden; }.comic-tags a,.comic-tag-more { max-width:100%; padding:.15rem .42rem; border:0; border-radius:999px; color:var(--accent-foreground,#6d4bc1); background:var(--accent-soft-gradient,var(--accent-soft,#f2edff)); font-size:12px; font-weight:800; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; overflow:hidden; }.comic-tag-more { color:var(--color-text-muted,var(--text-muted,#64748b)); background:var(--color-surface-muted,var(--surface-2,#eef1f5)); cursor:pointer; }
 .comic-author { display:flex; align-items:center; gap:8px; min-width:0; margin-top:8px; color:var(--color-text-muted,var(--text-muted,#64748b)); font-size:13px; }.comic-author img { width:24px; height:24px; border-radius:50%; object-fit:cover; }.comic-author a { overflow:hidden; min-width:0; color:var(--color-text-primary,var(--text-strong,#334155)); font-weight:800; text-overflow:ellipsis; white-space:nowrap; }.comic-author span { flex:0 0 auto; }
 .comic-source { overflow:hidden; margin:8px 0 0; color:var(--color-text-muted,var(--text-muted,#64748b)); font-size:13px; text-overflow:ellipsis; white-space:nowrap; }.comic-source a,.comic-source span { color:var(--accent-foreground,#7e57c2); font-weight:700; }.comic-source.is-warning { color:#8a6d1d; }
-.comic-like { display:inline-flex; align-items:center; gap:.28rem; min-height:30px; margin-top:8px; padding:0 .58rem; border:1px solid var(--color-border-soft,var(--line-soft,#e0e6ef)); border-radius:999px; color:var(--color-text-muted,var(--text-muted,#64748b)); background:var(--color-surface-muted,var(--surface-2,#f8fafc)); cursor:pointer; font-size:13px; font-weight:800; }.comic-like:hover,.comic-like.is-liked { color:var(--accent-foreground,#7e57c2); border-color:var(--accent,#7e57c2); background:var(--accent-soft-gradient,var(--accent-soft,rgba(126,87,194,.14))); }.comic-like:disabled { opacity:.72; cursor:wait; }
+.comic-stats { display:flex; align-items:center; flex-wrap:wrap; gap:.48rem; margin-top:8px; }
+.comic-like { display:inline-flex; align-items:center; gap:.28rem; min-height:30px; margin-top:0; padding:0 .58rem; border:1px solid var(--color-border-soft,var(--line-soft,#e0e6ef)); border-radius:999px; color:var(--color-text-muted,var(--text-muted,#64748b)); background:var(--color-surface-muted,var(--surface-2,#f8fafc)); cursor:pointer; font-size:13px; font-weight:800; }.comic-like:hover,.comic-like.is-liked { color:var(--accent-foreground,#7e57c2); border-color:var(--accent,#7e57c2); background:var(--accent-soft-gradient,var(--accent-soft,rgba(126,87,194,.14))); }.comic-like:disabled { opacity:.72; cursor:wait; }
+.comic-viewed { display:inline-flex; align-items:center; gap:.28rem; min-height:30px; padding:0 .48rem; color:var(--color-text-muted,var(--text-muted,#64748b)); font-size:13px; font-weight:800; }
 @media (hover:none) { .motion-tilt-card { transform:none !important; }.comic-glare { display:none; } }
 </style>

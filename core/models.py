@@ -594,6 +594,60 @@ class ComicLike(models.Model):
     published = models.DateTimeField(auto_now_add=True)
 
 
+class PinView(models.Model):
+    """One de-duplicated view of a pin per viewer identity."""
+
+    class Meta:
+        unique_together = ("pin", "actor_key")
+        index_together = ("pin", "actor_key")
+        indexes = [
+            models.Index(
+                fields=["ip_hash", "published"],
+                name="core_pinview_ip_pub_idx",
+            ),
+        ]
+
+    pin = models.ForeignKey(Pin, related_name="views", on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+    actor_key = models.CharField(max_length=96)
+    ip_hash = models.CharField(max_length=96, blank=True)
+    published = models.DateTimeField(auto_now_add=True)
+
+
+class ComicView(models.Model):
+    """One de-duplicated view of a comic per viewer identity."""
+
+    class Meta:
+        unique_together = ("comic", "actor_key")
+        index_together = ("comic", "actor_key")
+        indexes = [
+            models.Index(
+                fields=["ip_hash", "published"],
+                name="core_comicview_ip_pub_idx",
+            ),
+        ]
+
+    comic = models.ForeignKey(
+        Comic,
+        related_name="views",
+        on_delete=models.CASCADE,
+    )
+    user = models.ForeignKey(
+        User,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+    )
+    actor_key = models.CharField(max_length=96)
+    ip_hash = models.CharField(max_length=96, blank=True)
+    published = models.DateTimeField(auto_now_add=True)
+
+
 @receiver(models.signals.post_delete, sender=Pin)
 def delete_pin_images(sender, instance, **kwargs):
     if instance.image_id is None:
