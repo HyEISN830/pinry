@@ -8,6 +8,7 @@ import router from './router';
 import setUpAxiosCsrfConfig from './components/utils/csrf';
 import setUpAxiosFeedback from './components/utils/apiFeedback';
 import motionPreference from './components/utils/motionPreference';
+import openingPreference from './components/utils/openingPreference';
 import layoutReady from './components/utils/layoutReady';
 import sourceTooltip from './components/utils/sourceTooltip';
 import './components/utils/motion-system.scss';
@@ -32,6 +33,7 @@ Vue.directive('layout-ready', layoutReady);
 Vue.directive('source-tooltip', sourceTooltip);
 Vue.use(VueI18n);
 motionPreference.applySavedMotionPreference();
+openingPreference.applySavedOpeningPreference();
 setUpAxiosCsrfConfig();
 setUpAxiosFeedback();
 

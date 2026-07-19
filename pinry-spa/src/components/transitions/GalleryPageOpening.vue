@@ -16,6 +16,7 @@
 
 <script>
 import motionPreference from '../utils/motionPreference';
+import openingPreference from '../utils/openingPreference';
 import GalleryOpeningRenderer from './galleryOpeningRenderer';
 
 const OPENING_DURATION = 1900;
@@ -32,12 +33,13 @@ export default {
     return {
       animationKey: 0,
       hideTimer: null,
-      visible: !motionPreference.isReducedMotionEnabled(),
+      visible: openingPreference.isOpeningEnabled()
+        && !motionPreference.isReducedMotionEnabled(),
     };
   },
   created() {
     this.openingRenderer = null;
-    this.motionObserver = null;
+    this.preferenceObserver = null;
     this.playGeneration = 0;
   },
   watch: {
@@ -49,7 +51,7 @@ export default {
     },
   },
   mounted() {
-    this.observeMotionPreference();
+    this.observePreferences();
     if (this.visible) {
       this.startRenderer();
       this.scheduleHide();
@@ -58,31 +60,32 @@ export default {
   beforeDestroy() {
     this.playGeneration += 1;
     this.clearHideTimer();
-    this.stopObservingMotionPreference();
+    this.stopObservingPreferences();
     this.stopRenderer();
   },
   methods: {
-    observeMotionPreference() {
+    observePreferences() {
       if (typeof window === 'undefined' || !window.MutationObserver) {
         return;
       }
-      this.motionObserver = new window.MutationObserver(
-        this.handleMotionPreferenceChange,
+      this.preferenceObserver = new window.MutationObserver(
+        this.handlePreferenceChange,
       );
-      this.motionObserver.observe(document.documentElement, {
+      this.preferenceObserver.observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ['data-motion'],
+        attributeFilter: ['data-motion', 'data-page-opening'],
       });
     },
-    stopObservingMotionPreference() {
-      if (!this.motionObserver) {
+    stopObservingPreferences() {
+      if (!this.preferenceObserver) {
         return;
       }
-      this.motionObserver.disconnect();
-      this.motionObserver = null;
+      this.preferenceObserver.disconnect();
+      this.preferenceObserver = null;
     },
-    handleMotionPreferenceChange() {
-      if (!motionPreference.isReducedMotionEnabled()) {
+    handlePreferenceChange() {
+      if (openingPreference.isOpeningEnabled()
+        && !motionPreference.isReducedMotionEnabled()) {
         return;
       }
       this.playGeneration += 1;
@@ -132,7 +135,8 @@ export default {
       this.playGeneration = generation;
       this.clearHideTimer();
       this.stopRenderer();
-      if (motionPreference.isReducedMotionEnabled()) {
+      if (!openingPreference.isOpeningEnabled()
+        || motionPreference.isReducedMotionEnabled()) {
         this.visible = false;
         return;
       }
@@ -179,7 +183,8 @@ export default {
   mix-blend-mode: normal;
 }
 
-html[data-motion="reduce"] .gallery-page-opening {
+html[data-motion="reduce"] .gallery-page-opening,
+html[data-page-opening="disabled"] .gallery-page-opening {
   display: none;
 }
 </style>

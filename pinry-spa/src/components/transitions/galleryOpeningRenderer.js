@@ -18,6 +18,8 @@ const VEIL_REVEAL_START = 260;
 const VEIL_REVEAL_END = 1300;
 const VEIL_FADE_START = 1180;
 const VEIL_FADE_END = 1650;
+const PARTICLE_DISSIPATION_START = 0.38;
+const PARTICLE_DISSIPATION_END = 0.94;
 const WHITE = [255, 255, 255];
 const PEARL_WHITE = [255, 250, 253];
 const PEARL_COOL = [198, 226, 255];
@@ -141,9 +143,15 @@ function getThemeColors() {
     accent,
   );
   const isGradient = root.dataset.accentKind === 'gradient';
+  const end = isGradient ? accentStrong : accent;
   return {
-    end: isGradient ? accentStrong : accent,
+    end,
     isGradient,
+    // Keep the reveal rim luminous and slightly pearlescent while allowing
+    // the active accent to tint it.  Gradient themes get a little more tint
+    // so both ends remain perceptible without introducing neon saturation.
+    pearlEnd: mixColor(PEARL_WARM, end, isGradient ? 0.24 : 0.18),
+    pearlStart: mixColor(PEARL_COOL, accent, isGradient ? 0.24 : 0.18),
     start: accent,
   };
 }
@@ -521,6 +529,43 @@ export default class GalleryOpeningRenderer {
     context.restore();
   }
 
+  getRevealGeometry(elapsed) {
+    if (elapsed >= VEIL_FADE_END) {
+      return null;
+    }
+    const comet = this.getCometState(elapsed);
+    if (comet.movementProgress <= 0) {
+      return null;
+    }
+    const revealStart = this.getCometState(
+      COMET_DELAY + (COMET_DURATION * MOVEMENT_START),
+    );
+    const expansion = smoothstep(VEIL_REVEAL_START, VEIL_REVEAL_END, elapsed);
+    const shortEdge = Math.min(this.width, this.height);
+    const minimumWidth = clamp(shortEdge * 0.055, 34, 54);
+    const maximumWidth = clamp(shortEdge * 0.22, 96, 220);
+    const featherWidth = clamp(shortEdge * 0.04, 20, 42);
+    const revealWidth = minimumWidth
+      + ((maximumWidth - minimumWidth) * expansion);
+    const outerWidth = revealWidth + (featherWidth * 2);
+    const headLag = (outerWidth * 0.5)
+      + (this.geometry.isPortrait ? 18 : 24);
+    const travelled = this.geometry.travelRadius * 2 * comet.movementProgress;
+    if (travelled <= headLag) {
+      return null;
+    }
+    return {
+      comet,
+      featherWidth,
+      outerWidth,
+      revealHead: {
+        x: comet.x - (this.geometry.direction.x * headLag),
+        y: comet.y - (this.geometry.direction.y * headLag),
+      },
+      revealStart,
+    };
+  }
+
   getCometState(elapsed) {
     const localProgress = clamp((elapsed - COMET_DELAY) / COMET_DURATION);
     const movementProgress = getMovementProgress(localProgress);
@@ -829,8 +874,8 @@ export default class GalleryOpeningRenderer {
     const { context } = this;
     const [firstRecord] = points;
     const lastRecord = points[points.length - 1];
-    const cool = mixColor(PEARL_COOL, this.theme.start, 0.16);
-    const warm = mixColor(PEARL_WARM, this.theme.end, 0.16);
+    const cool = this.theme.pearlStart;
+    const warm = this.theme.pearlEnd;
 
     context.save();
     context.globalCompositeOperation = 'lighter';
@@ -1003,13 +1048,15 @@ export default class GalleryOpeningRenderer {
     const { context } = this;
     const progress = clamp(particle.age / particle.life);
     const fadeIn = smoothstep(0, 0.12, progress);
-    const fadeOut = 1 - smoothstep(0.46, 1, progress);
+    const fadeOut = 1 - smoothstep(PARTICLE_DISSIPATION_START, PARTICLE_DISSIPATION_END, progress);
     const twinkle = 0.72 + (Math.sin((elapsed * 0.013) + particle.phase) * 0.28);
     const alpha = fadeIn * fadeOut * twinkle * lifecycleAlpha;
     if (alpha <= 0.005) {
       return;
     }
     const drift = Math.sin((elapsed * 0.007) + particle.phase) * 4 * progress;
+    const dissipation = smoothstep(PARTICLE_DISSIPATION_START, PARTICLE_DISSIPATION_END, progress);
+    const sizeScale = 1 - (dissipation * 0.34);
     const x = particle.x + (this.geometry.normal.x * drift);
     const y = particle.y + (this.geometry.normal.y * drift);
     context.save();
@@ -1017,12 +1064,14 @@ export default class GalleryOpeningRenderer {
     context.globalAlpha = alpha;
     context.fillStyle = rgba(particle.color, 0.92);
     context.strokeStyle = rgba(particle.color, 0.86);
-    context.shadowBlur = particle.type === 'dust' ? particle.size * 4 : particle.size * 6;
+    context.shadowBlur = particle.type === 'dust'
+      ? particle.size * (2.8 - (dissipation * 1.2))
+      : particle.size * (5.2 - (dissipation * 1.8));
     context.shadowColor = rgba(particle.color, 0.78);
 
     if (particle.type === 'streak') {
       context.lineCap = 'round';
-      context.lineWidth = Math.max(0.8, particle.size * 0.62);
+      context.lineWidth = Math.max(0.7, particle.size * 0.62 * sizeScale);
       context.beginPath();
       context.moveTo(x, y);
       context.lineTo(
@@ -1031,7 +1080,7 @@ export default class GalleryOpeningRenderer {
       );
       context.stroke();
     } else if (particle.type === 'glint') {
-      const arm = particle.size * (2.6 + (twinkle * 1.8));
+      const arm = particle.size * sizeScale * (2.6 + (twinkle * 1.8));
       context.translate(x, y);
       context.rotate(this.geometry.angle);
       context.lineWidth = 0.75;
@@ -1042,11 +1091,11 @@ export default class GalleryOpeningRenderer {
       context.lineTo(0, arm);
       context.stroke();
       context.beginPath();
-      context.arc(0, 0, particle.size * 0.72, 0, Math.PI * 2);
+      context.arc(0, 0, particle.size * 0.72 * sizeScale, 0, Math.PI * 2);
       context.fill();
     } else {
       context.beginPath();
-      context.arc(x, y, particle.size, 0, Math.PI * 2);
+      context.arc(x, y, particle.size * sizeScale, 0, Math.PI * 2);
       context.fill();
     }
     context.restore();
@@ -1196,34 +1245,16 @@ export default class GalleryOpeningRenderer {
   }
 
   drawVeilReveal(elapsed, targetContext = this.context) {
-    if (elapsed >= VEIL_FADE_END) {
+    const reveal = this.getRevealGeometry(elapsed);
+    if (!reveal) {
       return;
     }
-    const comet = this.getCometState(elapsed);
-    if (comet.movementProgress <= 0) {
-      return;
-    }
-    const revealStart = this.getCometState(
-      COMET_DELAY + (COMET_DURATION * MOVEMENT_START),
-    );
-    const expansion = smoothstep(VEIL_REVEAL_START, VEIL_REVEAL_END, elapsed);
-    const shortEdge = Math.min(this.width, this.height);
-    const minimumWidth = clamp(shortEdge * 0.055, 34, 54);
-    const maximumWidth = clamp(shortEdge * 0.22, 96, 220);
-    const featherWidth = clamp(shortEdge * 0.04, 20, 42);
-    const revealWidth = minimumWidth
-      + ((maximumWidth - minimumWidth) * expansion);
-    const outerWidth = revealWidth + (featherWidth * 2);
-    const headLag = (outerWidth * 0.5)
-      + (this.geometry.isPortrait ? 18 : 24);
-    const travelled = this.geometry.travelRadius * 2 * comet.movementProgress;
-    if (travelled <= headLag) {
-      return;
-    }
-    const revealHead = {
-      x: comet.x - (this.geometry.direction.x * headLag),
-      y: comet.y - (this.geometry.direction.y * headLag),
-    };
+    const {
+      featherWidth,
+      outerWidth,
+      revealHead,
+      revealStart,
+    } = reveal;
     const featherStop = featherWidth / outerWidth;
     const middleX = (revealStart.x + revealHead.x) * 0.5;
     const middleY = (revealStart.y + revealHead.y) * 0.5;
@@ -1252,6 +1283,46 @@ export default class GalleryOpeningRenderer {
     context.beginPath();
     context.moveTo(revealStart.x, revealStart.y);
     context.lineTo(revealHead.x, revealHead.y);
+    context.stroke();
+    context.restore();
+  }
+
+  drawRevealPearlEdge(elapsed) {
+    const reveal = this.getRevealGeometry(elapsed);
+    if (!reveal) {
+      return;
+    }
+    const { context } = this;
+    const progress = smoothstep(VEIL_REVEAL_START, VEIL_REVEAL_END, elapsed);
+    const lifecycle = 1 - smoothstep(VEIL_FADE_END - 210, VEIL_FADE_END, elapsed);
+    const alpha = lifecycle * (0.18 + (progress * 0.28));
+    if (alpha <= 0.01) {
+      return;
+    }
+    const { normal } = this.geometry;
+    const edgeOffset = reveal.outerWidth * 0.5 - (reveal.featherWidth * 0.34);
+    const start = {
+      x: reveal.revealStart.x + (normal.x * edgeOffset),
+      y: reveal.revealStart.y + (normal.y * edgeOffset),
+    };
+    const end = {
+      x: reveal.revealHead.x + (normal.x * edgeOffset),
+      y: reveal.revealHead.y + (normal.y * edgeOffset),
+    };
+    const gradient = context.createLinearGradient(start.x, start.y, end.x, end.y);
+    gradient.addColorStop(0, rgba(this.theme.pearlStart, 0));
+    gradient.addColorStop(0.48, rgba(PEARL_WHITE, alpha * 0.42));
+    gradient.addColorStop(0.84, rgba(this.theme.pearlEnd, alpha * 0.78));
+    gradient.addColorStop(1, rgba(PEARL_WHITE, alpha));
+    context.save();
+    context.globalCompositeOperation = 'lighter';
+    context.globalAlpha = 1;
+    context.lineCap = 'round';
+    context.lineWidth = this.geometry.isPortrait ? 1.15 : 1.45;
+    context.strokeStyle = gradient;
+    context.beginPath();
+    context.moveTo(start.x, start.y);
+    context.lineTo(end.x, end.y);
     context.stroke();
     context.restore();
   }
@@ -1341,6 +1412,7 @@ export default class GalleryOpeningRenderer {
     this.drawCutGlow(elapsed);
     this.drawParticles(elapsed);
     this.drawHead(comet, elapsed);
+    this.drawRevealPearlEdge(elapsed);
     this.drawAfterglow(elapsed);
   }
 

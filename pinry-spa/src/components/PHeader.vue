@@ -159,6 +159,21 @@
                 <span></span>
               </span>
             </button>
+            <button
+              class="theme-mode opening-preference"
+              type="button"
+              role="switch"
+              :aria-checked="openingEnabled ? 'true' : 'false'"
+              :aria-label="$t('openingAnimationLabel')"
+              @click="toggleOpeningAnimation">
+              <span>{{ $t("openingAnimationLabel") }}</span>
+              <span
+                class="mode-switch"
+                :class="{ 'is-on': openingEnabled }"
+                aria-hidden="true">
+                <span></span>
+              </span>
+            </button>
             <div
               v-for="group in accentGroups"
               :key="group.kind"
@@ -373,6 +388,21 @@
             <span></span>
           </span>
         </button>
+        <button
+          class="mobile-theme-toggle opening-preference"
+          type="button"
+          role="switch"
+          :aria-checked="openingEnabled ? 'true' : 'false'"
+          :aria-label="$t('openingAnimationLabel')"
+          @click="toggleOpeningAnimation">
+          <span>{{ $t("openingAnimationLabel") }}</span>
+          <span
+            class="mode-switch"
+            :class="{ 'is-on': openingEnabled }"
+            aria-hidden="true">
+            <span></span>
+          </span>
+        </button>
         <div
           v-for="group in accentGroups"
           :key="`mobile-${group.kind}`"
@@ -418,6 +448,7 @@ import ComicIcon from './icons/ComicIcon.vue';
 import api from './api';
 import modals from './modals';
 import motionPreference from './utils/motionPreference';
+import openingPreference from './utils/openingPreference';
 import scroll from './utils/scroll';
 import theme from './utils/theme';
 
@@ -455,6 +486,7 @@ export default {
       mobileSectionOpen: null,
       navHidden: false,
       navProgress: 0,
+      openingEnabled: openingPreference.readOpeningPreference(),
       pinnedDropdown: null,
       scrollTicking: false,
       reduceMotion: motionPreference.readMotionPreference(),
@@ -669,6 +701,11 @@ export default {
       window.dispatchEvent(new CustomEvent('pinry-motion-change', {
         detail: { reduceMotion: this.reduceMotion },
       }));
+    },
+    toggleOpeningAnimation() {
+      this.openingEnabled = openingPreference.saveAndApplyOpeningPreference(
+        !this.openingEnabled,
+      );
     },
     toggleThemeMode() {
       const mode = this.themeState.mode === 'dark' ? 'light' : 'dark';
