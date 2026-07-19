@@ -29,11 +29,9 @@ html body .content-tag-pill.content-tag-pill {
   border-radius: var(--radius-pill, 999px);
   color: var(--accent-foreground, var(--color-accent-foreground, #6d4bc1));
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 42%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.14), transparent 46%),
     var(--accent-soft-gradient, var(--color-accent-soft-gradient, var(--accent-soft, rgba(126, 87, 194, 0.12))));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.34),
-    0 2px 0 rgba(15, 23, 42, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.01em;
@@ -41,16 +39,14 @@ html body .content-tag-pill.content-tag-pill {
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
-  backface-visibility: hidden;
   transform: translate3d(0, 0, 0);
   transform-origin: center center;
-  will-change: transform;
   transition:
     color 180ms var(--motion-ease-standard, ease),
     border-color 180ms var(--motion-ease-standard, ease),
     background-color 180ms var(--motion-ease-standard, ease),
-    box-shadow 220ms var(--motion-ease-spring, cubic-bezier(0.2, 0.8, 0.2, 1)),
-    transform 260ms cubic-bezier(0.16, 0.82, 0.25, 1) !important;
+    box-shadow 200ms var(--motion-ease-standard, ease),
+    transform 220ms var(--motion-ease-standard, ease) !important;
 }
 
 html body .content-tag-pill.content-tag-pill::before {
@@ -64,28 +60,10 @@ html body .content-tag-pill.content-tag-pill::before {
     transparent 68%
   );
   content: '';
-  opacity: 0.48;
+  opacity: 0.22;
   pointer-events: none;
   transform: scale(0.72);
   transition: opacity 200ms ease, transform 300ms var(--motion-ease-spring, cubic-bezier(0.2, 0.8, 0.2, 1));
-}
-
-html body .content-tag-pill.content-tag-pill::after {
-  position: absolute;
-  z-index: 1;
-  top: -70%;
-  bottom: -70%;
-  left: -52%;
-  width: 38%;
-  border-radius: 48%;
-  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.72), transparent);
-  content: '';
-  opacity: 0;
-  pointer-events: none;
-  transform: translate3d(-120%, 0, 0) skewX(-20deg);
-  transition:
-    opacity 90ms ease-out,
-    transform 0ms linear;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -95,31 +73,20 @@ html body .content-tag-pill.content-tag-pill::after {
   html:not([data-motion]) .content-tag-pill:focus-visible {
     z-index: 2;
     border-color: var(--accent, var(--color-accent, #7e57c2));
-    color: var(--accent-text, var(--color-accent-text, #fff));
-    background: var(--accent-fill, var(--color-accent-fill, var(--accent-strong, #7e57c2)));
+    color: var(--color-accent-foreground, var(--accent-foreground, #6d4bc1));
+    background: var(--color-accent-soft-gradient, var(--accent-soft-gradient));
     box-shadow:
-      0 0 0 3px var(--accent-soft, var(--color-accent-soft, rgba(126, 87, 194, 0.12))),
-      0 10px 18px var(--theme-glow, var(--color-theme-glow, rgba(126, 87, 194, 0.36)));
-    transform: translate3d(0, -2px, 0) scale(1.035) !important;
+      0 0 0 2px var(--color-accent-soft, rgba(126, 87, 194, 0.12)),
+      0 6px 14px color-mix(in srgb, var(--color-theme-glow) 54%, transparent);
+    transform: translate3d(0, -1px, 0) scale(1.012) !important;
   }
 
   html[data-motion='full'] .content-tag-pill:hover::before,
   html[data-motion='full'] .content-tag-pill:focus-visible::before,
   html:not([data-motion]) .content-tag-pill:hover::before,
   html:not([data-motion]) .content-tag-pill:focus-visible::before {
-    opacity: 0.88;
-    transform: scale(1.35);
-  }
-
-  html[data-motion='full'] .content-tag-pill:hover::after,
-  html[data-motion='full'] .content-tag-pill:focus-visible::after,
-  html:not([data-motion]) .content-tag-pill:hover::after,
-  html:not([data-motion]) .content-tag-pill:focus-visible::after {
-    opacity: 0.86;
-    transform: translate3d(620%, 0, 0) skewX(-20deg);
-    transition:
-      opacity 90ms ease-out,
-      transform 560ms cubic-bezier(0.16, 0.82, 0.25, 1);
+    opacity: 0.46;
+    transform: scale(1.08);
   }
 }
 
@@ -127,7 +94,14 @@ html[data-motion='reduce'] body .content-tag-pill.content-tag-pill {
   transition: border-color 140ms ease, color 140ms ease, background-color 140ms ease;
 }
 
-html[data-motion='reduce'] body .content-tag-pill.content-tag-pill::before,
-html[data-motion='reduce'] body .content-tag-pill.content-tag-pill::after {
+html[data-motion='reduce'] body .content-tag-pill.content-tag-pill::before {
   display: none;
+}
+
+@media (pointer: coarse) {
+  html body .content-tag-pill.content-tag-pill {
+    min-height: 40px;
+    padding-right: 0.72rem;
+    padding-left: 0.72rem;
+  }
 }

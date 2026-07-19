@@ -35,22 +35,47 @@ function copyText(value) {
   );
 }
 
-function shareRoute(vm, route) {
-  const url = buildRouteUrl(vm.$router, route);
+function notifyCopyResult(vm, succeeded) {
+  vm.$buefy.toast.open({
+    message: vm.$t(succeeded ? 'shareLinkCopied' : 'shareLinkFailed'),
+    type: succeeded ? 'is-success' : 'is-danger',
+  });
+}
+
+function copyRouteUrl(vm, url) {
   return copyText(url).then(
     () => {
-      vm.$buefy.toast.open({
-        message: vm.$t('shareLinkCopied'),
-        type: 'is-success',
-      });
+      notifyCopyResult(vm, true);
       return { method: 'copy', url };
     },
     () => {
-      vm.$buefy.toast.open({
-        message: vm.$t('shareLinkFailed'),
-        type: 'is-danger',
-      });
+      notifyCopyResult(vm, false);
       return { failed: true, url };
+    },
+  );
+}
+
+function shareRoute(vm, route, options = {}) {
+  const url = buildRouteUrl(vm.$router, route);
+  if (!navigator.share) {
+    return copyRouteUrl(vm, url);
+  }
+  const payload = { url };
+  if (options.title) payload.title = options.title;
+  if (options.text) payload.text = options.text;
+  let nativeShare;
+  try {
+    nativeShare = navigator.share(payload);
+  } catch {
+    return copyRouteUrl(vm, url);
+  }
+  return Promise.resolve(nativeShare).then(
+    () => ({ method: 'native', url }),
+    (error) => {
+      if (error && error.name === 'AbortError') {
+        return { cancelled: true, url };
+      }
+      return copyRouteUrl(vm, url);
     },
   );
 }

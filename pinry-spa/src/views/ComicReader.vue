@@ -1,64 +1,74 @@
 <template>
   <div class="comic-reader-page">
     <PHeader></PHeader>
-    <section class="section">
+    <section
+      class="section"
+      :aria-hidden="fullReaderOpen ? 'true' : null"
+      :inert="fullReaderOpen ? '' : null">
       <div class="container comic-reader">
         <div class="reader-head" v-if="comic">
-          <div>
+          <div class="reader-head__copy">
+            <div class="reader-kicker">
+              <span>{{ $t("comicLink") }}</span>
+              <span aria-hidden="true">·</span>
+              <span>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</span>
+            </div>
             <h1>{{ comic.title }}</h1>
-            <p>{{ comic.total_pages }} {{ $t("comicPagesUnit") }}</p>
-            <div
-              class="reader-description"
-              v-if="hasDescription(comic.description)"
-              v-html="niceLinks(comic.description)">
-            </div>
-            <div class="reader-source-row comic-source" v-if="hasSource(comic.referer)">
-              <a
-                v-if="isWebUrl(comic.referer)"
-                v-source-tooltip
-                class="content-source-link"
-                :href="comic.referer"
-                :data-source-tip="sourceText(comic.referer)"
-                target="_blank"
-                rel="noopener">
-                {{ $t("sourceLink") }}
-              </a>
-              <span
-                v-else
-                v-source-tooltip
-                class="content-source-link"
-                tabindex="0"
-                :data-source-tip="sourceText(comic.referer)">
-                {{ sourceText(comic.referer) }}
-              </span>
-            </div>
-            <div class="reader-source-row comic-source is-warning" v-else>
-              {{ $t("missingSourceNotice") }}
-            </div>
-            <div
-              class="reader-tags comic-tags"
-              v-if="comic.tags && comic.tags.length > 0">
-              <router-link
-                v-for="tag in comic.tags"
-                :key="tag"
-                class="content-tag-pill"
-                :to="{ name: 'tag', params: { tag } }">
-                {{ tag }}
-              </router-link>
-            </div>
-            <div class="reader-stats" :aria-label="$t('comicStatsLabel')">
+            <div class="reader-stats content-stats" role="group" :aria-label="$t('comicStatsLabel')">
               <button
-                class="reader-stat reader-like content-like-pill"
+                class="reader-stat reader-like content-like-pill content-stat content-stat--interactive"
                 type="button"
                 :class="{ 'is-liked': comic.viewer_liked }"
                 :aria-pressed="comic.viewer_liked ? 'true' : 'false'"
                 :disabled="likeBusy"
                 :title="comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                :aria-label="`${comic.viewer_liked ? $t('unlikeButton') : $t('likeButton')}: ${formatCount(comic.likes_count)}`"
                 @click="toggleLike">
                 <b-icon :icon="comic.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
                 {{ formatCount(comic.likes_count) }}
               </button>
-              <span class="reader-stat"><b-icon icon="eye-outline" size="is-small"></b-icon>{{ formatCount(comic.viewed_count) }}</span>
+              <span class="reader-stat content-stat content-stat--passive" :aria-label="`${$t('viewedLabel')}: ${formatCount(comic.viewed_count)}`"><b-icon icon="eye-outline" size="is-small" aria-hidden="true"></b-icon>{{ formatCount(comic.viewed_count) }}</span>
+            </div>
+            <div class="reader-supporting">
+              <div
+                class="reader-description"
+                v-if="hasDescription(comic.description)"
+                v-html="niceLinks(comic.description)">
+              </div>
+              <div class="reader-source-row comic-source" v-if="hasSource(comic.referer)">
+                <a
+                  v-if="isWebUrl(comic.referer)"
+                  v-source-tooltip
+                  class="content-source-link"
+                  :href="comic.referer"
+                  :data-source-tip="sourceText(comic.referer)"
+                  target="_blank"
+                  rel="noopener">
+                  {{ $t("sourceLink") }}
+                </a>
+                <span
+                  v-else
+                  v-source-tooltip
+                  class="content-source-link"
+                  tabindex="0"
+                  :data-source-tip="sourceText(comic.referer)">
+                  {{ sourceText(comic.referer) }}
+                </span>
+              </div>
+              <div class="reader-source-row comic-source is-warning" v-else>
+                {{ $t("missingSourceNotice") }}
+              </div>
+              <div
+                class="reader-tags comic-tags"
+                v-if="comic.tags && comic.tags.length > 0">
+                <router-link
+                  v-for="tag in comic.tags"
+                  :key="tag"
+                  class="content-tag-pill"
+                  :to="{ name: 'tag', params: { tag } }">
+                  {{ tag }}
+                </router-link>
+              </div>
             </div>
           </div>
           <div class="reader-actions">
@@ -282,10 +292,15 @@
     <div
       class="comic-full-reader"
       v-if="fullReaderOpen"
+      ref="fullReaderDialog"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="comic.title"
       tabindex="0"
       @keydown.left.prevent="goFullPage(-1)"
       @keydown.right.prevent="goFullPage(1)"
-      @keydown.esc.prevent="closeFullReader"
+      @keydown.tab="trapFullReaderFocus"
+      @keydown.esc.stop.prevent="closeFullReader"
       @wheel.stop
       @touchmove.stop>
       <div class="full-reader-bar">
@@ -295,6 +310,7 @@
             {{ currentFullPageOrder }} / {{ comic.total_pages }}
           </span>
           <button
+            ref="fullReaderClose"
             class="button is-light"
             type="button"
             @click="closeFullReader">
@@ -389,6 +405,7 @@ export default {
       fullReaderScrollLock: null,
       fullReaderScrollElement: null,
       fullReaderOpen: false,
+      fullReaderOpener: null,
       currentFullPageOrder: 1,
       insertMode: 'after',
       insertPageId: null,
@@ -666,6 +683,7 @@ export default {
       if (this.fullReaderOpen) {
         return;
       }
+      this.fullReaderOpener = document.activeElement;
       this.lockFullReaderScroll();
       this.fullReaderOpen = true;
       this.currentFullPageOrder = 1;
@@ -674,18 +692,46 @@ export default {
           this.observeFullReaderPages();
           this.bindFullReaderScroll();
           this.scheduleFullPageMeasure();
-          const fullReader = this.$el.querySelector('.comic-full-reader');
-          if (fullReader) {
-            fullReader.focus();
+          const closeButton = this.$refs.fullReaderClose;
+          if (closeButton && typeof closeButton.focus === 'function') {
+            closeButton.focus();
           }
         },
       );
       this.loadAllPages();
     },
     closeFullReader() {
+      const opener = this.fullReaderOpener;
+      this.fullReaderOpener = null;
       this.fullReaderOpen = false;
       this.disconnectFullPageObserver();
       this.unlockFullReaderScroll();
+      this.$nextTick(() => {
+        if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+          opener.focus();
+        }
+      });
+    },
+    trapFullReaderFocus(event) {
+      const dialog = this.$refs.fullReaderDialog;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter(element => !element.hidden && element.offsetParent !== null);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     },
     lockFullReaderScroll() {
       if (this.fullReaderScrollLock !== null) {
@@ -960,6 +1006,10 @@ export default {
       share.shareRoute(
         this,
         { name: 'comic', params: { comicId: this.comic.id } },
+        {
+          text: String(this.comic.description || '').trim(),
+          title: this.comic.title,
+        },
       );
     },
     toggleEditing() {
@@ -1211,10 +1261,10 @@ export default {
 .reader-source-row.is-warning {
   width: fit-content;
   padding: 0.22rem 0.5rem;
-  border: 1px solid color-mix(in srgb, #8a6d1d 24%, transparent);
+  border: 1px solid var(--color-warning-border);
   border-radius: var(--radius-sm);
-  color: #8a6d1d;
-  background: color-mix(in srgb, #fff8dc 78%, transparent);
+  color: var(--color-warning-text);
+  background: var(--color-warning-soft);
   font-size: 0.8rem;
   font-weight: 750;
 }
@@ -1222,24 +1272,10 @@ export default {
   margin-top: 0.55rem;
 }
 .reader-stats {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.6rem;
   margin-top: 0.65rem;
 }
 .reader-stat {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-  min-height: 30px;
-  padding: 0 0.48rem;
-  border: 1px solid #e7ebf2;
-  border-radius: 999px;
-  color: #64748b;
-  background: #f8fafc;
-  font-size: 13px;
-  font-weight: 800;
+  border-color: transparent;
 }
 .reader-like {
   cursor: pointer;
@@ -1478,8 +1514,8 @@ export default {
 }
 
 .reader-source-row.is-warning {
-  color: #8a6d1d;
-  background: color-mix(in srgb, #fff8dc 78%, transparent);
+  color: var(--color-warning-text);
+  background: var(--color-warning-soft);
 }
 
 .page-tools,
@@ -2102,6 +2138,123 @@ export default {
   .comic-editor-file__preview {
     width: 54px;
     height: 54px;
+  }
+}
+
+/* R76 reader hierarchy: the reading action leads; provenance stays secondary. */
+.reader-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: clamp(var(--space-md), 3vw, var(--space-xl));
+  padding: clamp(var(--space-md), 2.4vw, var(--space-lg));
+  border-color: var(--color-line-soft);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--color-theme-glow) 42%, transparent), transparent 280px),
+    var(--color-surface-card);
+  box-shadow: var(--shadow-card);
+}
+.reader-head__copy {
+  min-width: 0;
+}
+.reader-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin-bottom: var(--space-xs);
+  color: var(--color-accent-foreground);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.reader-head h1 {
+  max-width: 32ch;
+  color: var(--color-text-strong);
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 800;
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+}
+.reader-stats {
+  margin-top: var(--space-sm);
+}
+.reader-supporting {
+  max-width: 760px;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-line-soft);
+}
+.reader-supporting .reader-description {
+  margin-top: 0;
+}
+.reader-actions {
+  align-self: center;
+  max-width: 340px;
+}
+.reader-action-button--primary {
+  color: var(--color-accent-control-text);
+  text-shadow: none;
+}
+.full-reader-bar {
+  padding:
+    calc(0.9rem + env(safe-area-inset-top))
+    calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-right))
+    0.9rem
+    calc(clamp(1rem, 3vw, 2rem) + env(safe-area-inset-left));
+}
+.full-reader-actions .button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.full-reader-pages {
+  padding-right: calc(clamp(1rem, 3vw, 2.5rem) + env(safe-area-inset-right));
+  padding-bottom: calc(clamp(1rem, 3vw, 2.5rem) + env(safe-area-inset-bottom));
+  padding-left: calc(clamp(1rem, 3vw, 2.5rem) + env(safe-area-inset-left));
+}
+@media screen and (max-width: 760px) {
+  .reader-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-md);
+  }
+  .reader-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    width: 100%;
+    max-width: none;
+    margin-top: 0;
+  }
+  .reader-action-button--primary {
+    grid-column: 1 / -1;
+  }
+  .reader-head .reader-action-button,
+  .reader-actions .reader-action-button {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 0;
+  }
+}
+@media screen and (max-width: 542px) {
+  .reader-head,
+  .reader-actions {
+    display: grid;
+  }
+  .reader-actions {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+  .full-reader-bar {
+    padding:
+      calc(0.75rem + env(safe-area-inset-top))
+      calc(0.75rem + env(safe-area-inset-right))
+      0.75rem
+      calc(0.75rem + env(safe-area-inset-left));
+  }
+  .full-reader-pages {
+    padding-right: calc(0.75rem + env(safe-area-inset-right));
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    padding-left: calc(0.75rem + env(safe-area-inset-left));
   }
 }
 

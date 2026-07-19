@@ -1,4 +1,56 @@
-// Shared source-link and like-pill interactions for Pin and Comic cards.
+// Shared source and interaction treatment for Pin and Comic cards.
+html body .content-stats.content-stats {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+  font-variant-numeric: tabular-nums;
+}
+
+html body .content-stat.content-stat {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0 0.52rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill, 999px);
+  color: var(--color-text-muted, #64748b);
+  background: transparent;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+html body .content-stat.content-stat .icon,
+html body .content-stat.content-stat .mdi,
+html body .content-stat.content-stat svg {
+  flex: 0 0 auto;
+}
+
+html body .content-stat.content-stat--interactive {
+  border-color: var(--color-line-soft, rgba(148, 163, 184, 0.3));
+  background: color-mix(in srgb, var(--color-surface-2) 88%, transparent);
+  cursor: pointer;
+}
+
+html body .content-stat.content-stat--interactive:hover,
+html body .content-stat.content-stat--interactive:focus-visible,
+html body .content-stat.content-stat--interactive.is-liked,
+html body .content-stat.content-stat--interactive[aria-pressed='true'] {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent-foreground);
+  background: var(--color-accent-soft-gradient);
+}
+
+html body .content-stat.content-stat--passive {
+  padding-right: 0.4rem;
+  padding-left: 0.4rem;
+}
+
 .content-source-link {
   position: relative;
   display: inline-flex;
@@ -205,4 +257,11 @@ html[data-motion='reduce'] .content-like-pill svg {
 
 html[data-motion='reduce'] .content-source-link::after {
   display: none;
+}
+
+@media (pointer: coarse) {
+  html body .content-stat.content-stat--interactive,
+  html body .content-source-link.content-source-link {
+    min-height: 44px;
+  }
 }

@@ -10,14 +10,15 @@
     <nav class="nav-shell" role="navigation" aria-label="main navigation">
       <router-link
         class="brand"
+        aria-label="HyEISN Gallery · Pinry"
         :to="{ name: 'home' }"
         @click.native="closeMenu">
         <span class="brand-logo">
-          <img src="../assets/logo-dark.png" alt="Pinry">
+          <img :src="brandLogo" alt="">
         </span>
         <span class="brand-copy" aria-hidden="true">
-          <strong>Pinry</strong>
-          <small>HyEISN Gallery</small>
+          <strong>HyEISN</strong>
+          <small>Gallery</small>
         </span>
       </router-link>
 
@@ -444,6 +445,8 @@
 
 <script>
 import localeUtils from '@/components/utils/i18n';
+import logoDark from '../assets/logo-dark.png';
+import logoLight from '../assets/logo-light.png';
 import ComicIcon from './icons/ComicIcon.vue';
 import api from './api';
 import modals from './modals';
@@ -498,6 +501,9 @@ export default {
     };
   },
   computed: {
+    brandLogo() {
+      return this.themeState.mode === 'dark' ? logoLight : logoDark;
+    },
     navOpen() {
       return this.active
         || this.activeDropdown !== null
@@ -635,6 +641,7 @@ export default {
     setLocale(locale) {
       this.$i18n.locale = locale;
       localStorage.setItem('localeCode', locale);
+      document.documentElement.lang = locale;
       this.closeMenu();
     },
     toggleDropdown(name) {
@@ -713,11 +720,23 @@ export default {
         mode,
         accent: this.themeState.accent,
       });
+      this.updateThemeColorMeta();
     },
     setAccent(accent) {
       this.themeState = theme.saveAndApplyTheme({
         mode: this.themeState.mode,
         accent,
+      });
+      this.updateThemeColorMeta();
+    },
+    updateThemeColorMeta() {
+      this.$nextTick(() => {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) return;
+        const appBackground = window.getComputedStyle(document.documentElement)
+          .getPropertyValue('--app-bg')
+          .trim();
+        if (appBackground) meta.setAttribute('content', appBackground);
       });
     },
     requestScrollUpdate() {
@@ -819,7 +838,11 @@ export default {
   top: 0;
   right: 0;
   left: 0;
-  padding: var(--space-sm) clamp(var(--space-sm), 3vw, var(--space-xl));
+  padding:
+    calc(var(--space-sm) + env(safe-area-inset-top))
+    calc(clamp(var(--space-sm), 3vw, var(--space-xl)) + env(safe-area-inset-right))
+    var(--space-sm)
+    calc(clamp(var(--space-sm), 3vw, var(--space-xl)) + env(safe-area-inset-left));
   pointer-events: none;
   transition: padding var(--motion-duration-fast) var(--motion-ease-standard);
 }
@@ -1252,7 +1275,11 @@ export default {
 }
 @media screen and (max-width: 980px) {
   .p-header {
-    padding: var(--space-xs);
+    padding:
+      calc(var(--space-xs) + env(safe-area-inset-top))
+      calc(var(--space-xs) + env(safe-area-inset-right))
+      var(--space-xs)
+      calc(var(--space-xs) + env(safe-area-inset-left));
   }
   .nav-shell {
     min-height: 50px;
@@ -1287,16 +1314,16 @@ export default {
   .mobile-panel {
     position: fixed;
     z-index: 2;
-    top: calc(var(--space-xs) + 58px);
-    right: var(--space-xs);
-    left: var(--space-xs);
+    top: calc(env(safe-area-inset-top) + var(--space-xs) + 58px);
+    right: calc(var(--space-xs) + env(safe-area-inset-right));
+    left: calc(var(--space-xs) + env(safe-area-inset-left));
     display: grid;
     gap: var(--space-sm);
     width: auto;
     max-width: var(--container-max);
-    max-height: calc(100dvh - 74px);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 74px);
     margin: 0 auto;
-    padding: var(--space-sm);
+    padding: var(--space-sm) var(--space-sm) calc(var(--space-sm) + env(safe-area-inset-bottom));
     overflow-y: auto;
     border: 1px solid var(--color-line-soft);
     border-radius: var(--radius-lg);

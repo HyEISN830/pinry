@@ -12,6 +12,78 @@ function rgba(hex, alpha) {
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
+function rgb(hex) {
+  const value = hex.slice(1);
+  return {
+    blue: parseInt(value.slice(4, 6), 16),
+    green: parseInt(value.slice(2, 4), 16),
+    red: parseInt(value.slice(0, 2), 16),
+  };
+}
+
+function hexColor({ red, green, blue }) {
+  const channel = value => Math.round(value).toString(16).padStart(2, '0');
+  return `#${channel(red)}${channel(green)}${channel(blue)}`.toUpperCase();
+}
+
+function mixHex(from, to, amount) {
+  const start = rgb(from);
+  const end = rgb(to);
+  return hexColor({
+    red: start.red + ((end.red - start.red) * amount),
+    green: start.green + ((end.green - start.green) * amount),
+    blue: start.blue + ((end.blue - start.blue) * amount),
+  });
+}
+
+function relativeLuminance(hex) {
+  const value = rgb(hex);
+  const channel = (input) => {
+    const normalized = input / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  };
+  return (0.2126 * channel(value.red))
+    + (0.7152 * channel(value.green))
+    + (0.0722 * channel(value.blue));
+}
+
+function contrastRatio(first, second) {
+  const firstLuminance = relativeLuminance(first);
+  const secondLuminance = relativeLuminance(second);
+  const lighter = Math.max(firstLuminance, secondLuminance);
+  const darker = Math.min(firstLuminance, secondLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function ensureContrast(color, background, target, toward) {
+  if (contrastRatio(color, background) >= target) {
+    return color;
+  }
+  for (let step = 1; step <= 20; step += 1) {
+    const candidate = mixHex(color, toward, step / 20);
+    if (contrastRatio(candidate, background) >= target) {
+      return candidate;
+    }
+  }
+  return toward;
+}
+
+function accessibleControlPalette(palette) {
+  const lightText = '#FFFFFF';
+  const darkText = '#172033';
+  const prefersDarkText = contrastRatio(palette.accentText, '#FFFFFF')
+    > contrastRatio(palette.accentText, '#172033');
+  const text = prefersDarkText ? darkText : lightText;
+  const toward = prefersDarkText ? '#FFFFFF' : '#111827';
+  return {
+    from: ensureContrast(palette.from, text, 4.5, toward),
+    text,
+    to: ensureContrast(palette.to, text, 4.5, toward),
+  };
+}
+
 function buildGradient(from, to) {
   return {
     diagonal: `linear-gradient(135deg, ${from} 0%, ${to} 100%)`,
@@ -23,7 +95,14 @@ function buildGradient(from, to) {
 function buildCssVariables(palette, mode) {
   const isDark = mode === 'dark';
   const gradient = buildGradient(palette.from, palette.to);
-  const foreground = palette.fontColor[mode];
+  const foreground = ensureContrast(
+    palette.fontColor[mode],
+    isDark ? '#171B24' : '#FFFFFF',
+    4.5,
+    isDark ? '#FFFFFF' : '#111827',
+  );
+  const controlPalette = accessibleControlPalette(palette);
+  const controlGradient = buildGradient(controlPalette.from, controlPalette.to);
   const softAlpha = isDark ? 0.2 : 0.16;
   const surfaceAlpha = isDark ? 0.17 : 0.12;
   const glowAlpha = isDark ? 0.18 : 0.24;
@@ -37,12 +116,24 @@ function buildCssVariables(palette, mode) {
     '--accent': palette.from,
     '--accent-strong': palette.to,
     '--accent-foreground': foreground,
+    '--accent-ink': foreground,
     '--accent-text': palette.accentText,
     '--accent-text-shadow': palette.accentText === '#FFFFFF'
       ? '0 1px 2px rgba(15, 23, 42, 0.24)'
       : 'none',
     '--accent-fill': fill,
     '--accent-fill-hover': fillHover,
+    '--accent-control-text': controlPalette.text,
+    '--accent-control-fill': palette.kind === 'gradient'
+      ? controlGradient.diagonal
+      : controlPalette.to,
+    '--accent-control-fill-hover': palette.kind === 'gradient'
+      ? `linear-gradient(135deg, ${controlPalette.to} 0%, ${controlPalette.from} 100%)`
+      : controlPalette.from,
+    '--accent-control-gradient': controlGradient.vertical,
+    '--accent-control-gradient-horizontal': controlGradient.horizontal,
+    '--accent-control-gradient-vertical': controlGradient.vertical,
+    '--accent-control-gradient-diagonal': controlGradient.diagonal,
     '--accent-gradient': gradient.vertical,
     '--accent-gradient-horizontal': gradient.horizontal,
     '--accent-gradient-vertical': gradient.vertical,
@@ -53,6 +144,7 @@ function buildCssVariables(palette, mode) {
     '--accent-soft-gradient': `linear-gradient(135deg, ${rgba(palette.from, softAlpha + 0.04)} 0%, ${rgba(palette.to, softAlpha)} 100%)`,
     '--surface-accent': rgba(palette.from, surfaceAlpha),
     '--accent-border': rgba(palette.from, isDark ? 0.42 : 0.36),
+    '--focus-ring-color': foreground,
     '--accent-shadow': `0 16px 38px ${rgba(palette.to, isDark ? 0.26 : 0.2)}`,
     '--theme-glow': rgba(palette.from, glowAlpha),
     '--theme-glow-strong': rgba(palette.to, strongGlowAlpha),

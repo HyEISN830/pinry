@@ -7,13 +7,36 @@
           <div class="sidebar-eyebrow">{{ $t("aggregateSearchTitle") }}</div>
           <h1>{{ $t("searchPlaceholder") }}</h1>
           <p>{{ activeTypeLabel }}</p>
-          <div class="search-types" role="list" :aria-label="$t('aggregateSearchTitle')">
+          <button
+            ref="searchFilterToggle"
+            class="search-filter-toggle"
+            type="button"
+            :aria-expanded="mobileFiltersExpanded ? 'true' : 'false'"
+            aria-controls="aggregate-search-types"
+            @click="toggleMobileFilters">
+            <span>
+              <small>{{ $t("chooseFilterPlaceholder") }}</small>
+              <strong>{{ activeTypeLabel }}</strong>
+            </span>
+            <b-icon
+              class="search-filter-toggle-icon"
+              :class="{ 'is-expanded': mobileFiltersExpanded }"
+              icon="chevron-down"
+              custom-size="mdi-20px"
+              aria-hidden="true">
+            </b-icon>
+          </button>
+          <div
+            id="aggregate-search-types"
+            class="search-types"
+            :class="{ 'is-mobile-expanded': mobileFiltersExpanded }"
+            role="group"
+            :aria-label="$t('aggregateSearchTitle')">
             <button
               v-for="option in typeOptions"
               :key="option.value"
               class="search-type-pill"
               type="button"
-              role="listitem"
               :class="{ 'is-active': activeType === option.value }"
               :aria-pressed="activeType === option.value ? 'true' : 'false'"
               @click="setType(option.value)">
@@ -32,6 +55,8 @@
               <input
                 id="aggregate-search-input"
                 class="input"
+                type="search"
+                enterkeyhint="search"
                 v-model="queryText"
                 maxlength="80"
                 :aria-label="$t('searchPlaceholder')"
@@ -56,8 +81,19 @@
             <p>{{ $t("searchPlaceholder") }}</p>
           </section>
 
-          <section class="state-card is-loading" v-if="loading">
-            <loadingSpinner :show="loading" size="regular"></loadingSpinner>
+          <section
+            class="state-card is-loading"
+            v-if="loading"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true">
+            <span class="search-status-message">{{ $t("imageLoadingText") }}</span>
+            <loadingSpinner
+              :show="loading"
+              :label="$t('imageLoadingText')"
+              size="regular"
+              aria-hidden="true">
+            </loadingSpinner>
             <div class="skeleton-lines" aria-hidden="true">
               <span></span>
               <span></span>
@@ -65,7 +101,11 @@
             </div>
           </section>
 
-          <section class="state-card is-error" v-if="errorText && !loading">
+          <section
+            class="state-card is-error"
+            v-if="errorText && !loading"
+            role="alert"
+            aria-atomic="true">
             <b-icon icon="alert-circle-outline" custom-size="mdi-34px"></b-icon>
             <h2>{{ $t("searchFailedTitle") }}</h2>
             <p>{{ errorText }}</p>
@@ -74,14 +114,22 @@
             </button>
           </section>
 
-          <div class="result-heading" v-if="hasSearched && !loading && !errorText">
+          <div
+            class="result-heading"
+            v-if="hasSearched && !loading && !errorText"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true">
             <span>{{ $t("searchResultsFor") }}</span>
             <strong>{{ resultQuery }}</strong>
           </div>
 
           <div
             class="empty-results motion-card-enter"
-            v-if="hasSearched && !loading && !errorText && !hasAnyResults">
+            v-if="hasSearched && !loading && !errorText && !hasAnyResults"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true">
             <b-icon icon="image-search-outline" custom-size="mdi-32px"></b-icon>
             <div>
               <h2>{{ $t("noResultsFound") }}</h2>
@@ -271,6 +319,7 @@ export default {
         comics: false,
         tags: false,
       },
+      mobileFiltersExpanded: false,
       queryText: '',
       resultQuery: '',
       restoreScrollTop: 0,
@@ -375,9 +424,21 @@ export default {
     },
     setType(type) {
       this.activeType = type;
+      if (this.mobileFiltersExpanded) {
+        this.mobileFiltersExpanded = false;
+        if (window.matchMedia('(max-width: 860px)').matches) {
+          this.$nextTick(() => {
+            const toggle = this.$refs.searchFilterToggle;
+            if (toggle && typeof toggle.focus === 'function') toggle.focus();
+          });
+        }
+      }
       if (this.hasSearched) {
         this.search(true);
       }
+    },
+    toggleMobileFilters() {
+      this.mobileFiltersExpanded = !this.mobileFiltersExpanded;
     },
     search(reset = true) {
       if (this.normalizedQuery.length === 0 || this.loading) {
@@ -454,8 +515,11 @@ export default {
       const restoreScroll = scroll.preserveModalScrollPosition(
         () => this.$route.fullPath === routeAtOpen,
       );
+      const previewTrigger = document.activeElement;
       const previewModal = this.$buefy.modal.open(
         {
+          ariaModal: true,
+          ariaRole: 'dialog',
           parent: this,
           component: PinPreview,
           props: {
@@ -463,12 +527,17 @@ export default {
             statsTarget: pin,
           },
           scroll: 'keep',
+          trapFocus: true,
           customClass: 'pin-preview-at-home',
         },
       );
       previewModal.$once('close', () => {
         restoreScroll();
         this.saveCachedSearch();
+        if (previewTrigger && typeof previewTrigger.focus === 'function'
+          && document.contains(previewTrigger)) {
+          previewTrigger.focus();
+        }
       });
     },
     shouldShowBucket(name) {
@@ -572,6 +641,9 @@ export default {
   gap: var(--space-xs);
   margin-top: var(--space-md);
 }
+.search-filter-toggle {
+  display: none;
+}
 .search-type-pill {
   display: flex;
   align-items: center;
@@ -594,6 +666,7 @@ export default {
   box-shadow: var(--shadow-xs);
 }
 .search-type-pill:focus-visible,
+.search-filter-toggle:focus-visible,
 .search-card .input:focus,
 .search-submit:focus-visible,
 .search-load-more:focus-visible,
@@ -685,6 +758,16 @@ export default {
   display: grid;
   gap: var(--space-xs);
 }
+.search-status-message {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .skeleton-lines span {
   display: block;
   height: 12px;
@@ -744,7 +827,7 @@ export default {
 }
 @media screen and (max-width: 860px) {
   .search-shell {
-    padding-top: calc(62px + var(--space-lg));
+    padding-top: var(--space-sm);
   }
   .search-container {
     display: block;
@@ -752,16 +835,78 @@ export default {
   }
   .search-sidebar {
     position: static;
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-sm);
+    padding: var(--space-sm);
+  }
+  .search-sidebar h1 {
+    margin: var(--space-2xs) 0 0;
+    font-size: clamp(1.15rem, 5vw, 1.5rem);
+  }
+  .search-sidebar p {
+    display: none;
+  }
+  .sidebar-eyebrow {
+    display: none;
+  }
+  .search-filter-toggle {
+    display: flex;
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    margin-top: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    border: 1px solid var(--color-accent-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text-strong);
+    background: var(--color-accent-soft-gradient);
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+  }
+  .search-filter-toggle > span {
+    display: grid;
+    min-width: 0;
+  }
+  .search-filter-toggle small {
+    overflow: hidden;
+    color: var(--color-text-muted);
+    font-size: 0.7rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-filter-toggle strong {
+    overflow: hidden;
+    color: var(--color-accent-foreground);
+    font-size: 0.92rem;
+    font-weight: 950;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .search-filter-toggle-icon {
+    flex: 0 0 auto;
+    color: var(--color-accent-foreground);
+    transition: transform var(--motion-duration-standard) var(--motion-ease-standard);
+  }
+  .search-filter-toggle-icon.is-expanded {
+    transform: rotate(180deg);
   }
   .search-types {
+    display: none;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: var(--space-xs);
+  }
+  .search-types.is-mobile-expanded {
+    display: grid;
   }
 }
 @media screen and (max-width: 560px) {
-  .search-input-row,
   .search-types {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .section-head,
   .empty-results,

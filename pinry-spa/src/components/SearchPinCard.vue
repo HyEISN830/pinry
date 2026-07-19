@@ -53,18 +53,25 @@
               :data-source-tip="sourceTip">
               {{ sourceTip }}
             </span>
-            <div class="search-card-stats">
+            <div
+              class="search-card-stats content-stats"
+              role="group"
+              :aria-label="$t('pinStatsLabel')">
               <button
-                class="search-card-like content-like-pill"
+                class="search-card-like content-like-pill content-stat content-stat--interactive"
                 type="button"
                 :class="{ 'is-liked': pin.viewer_liked }"
                 :aria-pressed="pin.viewer_liked ? 'true' : 'false'"
+                :aria-label="`${pin.viewer_liked ? $t('unlikeButton') : $t('likeButton')}: ${formattedLikes}`"
                 :disabled="likeBusy"
                 @click.stop="$emit('toggle-like', pin)">
                 <b-icon :icon="pin.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
                 <span>{{ formattedLikes }}</span>
               </button>
-              <span class="search-card-viewed" :title="$t('viewedLabel')">
+              <span
+                class="search-card-viewed content-stat content-stat--passive"
+                :aria-label="`${$t('viewedLabel')}: ${formattedViewed}`"
+                :title="$t('viewedLabel')">
                 <b-icon icon="eye-outline" size="is-small" aria-hidden="true"></b-icon>
                 <span>{{ formattedViewed }}</span>
               </span>
@@ -126,7 +133,6 @@ export default {
 .search-card-like { display: inline-flex; align-items: center; gap: 0.28rem; min-height: 30px; padding: 0 0.58rem; border: 1px solid var(--color-line-soft); border-radius: var(--radius-pill); color: var(--color-text-muted); background: var(--color-surface-2); cursor: pointer; font-size: 13px; font-weight: 900; }
 .search-card-like:hover, .search-card-like.is-liked { border-color: var(--color-accent); color: var(--color-accent-foreground); background: var(--color-accent-soft-gradient); }
 .search-card-like:disabled { opacity: 0.72; cursor: wait; }
-.search-card-stats { display: flex; align-items: center; flex-wrap: wrap; gap: .48rem; }
-.search-card-viewed { display: inline-flex; align-items: center; gap: .28rem; min-height: 30px; padding: 0 .48rem; color: var(--color-text-muted); font-size: 13px; font-weight: 900; }
+.search-card-stats { margin-top: var(--space-2xs); }
 
 </style>

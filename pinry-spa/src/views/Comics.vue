@@ -1307,9 +1307,9 @@ html[data-motion='full'] .comic-page-button__surface {
   left: var(--space-sm, 12px);
   padding: 0.25rem 0.45rem;
   border-radius: var(--radius-sm, 8px);
-  color: var(--accent-text, #fff);
-  background: var(--accent-fill, var(--accent-strong, #7e57c2));
-  text-shadow: var(--accent-text-shadow, none);
+  color: var(--color-accent-control-text, #fff);
+  background: var(--color-accent-fill, var(--accent-strong, #7e57c2));
+  text-shadow: none;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.02em;

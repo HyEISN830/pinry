@@ -37,8 +37,19 @@ openingPreference.applySavedOpeningPreference();
 setUpAxiosCsrfConfig();
 setUpAxiosFeedback();
 
+const supportedLocales = Object.keys(localeUtils.messages);
+const requestedLocale = localStorage.getItem('localeCode') || navigator.language || 'en';
+const normalizedLocale = String(requestedLocale).toLowerCase().split('-')[0];
+let initialLocale = 'en';
+if (supportedLocales.includes(requestedLocale)) {
+  initialLocale = requestedLocale;
+} else if (supportedLocales.includes(normalizedLocale)) {
+  initialLocale = normalizedLocale;
+}
+document.documentElement.lang = initialLocale;
+
 const i18n = new VueI18n({
-  locale: localStorage.getItem('localeCode') || navigator.language.split('-')[0],
+  locale: initialLocale,
   fallbackLocale: 'en',
   messages: localeUtils.messages,
 });

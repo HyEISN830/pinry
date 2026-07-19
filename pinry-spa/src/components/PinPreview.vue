@@ -1,6 +1,10 @@
 <template>
   <div class="pin-preview-modal">
-    <section ref="previewSurface" class="pin-preview-surface">
+    <section
+      ref="previewSurface"
+      class="pin-preview-surface"
+      :aria-hidden="fullViewOpen ? 'true' : null"
+      :inert="fullViewOpen ? '' : null">
       <article
         class="pin-preview-card"
         :class="{ 'is-layout-pending': !previewLayoutReady }"
@@ -17,7 +21,7 @@
               class="pin-preview-image"
               :src="activePreviewUrl"
               :style="previewImageStyle"
-              alt="Image"
+              :alt="pinImageAlt"
               @load="onPreviewImageLoad"
               @error="onPreviewImageError"
               :class="{ 'is-loading-preview': imageLoading }">
@@ -72,61 +76,37 @@
                 v-html="niceLinks(pinItem.description)"></p>
               <div class="pin-preview-footer">
               <div class="pin-preview-meta">
-                <div class="pin-preview-actions">
-                  <a
-                    v-if="isWebUrl(pinItem.referer)"
-                    v-source-tooltip
-                    :href="pinItem.referer"
-                    :data-source-tip="sourceText(pinItem.referer)"
-                    target="_blank"
-                    rel="noopener">
-                    <b-button class="meta-link" type="is-warning">{{ $t("sourceButton") }}</b-button>
-                  </a>
-                  <span
-                    v-else-if="hasSource(pinItem.referer)"
-                    v-source-tooltip
-                    class="meta-link source-text-button"
-                    tabindex="0"
-                    :data-source-tip="sourceText(pinItem.referer)">
-                    {{ sourceText(pinItem.referer) }}
-                  </span>
-                  <span v-else class="meta-link source-missing-pill">{{ $t("missingSourceNotice") }}</span>
-                  <a v-if="originalImageUrl" :href="originalImageUrl" target="_blank" rel="noopener">
-                    <b-button class="meta-link" type="is-link">{{ $t("originalImageButton") }}</b-button>
-                  </a>
-                  <b-button @click="sharePin" class="meta-link" type="is-success">{{ $t("permalinkButton") }}</b-button>
-                  <b-button
-                    @click="openFullView"
-                    :disabled="!previewImageUrl || imageLoading"
-                    class="meta-link"
-                    type="is-primary">
-                    {{ $t("viewFullImageButton") }}
-                  </b-button>
-                  <b-button
-                    @click="downloadImage"
-                    :disabled="!imageBlob"
-                    :loading="imageLoading"
-                    class="meta-link"
-                    type="is-info">
-                    {{ $t("downloadButton") }}
-                  </b-button>
-                </div>
-                <div class="pin-preview-stats" :aria-label="$t('pinStatsLabel')">
-                  <button
-                    class="pin-preview-like content-like-pill"
-                    type="button"
-                    :class="{ 'is-liked': pinItem.viewer_liked }"
-                    :aria-pressed="pinItem.viewer_liked ? 'true' : 'false'"
-                    :disabled="likeBusy"
-                    :title="pinItem.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
-                    @click.stop="toggleLike">
-                    <b-icon :icon="pinItem.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
-                    <span>{{ formatCount(pinItem.likes_count) }}</span>
-                  </button>
-                  <span class="pin-preview-viewed" :title="$t('viewedLabel')">
-                    <b-icon icon="eye-outline" size="is-small" aria-hidden="true"></b-icon>
-                    <span>{{ formatCount(pinItem.viewed_count) }}</span>
-                  </span>
+                <div class="pin-preview-summary">
+                  <div class="pin-preview-identity">
+                    <img class="pin-preview-avatar" :src="pinItem.avatar" alt="">
+                    <p class="pin-preview-author">
+                      <span class="dim">{{ $t("pinnedByTitle") }}</span>
+                      <router-link
+                        class="author"
+                        :to="{ name: 'profile4user', params: { username: pinItem.author } }"
+                        @click.native="closePreview">
+                        {{ pinItem.author }}
+                      </router-link>
+                    </p>
+                  </div>
+                  <div class="pin-preview-stats content-stats" role="group" :aria-label="$t('pinStatsLabel')">
+                    <button
+                      class="pin-preview-like content-like-pill content-stat content-stat--interactive"
+                      type="button"
+                      :class="{ 'is-liked': pinItem.viewer_liked }"
+                      :aria-pressed="pinItem.viewer_liked ? 'true' : 'false'"
+                      :disabled="likeBusy"
+                      :title="pinItem.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                      :aria-label="`${pinItem.viewer_liked ? $t('unlikeButton') : $t('likeButton')}: ${formatCount(pinItem.likes_count)}`"
+                      @click.stop="toggleLike">
+                      <b-icon :icon="pinItem.viewer_liked ? 'heart' : 'heart-outline'" size="is-small"></b-icon>
+                      <span>{{ formatCount(pinItem.likes_count) }}</span>
+                    </button>
+                    <span class="pin-preview-viewed content-stat content-stat--passive" :aria-label="`${$t('viewedLabel')}: ${formatCount(pinItem.viewed_count)}`" :title="$t('viewedLabel')">
+                      <b-icon icon="eye-outline" size="is-small" aria-hidden="true"></b-icon>
+                      <span>{{ formatCount(pinItem.viewed_count) }}</span>
+                    </span>
+                  </div>
                 </div>
                 <div v-if="pinItem.tags.length > 0" class="pin-preview-tag-container">
                   <div class="pin-preview-tags">
@@ -140,17 +120,46 @@
                     </router-link>
                   </div>
                 </div>
-                <div class="pin-preview-identity">
-                  <img class="pin-preview-avatar" :src="pinItem.avatar" alt="Image">
-                  <p class="pin-preview-author">
-                    <span class="dim">{{ $t("pinnedByTitle") }}</span>
-                    <router-link
-                      class="author"
-                      :to="{ name: 'profile4user', params: { username: pinItem.author } }"
-                      @click.native="closePreview">
-                      {{ pinItem.author }}
-                    </router-link>
-                  </p>
+                <div class="pin-preview-actions">
+                  <b-button
+                    ref="fullViewTrigger"
+                    @click="openFullView"
+                    :disabled="!previewImageUrl || imageLoading"
+                    class="meta-link pin-preview-action-primary"
+                    type="is-primary">
+                    {{ $t("viewFullImageButton") }}
+                  </b-button>
+                  <b-button
+                    @click="downloadImage"
+                    :disabled="!imageBlob"
+                    :loading="imageLoading"
+                    class="meta-link pin-preview-action-secondary">
+                    {{ $t("downloadButton") }}
+                  </b-button>
+                  <div class="pin-preview-actions-secondary">
+                    <a
+                      v-if="isWebUrl(pinItem.referer)"
+                      v-source-tooltip
+                      :href="pinItem.referer"
+                      :data-source-tip="sourceText(pinItem.referer)"
+                      target="_blank"
+                      rel="noopener">
+                      <b-button class="meta-link pin-preview-action-quiet">{{ $t("sourceButton") }}</b-button>
+                    </a>
+                    <span
+                      v-else-if="hasSource(pinItem.referer)"
+                      v-source-tooltip
+                      class="meta-link source-text-button pin-preview-action-quiet"
+                      tabindex="0"
+                      :data-source-tip="sourceText(pinItem.referer)">
+                      {{ sourceText(pinItem.referer) }}
+                    </span>
+                    <span v-else class="meta-link source-missing-pill">{{ $t("missingSourceNotice") }}</span>
+                    <a v-if="originalImageUrl" :href="originalImageUrl" target="_blank" rel="noopener">
+                      <b-button class="meta-link pin-preview-action-quiet">{{ $t("originalImageButton") }}</b-button>
+                    </a>
+                    <b-button @click="sharePin" class="meta-link pin-preview-action-quiet">{{ $t("permalinkButton") }}</b-button>
+                  </div>
                 </div>
               </div>
               </div>
@@ -161,21 +170,26 @@
     <div
       v-if="fullViewOpen"
       class="full-image-viewer"
+      ref="fullViewDialog"
       role="dialog"
       aria-modal="true"
+      :aria-label="$t('viewFullImageButton')"
+      tabindex="-1"
       @click.self="closeFullView"
+      @keydown.tab="trapFullViewFocus"
+      @keyup.esc.stop.prevent="closeFullView"
       @wheel.stop
       @touchmove.stop
       @mousedown.stop>
       <div class="full-image-toolbar">
         <strong>{{ $t("viewFullImageButton") }}</strong>
-        <button type="button" @click="closeFullView">
+        <button ref="fullViewClose" type="button" @click="closeFullView">
           {{ $t("closeButton") }}
         </button>
       </div>
       <div class="full-image-stage">
         <div class="full-image-media">
-          <img :src="previewImageUrl" alt="Image">
+          <img :src="previewImageUrl" :alt="pinImageAlt">
           <video
             v-if="canPlayFullMotionPhoto"
             ref="fullMotionVideo"
@@ -240,6 +254,7 @@ export default {
       imageBlob: null,
       bodyOverflowSnapshot: null,
       fullViewOpen: false,
+      fullViewOpener: null,
       fullMotionReplayTimer: null,
       fullMotionVideoActive: false,
       fullMotionVideoFailed: false,
@@ -266,6 +281,13 @@ export default {
     },
     originalImageUrl() {
       return API.Pin.originalImageUrl(this.pinItem.image_id);
+    },
+    pinImageAlt() {
+      const description = String(this.pinItem.description || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return description || this.$t('pinLink');
     },
     previewBackdropStyle() {
       const source = this.pinItem.url || this.previewImageUrl;
@@ -432,8 +454,15 @@ export default {
         motionVideo.pause();
         this.motionVideoActive = false;
       }
+      this.fullViewOpener = document.activeElement;
       this.fullViewOpen = true;
-      this.$nextTick(this.playFullMotionVideo);
+      this.$nextTick(() => {
+        this.playFullMotionVideo();
+        const closeButton = this.$refs.fullViewClose;
+        if (closeButton && typeof closeButton.focus === 'function') {
+          closeButton.focus();
+        }
+      });
     },
     closeFullView() {
       if (!this.fullViewOpen) {
@@ -449,11 +478,40 @@ export default {
       }
       this.fullMotionVideoActive = false;
       this.fullViewOpen = false;
-      this.$nextTick(this.playMotionVideo);
+      const opener = this.fullViewOpener;
+      this.fullViewOpener = null;
+      this.$nextTick(() => {
+        this.playMotionVideo();
+        if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+          opener.focus();
+        }
+      });
     },
     onKeydown(event) {
-      if (event.key === 'Escape') {
-        this.closeFullView();
+      if (event.key === 'Escape' && this.fullViewOpen) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    },
+    trapFullViewFocus(event) {
+      const dialog = this.$refs.fullViewDialog;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter(element => !element.hidden && element.offsetParent !== null);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     },
     onPreviewImageError() {
@@ -762,6 +820,10 @@ export default {
       share.shareRoute(
         this,
         { name: 'pin', params: { pinId: this.pinItem.id } },
+        {
+          text: String(this.pinItem.description || '').trim(),
+          title: this.pinImageAlt,
+        },
       );
     },
     closePreview() {
@@ -1422,6 +1484,113 @@ export default {
   }
   .full-image-stage {
     padding: 0.8rem;
+  }
+}
+
+/* R76 information hierarchy: identity and engagement lead, utilities recede. */
+.pin-preview-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  min-width: 0;
+  padding-bottom: 0.52rem;
+  border-bottom: 1px solid var(--color-line-soft);
+}
+.pin-preview-summary .pin-preview-identity {
+  order: initial;
+}
+.pin-preview-summary .pin-preview-stats {
+  order: initial;
+  flex: 0 0 auto;
+}
+.pin-preview-tag-container {
+  order: initial;
+}
+.pin-preview-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.46rem;
+  order: initial;
+  padding-top: 0.08rem;
+}
+.pin-preview-actions-secondary {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.pin-preview-actions-secondary > a,
+.pin-preview-actions-secondary > span {
+  display: inline-flex;
+  min-width: 0;
+}
+.pin-preview-actions .pin-preview-action-primary.pin-preview-action-primary {
+  min-height: 40px;
+  border-color: var(--color-accent-strong) !important;
+  color: var(--color-accent-control-text) !important;
+  background: var(--color-accent-fill) !important;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--color-theme-glow) 68%, transparent);
+  font-weight: 800;
+}
+.pin-preview-actions .pin-preview-action-secondary.pin-preview-action-secondary {
+  min-height: 40px;
+  border-color: var(--color-accent-border) !important;
+  color: var(--color-accent-foreground) !important;
+  background: var(--color-accent-soft-gradient) !important;
+  box-shadow: none;
+}
+.pin-preview-actions .pin-preview-action-quiet.pin-preview-action-quiet {
+  border-color: var(--color-line-soft) !important;
+  color: var(--color-text-muted) !important;
+  background: var(--color-surface-2) !important;
+  box-shadow: none;
+}
+.pin-preview-actions .source-missing-pill {
+  border-color: var(--color-warning-border) !important;
+  color: var(--color-warning-text) !important;
+  background: var(--color-warning-soft) !important;
+}
+.full-image-toolbar {
+  padding:
+    calc(0.85rem + env(safe-area-inset-top))
+    calc(1rem + env(safe-area-inset-right))
+    0.85rem
+    calc(1rem + env(safe-area-inset-left));
+}
+.full-image-toolbar button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.full-image-stage {
+  padding-right: calc(1.25rem + env(safe-area-inset-right));
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  padding-left: calc(1.25rem + env(safe-area-inset-left));
+}
+@media screen and (max-width: 542px) {
+  .pin-preview-summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.48rem;
+  }
+  .pin-preview-actions {
+    grid-template-columns: minmax(0, 1fr) minmax(92px, auto);
+  }
+  .pin-preview-actions .button,
+  .pin-preview-actions .source-text-button,
+  .pin-preview-actions .source-missing-pill {
+    min-height: 44px;
+  }
+  .pin-preview-actions-secondary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pin-preview-actions-secondary > a,
+  .pin-preview-actions-secondary > span,
+  .pin-preview-actions-secondary .button {
+    width: 100%;
+    max-width: none;
   }
 }
 

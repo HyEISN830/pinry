@@ -38,6 +38,14 @@ export default {
   },
   created() {
     theme.applySavedTheme();
+    this.$nextTick(() => {
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) return;
+      const appBackground = window.getComputedStyle(document.documentElement)
+        .getPropertyValue('--app-bg')
+        .trim();
+      if (appBackground) meta.setAttribute('content', appBackground);
+    });
     bus.bus.$on(bus.events.notify, this.showToast);
   },
   beforeDestroy() {
@@ -90,6 +98,13 @@ export default {
     --accent-text-shadow: 0 1px 2px rgba(15, 23, 42, 0.24);
     --accent-fill: #d94691;
     --accent-fill-hover: #e879b9;
+    --accent-control-text: #ffffff;
+    --accent-control-fill: #d94691;
+    --accent-control-fill-hover: #e879b9;
+    --accent-control-gradient: linear-gradient(180deg, #e879b9 0%, #d94691 100%);
+    --accent-control-gradient-horizontal: linear-gradient(90deg, #e879b9 0%, #d94691 100%);
+    --accent-control-gradient-vertical: linear-gradient(180deg, #e879b9 0%, #d94691 100%);
+    --accent-control-gradient-diagonal: linear-gradient(135deg, #e879b9 0%, #d94691 100%);
     --accent-gradient: linear-gradient(180deg, #e879b9 0%, #d94691 100%);
     --accent-gradient-horizontal: linear-gradient(90deg, #e879b9 0%, #d94691 100%);
     --accent-gradient-vertical: linear-gradient(180deg, #e879b9 0%, #d94691 100%);
@@ -104,7 +119,7 @@ export default {
     --theme-backdrop: linear-gradient(150deg, rgba(232, 121, 185, 0.14) 0%, rgba(217, 70, 145, 0.1) 48%, transparent 78%);
     --skeleton-base: #f7edf4;
     --skeleton-highlight: #ffffff;
-    --nav-height: 80px;
+    --nav-height: calc(80px + env(safe-area-inset-top));
   }
   html[data-theme="dark"] {
     --app-bg: #0f1218;
@@ -128,13 +143,16 @@ export default {
     min-height: 100vh;
     background: var(--app-bg);
     color: var(--text-strong);
-    font-family: 'Open Sans', sans-serif;
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
   #app {
     min-height: 100vh;
     background:
-      radial-gradient(circle at top left, var(--theme-glow-start), transparent 360px),
-      radial-gradient(circle at 92% 12%, var(--theme-glow-end), transparent 300px),
+      radial-gradient(circle at top left, color-mix(in srgb, var(--theme-glow-start) 68%, transparent), transparent 420px),
+      radial-gradient(circle at 92% 12%, color-mix(in srgb, var(--theme-glow-end) 58%, transparent), transparent 360px),
       var(--theme-backdrop),
       var(--app-bg);
   }
@@ -147,21 +165,21 @@ export default {
   }
   @media screen and (max-width: 760px) {
     :root {
-      --nav-height: 66px;
+      --nav-height: calc(66px + env(safe-area-inset-top));
     }
   }
   a {
     color: var(--accent-foreground);
   }
   .button.is-primary {
-    border-color: var(--accent-strong);
-    color: var(--accent-text);
-    text-shadow: var(--accent-text-shadow);
-    background: var(--accent-fill);
+    border-color: var(--accent-strong) !important;
+    color: var(--color-accent-control-text) !important;
+    text-shadow: none;
+    background: var(--color-accent-fill) !important;
   }
   .button.is-primary:hover {
-    border-color: var(--accent);
-    background: var(--accent-fill-hover);
+    border-color: var(--accent) !important;
+    background: var(--color-accent-fill-hover) !important;
   }
   .button.is-light {
     border-color: var(--line-soft);
@@ -175,15 +193,15 @@ export default {
   }
   .button.is-link,
   .button.is-info {
-    border-color: var(--accent-strong);
-    color: var(--accent-text);
-    text-shadow: var(--accent-text-shadow);
-    background: var(--accent-fill);
+    border-color: var(--accent-strong) !important;
+    color: var(--color-accent-control-text) !important;
+    text-shadow: none;
+    background: var(--color-accent-fill) !important;
   }
   .button.is-link:hover,
   .button.is-info:hover {
-    border-color: var(--accent);
-    background: var(--accent-fill-hover);
+    border-color: var(--accent) !important;
+    background: var(--color-accent-fill-hover) !important;
   }
   .input,
   .textarea,
@@ -213,11 +231,8 @@ export default {
   .box {
     color: var(--text-strong);
     border: 1px solid var(--line-soft);
-    background:
-      radial-gradient(circle at top left, var(--theme-glow-start), transparent 260px),
-      radial-gradient(circle at bottom right, var(--theme-glow-end), transparent 280px),
-      var(--surface-card);
-    box-shadow: var(--shadow-soft);
+    background: var(--surface-card);
+    box-shadow: var(--shadow-card);
   }
   .modal-card {
     color: var(--text-strong);
@@ -254,9 +269,9 @@ export default {
   }
   .tabs.is-toggle li.is-active a {
     border-color: var(--accent-strong);
-    color: var(--accent-text);
-    text-shadow: var(--accent-text-shadow);
-    background: var(--accent-fill);
+    color: var(--color-accent-control-text);
+    text-shadow: none;
+    background: var(--color-accent-fill);
   }
   .pin-preview-at-home .modal-content {
     display: flex;

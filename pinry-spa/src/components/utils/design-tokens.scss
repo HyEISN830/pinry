@@ -7,30 +7,46 @@
   --color-surface-2: var(--surface-2);
   --color-surface-card: var(--surface-card);
   --color-surface-accent: var(--surface-accent);
+  --color-surface-muted: var(--surface-2);
   --color-text-strong: var(--text-strong);
+  --color-text-primary: var(--text-strong);
   --color-text-muted: var(--text-muted);
   --color-line-soft: var(--line-soft);
+  --color-border-soft: var(--line-soft);
   --color-accent: var(--accent);
   --color-accent-strong: var(--accent-strong);
   --color-accent-foreground: var(--accent-foreground);
-  --color-accent-fill: var(--accent-fill);
-  --color-accent-fill-hover: var(--accent-fill-hover);
-  --color-accent-gradient: var(--accent-gradient);
-  --color-accent-gradient-horizontal: var(--accent-gradient-horizontal);
-  --color-accent-gradient-vertical: var(--accent-gradient-vertical);
-  --color-accent-gradient-diagonal: var(--accent-gradient-diagonal);
+  --color-accent-ink: var(--accent-ink, var(--accent-foreground));
+  --color-accent-fill: var(--accent-control-fill, var(--accent-fill));
+  --color-accent-fill-hover: var(--accent-control-fill-hover, var(--accent-fill-hover));
+  --color-accent-control-text: var(--accent-control-text, var(--accent-text));
+  --color-accent-gradient: var(--accent-control-gradient, var(--accent-gradient));
+  --color-accent-gradient-horizontal: var(--accent-control-gradient-horizontal, var(--accent-gradient-horizontal));
+  --color-accent-gradient-vertical: var(--accent-control-gradient-vertical, var(--accent-gradient-vertical));
+  --color-accent-gradient-diagonal: var(--accent-control-gradient-diagonal, var(--accent-gradient-diagonal));
   --color-accent-progress: var(--accent-progress);
   --color-accent-soft-gradient: var(--accent-soft-gradient);
   --color-accent-swatch: var(--accent-swatch);
   --color-accent-soft: var(--accent-soft);
   --color-accent-border: var(--accent-border);
-  --color-accent-text: var(--accent-text);
+  --color-border-accent: var(--accent-border);
+  --color-accent-text: var(--accent-control-text, var(--accent-text));
   --color-accent-text-shadow: var(--accent-text-shadow);
   --color-theme-glow: var(--theme-glow);
   --color-theme-glow-strong: var(--theme-glow-strong);
   --color-theme-glow-start: var(--theme-glow-start);
   --color-theme-glow-end: var(--theme-glow-end);
   --color-theme-backdrop: var(--theme-backdrop);
+  --color-focus-ring: var(--focus-ring-color, var(--accent-foreground));
+  --color-warning-text: #74520a;
+  --color-warning-border: rgba(180, 126, 16, 0.28);
+  --color-warning-soft: rgba(255, 244, 204, 0.72);
+
+  // System font stacks avoid a render-blocking font request and keep mixed
+  // Latin/CJK typography stable across Windows, Android, and iOS.
+  --font-sans: Inter, "SF Pro Text", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-display: Inter, "SF Pro Display", "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
   // Spacing scale.
   --space-0: 0;
@@ -50,14 +66,15 @@
   --radius-lg: 24px;
   --radius-xl: 32px;
   --radius-pill: 999px;
+  --radius-card: var(--radius-lg);
 
   // Elevation scale.
-  --shadow-xs: 0 4px 14px rgba(16, 24, 40, 0.08);
-  --shadow-sm: 0 10px 28px rgba(16, 24, 40, 0.10);
-  --shadow-card: var(--shadow-soft);
-  --shadow-hover: 0 20px 52px rgba(16, 24, 40, 0.16), 0 0 0 1px var(--color-accent-border);
-  --shadow-floating: 0 26px 70px rgba(16, 24, 40, 0.22);
-  --focus-ring: 0 0 0 3px var(--color-accent-soft);
+  --shadow-xs: 0 4px 14px rgba(16, 24, 40, 0.07);
+  --shadow-sm: 0 9px 26px rgba(16, 24, 40, 0.09);
+  --shadow-card: 0 14px 38px rgba(16, 24, 40, 0.11);
+  --shadow-hover: 0 18px 46px rgba(16, 24, 40, 0.14), 0 0 0 1px var(--color-accent-border);
+  --shadow-floating: 0 26px 70px rgba(16, 24, 40, 0.20);
+  --focus-ring: 0 0 0 2px var(--color-surface-1), 0 0 0 5px var(--color-focus-ring);
 
   // Layout and responsive tokens. CSS custom properties document the scale; SCSS mixins use the same map.
   --bp-xs: 360px;
@@ -86,13 +103,14 @@
   --tilt-perspective: 900px;
   --tilt-rotate-x: 0deg;
   --tilt-rotate-y: 0deg;
-  --tilt-scale: 1.035;
+  --tilt-scale: 1.018;
   --tilt-glare-x: 50%;
   --tilt-glare-y: 18%;
   --tilt-glare-opacity: 0;
 
   // Shared z-index layers.
   --z-nav: 120;
+  --z-sticky: 110;
   --z-dropdown: 130;
   --z-modal: 140;
   --z-page-transition: 170;
@@ -102,8 +120,12 @@
 html[data-theme="dark"] {
   --shadow-xs: 0 4px 14px rgba(0, 0, 0, 0.26);
   --shadow-sm: 0 12px 32px rgba(0, 0, 0, 0.34);
-  --shadow-hover: 0 24px 62px rgba(0, 0, 0, 0.46), 0 0 0 1px var(--color-accent-border);
-  --shadow-floating: 0 30px 80px rgba(0, 0, 0, 0.52);
+  --shadow-card: 0 16px 42px rgba(0, 0, 0, 0.32);
+  --shadow-hover: 0 22px 58px rgba(0, 0, 0, 0.42), 0 0 0 1px var(--color-accent-border);
+  --shadow-floating: 0 30px 80px rgba(0, 0, 0, 0.48);
+  --color-warning-text: #f2cb72;
+  --color-warning-border: rgba(242, 203, 114, 0.28);
+  --color-warning-soft: rgba(126, 87, 17, 0.2);
 }
 
 html[data-motion="reduce"] {

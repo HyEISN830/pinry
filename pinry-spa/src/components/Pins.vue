@@ -41,16 +41,19 @@
                       v-on:pin-remove-from-board-succeed="reset"
                     ></EditorUI>
                   </transition>
-                  <div
-                    class="pin-image-shell"
+                  <button
+                    class="pin-image-shell pin-image-trigger"
+                    type="button"
                     :style="item.style"
-                    :data-pin-id="item.id">
+                    :data-pin-id="item.id"
+                    :disabled="!item.imageVisible || !item.url"
+                    :aria-label="pinPreviewLabel(item)"
+                    @click="openPreview(item, $event)">
                     <img
                        v-if="item.imageVisible && item.url"
                        :src="item.url"
                        @load="onPinImageLoaded(item.id)"
                        @error="onPinImageFailed(item.id)"
-                       @click="openPreview(item, $event)"
                        :alt="item.description || $t('imageUnavailableText')"
                        class="pin-preview-image">
                     <div
@@ -73,7 +76,7 @@
                         <span class="live-photo-dot"></span>
                       </span>
                     </div>
-                  </div>
+                  </button>
                 </div>
                 <div class="pin-footer">
                   <div
@@ -140,14 +143,18 @@
                   <div class="source-warning" v-if="!hasSource(item.referer)">
                     {{ $t("missingSourceNotice") }}
                   </div>
-                  <div class="pin-stats">
+                  <div
+                    class="pin-stats content-stats"
+                    role="group"
+                    :aria-label="$t('pinStatsLabel')">
                     <button
-                      class="like-button content-like-pill"
+                      class="like-button content-like-pill content-stat content-stat--interactive"
                       type="button"
                       :class="{ 'is-liked': item.viewer_liked }"
                       :aria-pressed="item.viewer_liked ? 'true' : 'false'"
                       :disabled="item.likeBusy"
                       :title="item.viewer_liked ? $t('unlikeButton') : $t('likeButton')"
+                      :aria-label="`${item.viewer_liked ? $t('unlikeButton') : $t('likeButton')}: ${formatLikeCount(item.likes_count)}`"
                       @click.stop="togglePinLike(item)">
                       <b-icon
                         :icon="item.viewer_liked ? 'heart' : 'heart-outline'"
@@ -155,7 +162,10 @@
                       </b-icon>
                       <span>{{ formatLikeCount(item.likes_count) }}</span>
                     </button>
-                    <span class="viewed-count" :title="$t('viewedLabel')">
+                    <span
+                      class="viewed-count content-stat content-stat--passive"
+                      :aria-label="`${$t('viewedLabel')}: ${formatLikeCount(item.viewed_count)}`"
+                      :title="$t('viewedLabel')">
                       <b-icon icon="eye-outline" size="is-small" aria-hidden="true"></b-icon>
                       <span>{{ formatLikeCount(item.viewed_count) }}</span>
                     </span>
@@ -690,18 +700,37 @@ export default {
       const restoreScroll = scroll.preserveModalScrollPosition(
         () => this.$route.fullPath === routeAtOpen,
       );
+      const previewTrigger = event && event.currentTarget
+        ? event.currentTarget
+        : document.activeElement;
       const previewModal = this.$buefy.modal.open(
         {
+          ariaModal: true,
+          ariaRole: 'dialog',
           parent: this,
           component: PinPreview,
           props: {
             pinItem,
           },
           scroll: 'keep',
+          trapFocus: true,
           customClass: 'pin-preview-at-home',
         },
       );
-      previewModal.$once('close', restoreScroll);
+      previewModal.$once('close', () => {
+        restoreScroll();
+        if (previewTrigger && typeof previewTrigger.focus === 'function'
+          && document.contains(previewTrigger)) {
+          previewTrigger.focus();
+        }
+      });
+    },
+    pinPreviewLabel(pinItem) {
+      const description = String((pinItem && pinItem.description) || '')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      return description || this.$t('pinLink');
     },
     shouldFetchMore(created) {
       if (!created) {
@@ -997,6 +1026,25 @@ $avatar-height: 30px;
     background-color: var(--surface-accent, #f5f7fa);
     border-radius: 8px 8px 0 0;
   }
+  .pin-image-trigger {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    color: inherit;
+    cursor: zoom-in;
+    font: inherit;
+    text-align: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  .pin-image-trigger:disabled {
+    cursor: default;
+  }
+  .pin-image-trigger:focus-visible {
+    outline: 3px solid var(--color-focus-ring);
+    outline-offset: -3px;
+  }
   .pin-preview-image {
     display: block;
     width: 100%;
@@ -1226,10 +1274,10 @@ $avatar-height: 30px;
   .source-warning {
     margin: 0 12px 12px 47px;
     padding: 5px 8px;
-    border: 1px solid #f2df9b;
+    border: 1px solid var(--color-warning-border);
     border-radius: 6px;
-    background: #fffaf0;
-    color: #8a6d1d;
+    background: var(--color-warning-soft);
+    color: var(--color-warning-text);
     font-size: 13px;
     line-height: 1.35;
   }
@@ -1250,10 +1298,6 @@ $avatar-height: 30px;
     transition: transform .16s ease, color .16s ease, background .16s ease, border-color .16s ease;
   }
   .pin-stats {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.48rem;
     margin: 0 12px 12px 47px;
   }
   .pin-stats .like-button {
