@@ -118,7 +118,8 @@
 }
 
 // Pin and Comic cards opt into denser metadata without shrinking the same
-// shared controls in readers, previews, board badges, or standalone search tags.
+// shared controls in desktop readers, previews, board badges, or standalone
+// search tags.
 .pin-card,
 .comic-card {
   --content-card-tag-height: 26px;
@@ -127,6 +128,21 @@
   --content-card-stat-height-coarse: 30px;
   --content-card-source-height: 24px;
   --content-card-source-height-coarse: 30px;
+}
+
+// Detail surfaces use the same compact metadata tokens only when they adopt
+// the mobile layout/profile. This keeps coarse-pointer defaults accessible in
+// unrelated controls and leaves the desktop preview/reader proportions intact.
+@media screen and (max-width: 860px), (hover: none) and (pointer: coarse) {
+  .pin-preview-card,
+  .reader-head {
+    --content-card-tag-height: 26px;
+    --content-card-tag-height-coarse: 28px;
+    --content-card-stat-height: 28px;
+    --content-card-stat-height-coarse: 30px;
+    --content-card-source-height: 24px;
+    --content-card-source-height-coarse: 30px;
+  }
 }
 
 html[data-theme="dark"] {

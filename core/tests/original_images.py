@@ -1,3 +1,4 @@
+import os
 import shutil
 import tempfile
 from io import BytesIO
@@ -22,6 +23,7 @@ class OriginalImageDeliveryTests(APITestCase):
         self.media_settings = override_settings(
             MEDIA_ROOT=self.media_root,
             IMAGE_PREVIEW_THROTTLE_BYTES_PER_SECOND=1024 * 1024,
+            IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND=1024,
         )
         self.media_settings.enable()
         original_image_id_for_path.cache_clear()
@@ -93,20 +95,59 @@ class OriginalImageDeliveryTests(APITestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_private_original_alias_path_remains_guarded(self):
+        self.pin.private = True
+        self.pin.save(update_fields=['private'])
+        alias_url = '/media/avatars/../{}'.format(self.image.image.name)
+
+        response = self.client.get(alias_url, follow=True)
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(
+            response.redirect_chain,
+            [(reverse('image-original', kwargs={'pk': self.image.pk}), 302)],
+        )
+
     def test_thumbnail_media_is_served_without_original_redirect(self):
-        thumbnail_payload = self.image_bytes(color='blue')
+        thumbnail_payload = self.image_bytes(
+            size=(128, 128),
+            image_format='BMP',
+            color='blue',
+        )
         thumbnail = Thumbnail.objects.create(
             original=self.image,
             size='guard-test',
             image=SimpleUploadedFile(
-                'thumbnail.png',
+                'thumbnail.bmp',
                 thumbnail_payload,
-                content_type='image/png',
+                content_type='image/bmp',
             ),
         )
 
-        response = self.client.get(thumbnail.image.url)
-        body = b''.join(response.streaming_content)
+        with mock.patch('core.media_views.time.sleep') as sleep:
+            response = self.client.get(thumbnail.image.url)
+            body = b''.join(response.streaming_content)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(body, thumbnail_payload)
+        self.assertTrue(sleep.called)
+        self.assertGreater(
+            sum(call.args[0] for call in sleep.call_args_list),
+            0,
+        )
+
+    def test_avatar_media_is_not_treated_as_a_thumbnail(self):
+        avatar_payload = b'avatar-payload' * 512
+        avatar_path = 'avatars/test/avatar.png'
+        avatar_file = os.path.join(self.media_root, *avatar_path.split('/'))
+        os.makedirs(os.path.dirname(avatar_file), exist_ok=True)
+        with open(avatar_file, 'wb') as stream:
+            stream.write(avatar_payload)
+
+        with mock.patch('core.media_views.time.sleep') as sleep:
+            response = self.client.get('/media/' + avatar_path)
+            body = b''.join(response.streaming_content)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(body, avatar_payload)
+        sleep.assert_not_called()

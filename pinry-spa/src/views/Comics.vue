@@ -1215,7 +1215,7 @@ html[data-motion='full'] .comic-page-button__surface {
 }
 
 .comic-masonry-item {
-  margin-bottom: calc(var(--comic-masonry-gutter, 16px) + 14px);
+  margin-bottom: var(--comic-masonry-gutter, 16px);
   transform: none;
   will-change: top, left;
 }

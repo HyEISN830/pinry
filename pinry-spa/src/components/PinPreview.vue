@@ -1552,6 +1552,7 @@ export default {
   color: var(--color-warning-text) !important;
   background: var(--color-warning-soft) !important;
 }
+
 .full-image-toolbar {
   padding:
     calc(0.85rem + env(safe-area-inset-top))
@@ -1591,6 +1592,21 @@ export default {
   .pin-preview-actions-secondary .button {
     width: 100%;
     max-width: none;
+  }
+}
+
+// Keep secondary provenance utilities visually compact on the mobile profile.
+// This follows the narrow-layout block so its detail sizing wins the cascade;
+// the primary view/download controls retain their larger touch target.
+@media screen and (max-width: 860px), (hover: none) and (pointer: coarse) {
+  .pin-preview-actions-secondary .button,
+  .pin-preview-actions-secondary .source-text-button,
+  .pin-preview-actions-secondary .source-missing-pill {
+    height: calc(var(--content-card-source-height-coarse, 30px) + var(--space-xs, 8px));
+    min-height: calc(var(--content-card-source-height-coarse, 30px) + var(--space-xs, 8px));
+    padding-top: 0.14rem;
+    padding-bottom: 0.14rem;
+    line-height: 1.2;
   }
 }
 

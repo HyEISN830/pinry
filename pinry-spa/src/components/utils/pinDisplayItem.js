@@ -21,7 +21,7 @@ export default function createPinDisplayItem(pin) {
 
   try {
     thumbnail = pinImage.id
-      ? (imageVariant.getCardThumbnail(pinImage, { preferTallDetail: true }) || {})
+      ? (imageVariant.getCardThumbnail(pinImage) || {})
       : {};
   } catch (error) {
     thumbnail = {};
