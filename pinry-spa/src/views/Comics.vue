@@ -164,6 +164,7 @@ import HomeCollectionStat from '../components/HomeCollectionStat.vue';
 import PHeader from '../components/PHeader.vue';
 import loadingSpinner from '../components/loadingSpinner.vue';
 import modals from '../components/modals';
+import { responsiveBatchSize } from '../components/utils/responsiveMedia';
 
 const FULL_PAGE_BATCH_SIZE = 12;
 const FULL_PAGE_MAX_COLUMNS = 4;
@@ -449,7 +450,7 @@ export default {
       this.status.error = false;
       API.Comic.fetchList(
         offset,
-        FULL_PAGE_BATCH_SIZE,
+        responsiveBatchSize(FULL_PAGE_BATCH_SIZE),
         this.tagFilter,
         this.userFilter,
       ).then(

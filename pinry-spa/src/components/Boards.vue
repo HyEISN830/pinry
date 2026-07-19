@@ -109,6 +109,9 @@ import placeholder from '../assets/pinry-placeholder.jpg';
 import BoardEditorUI from './editors/BoardEditUI.vue';
 import bus from './utils/bus';
 import imageVariant from './utils/imageVariant';
+import { responsiveBatchSize } from './utils/responsiveMedia';
+
+const BOARD_BATCH_SIZE = 24;
 
 function getResponsiveCardWidth(containerWidth) {
   if (containerWidth >= 1240) return 224;
@@ -528,8 +531,11 @@ export default {
       }, 180);
     },
     registerScrollEvent() {
+      if (this.unbindScroll) {
+        return;
+      }
       const self = this;
-      scroll.bindScroll2Bottom(
+      this.unbindScroll = scroll.bindScroll2Bottom(
         () => {
           if (self.status.loading || !self.status.hasNext) {
             return;
@@ -566,15 +572,18 @@ export default {
         return;
       }
       let promise;
+      const batchSize = responsiveBatchSize(BOARD_BATCH_SIZE);
       if (this.filters.boardUsername) {
         promise = API.fetchBoardForUser(
           this.filters.boardUsername,
           this.status.offset,
+          batchSize,
         );
       } else if (this.filters.boardNameContains) {
         promise = API.Board.fetchListWhichContains(
           this.filters.boardNameContains,
           this.status.offset,
+          batchSize,
         );
       } else {
         return;
@@ -609,6 +618,7 @@ export default {
   },
   created() {
     this.lazyObserver = null;
+    this.unbindScroll = null;
     bus.bus.$on(bus.events.refreshBoards, this.reset);
     this.registerScrollEvent();
     window.addEventListener('resize', this.handleResize);
@@ -641,6 +651,10 @@ export default {
     }
     if (this.suppressBoardNavigationTimer) {
       window.clearTimeout(this.suppressBoardNavigationTimer);
+    }
+    if (this.unbindScroll) {
+      this.unbindScroll();
+      this.unbindScroll = null;
     }
     window.removeEventListener('resize', this.handleResize);
   },

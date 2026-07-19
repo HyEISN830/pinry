@@ -54,6 +54,7 @@ import API from './api';
 import ComicCard from './ComicCard.vue';
 import loadingSpinner from './loadingSpinner.vue';
 import modals from './modals';
+import { responsiveBatchSize } from './utils/responsiveMedia';
 
 const PAGE_SIZE = 18;
 const SAFE_WIDTH = 240;
@@ -137,7 +138,12 @@ export default {
       const epoch = this.requestEpoch;
       const { username } = this;
       this.status.loading = true;
-      API.Comic.fetchList(this.status.offset, PAGE_SIZE, null, username).then((response) => {
+      API.Comic.fetchList(
+        this.status.offset,
+        responsiveBatchSize(PAGE_SIZE),
+        null,
+        username,
+      ).then((response) => {
         if (epoch !== this.requestEpoch || username !== this.username) return;
         const { data } = response;
         const incoming = (data.results || []).map(comic => Object.assign({}, comic, { likeBusy: false }));

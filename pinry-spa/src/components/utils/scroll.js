@@ -14,12 +14,11 @@ function onScroll2Bottom(callback) {
 }
 
 function bindScroll2Bottom(callback) {
-  window.addEventListener(
-    'scroll',
-    () => {
-      onScroll2Bottom(callback);
-    },
-  );
+  const listener = () => {
+    onScroll2Bottom(callback);
+  };
+  window.addEventListener('scroll', listener, { passive: true });
+  return () => window.removeEventListener('scroll', listener);
 }
 
 function runWithoutSmoothScroll(callback, restoreDelay = 0) {

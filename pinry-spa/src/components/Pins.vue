@@ -208,6 +208,9 @@ import EditorUI from './editors/PinEditorUI.vue';
 import niceLinks from './utils/niceLinks';
 import format from './utils/format';
 import createPinDisplayItem from './utils/pinDisplayItem';
+import { responsiveBatchSize } from './utils/responsiveMedia';
+
+const PIN_BATCH_SIZE = 18;
 
 function isWebUrl(url) {
   return /^https?:\/\//i.test((url || '').trim());
@@ -661,8 +664,11 @@ export default {
       }, 180);
     },
     registerScrollEvent() {
+      if (this.unbindScroll) {
+        return;
+      }
       const self = this;
-      scroll.bindScroll2Bottom(
+      this.unbindScroll = scroll.bindScroll2Bottom(
         () => {
           if (self.status.loading || !self.status.hasNext) {
             return;
@@ -839,23 +845,42 @@ export default {
         return;
       }
       this.status.loading = true;
+      const batchSize = responsiveBatchSize(PIN_BATCH_SIZE);
       let promise;
       if (this.pinFilters.tagFilter) {
-        promise = API.fetchPins(this.status.offset, this.pinFilters.tagFilter, null, null);
+        promise = API.fetchPins(
+          this.status.offset,
+          this.pinFilters.tagFilter,
+          null,
+          null,
+          batchSize,
+        );
       } else if (this.pinFilters.userFilter) {
-        promise = API.fetchPins(this.status.offset, null, this.pinFilters.userFilter, null);
+        promise = API.fetchPins(
+          this.status.offset,
+          null,
+          this.pinFilters.userFilter,
+          null,
+          batchSize,
+        );
       } else if (this.pinFilters.boardFilter) {
         const prevPromise = API.Board.get(this.pinFilters.boardFilter);
         promise = prevPromise.then(
           (resp) => {
             this.editorMeta.currentBoard = resp.data;
-            return API.fetchPins(this.status.offset, null, null, this.pinFilters.boardFilter);
+            return API.fetchPins(
+              this.status.offset,
+              null,
+              null,
+              this.pinFilters.boardFilter,
+              batchSize,
+            );
           },
         );
       } else if (this.pinFilters.idFilter) {
         promise = API.fetchPin(this.pinFilters.idFilter);
       } else {
-        promise = API.fetchPins(this.status.offset);
+        promise = API.fetchPins(this.status.offset, null, null, null, batchSize);
       }
       promise.then(
         (resp) => {
@@ -913,6 +938,7 @@ export default {
   },
   created() {
     this.lazyObserver = null;
+    this.unbindScroll = null;
     bus.bus.$on(bus.events.refreshPin, this.handlePinRefresh);
     this.registerScrollEvent();
     window.addEventListener('resize', this.handleResize);
@@ -949,6 +975,10 @@ export default {
     }
     if (this.autoPreviewTimer) {
       window.clearTimeout(this.autoPreviewTimer);
+    }
+    if (this.unbindScroll) {
+      this.unbindScroll();
+      this.unbindScroll = null;
     }
     window.removeEventListener('resize', this.handleResize);
   },

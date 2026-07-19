@@ -245,6 +245,7 @@ import SearchComicMasonry from '../components/SearchComicMasonry.vue';
 import SearchPinMasonry from '../components/SearchPinMasonry.vue';
 import PinPreview from '../components/PinPreview.vue';
 import createPinDisplayItem from '../components/utils/pinDisplayItem';
+import { responsiveBatchSize } from '../components/utils/responsiveMedia';
 import scroll from '../components/utils/scroll';
 import { loadSearchState, saveSearchState } from '../components/utils/searchStateCache';
 
@@ -455,7 +456,7 @@ export default {
         this.resultQuery,
         this.activeType,
         {},
-        this.activeType === 'all' ? 6 : 12,
+        responsiveBatchSize(this.activeType === 'all' ? 6 : 12),
       ).then(
         (resp) => {
           this.applySearchResponse(resp.data, false);
@@ -497,7 +498,7 @@ export default {
         this.resultQuery,
         type,
         offsets,
-        12,
+        responsiveBatchSize(12),
       ).then(
         (resp) => {
           this.applySearchResponse(resp.data, true);

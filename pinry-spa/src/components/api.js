@@ -165,12 +165,12 @@ const Pin = {
 };
 
 
-function fetchPins(offset, tagFilter, userFilter, boardFilter) {
+function fetchPins(offset, tagFilter, userFilter, boardFilter, limit = 18) {
   const url = `${API_PREFIX}pins/`;
   const queryArgs = {
     format: 'json',
     ordering: '-id',
-    limit: 18,
+    limit,
     offset,
   };
   if (tagFilter) queryArgs.tags__name = tagFilter;
