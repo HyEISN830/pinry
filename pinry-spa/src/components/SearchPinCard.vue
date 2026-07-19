@@ -96,7 +96,10 @@ export default {
   computed: {
     submitter() { return this.pin.submitter || null; },
     imageUrl() {
-      const thumbnail = imageVariant.getCardThumbnail(this.pin.image) || {};
+      const thumbnail = imageVariant.getCardThumbnail(
+        this.pin.image,
+        { preferTallDetail: true },
+      ) || {};
       return thumbnail.image || '';
     },
     coverStyle() {

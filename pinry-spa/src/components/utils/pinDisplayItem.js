@@ -19,7 +19,9 @@ export default function createPinDisplayItem(pin) {
   let thumbnail = {};
 
   try {
-    thumbnail = pinImage.id ? (imageVariant.getCardThumbnail(pinImage) || {}) : {};
+    thumbnail = pinImage.id
+      ? (imageVariant.getCardThumbnail(pinImage, { preferTallDetail: true }) || {})
+      : {};
   } catch (error) {
     thumbnail = {};
   }
