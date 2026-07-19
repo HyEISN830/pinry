@@ -3,7 +3,11 @@ const COMET_DURATION = 1520;
 const MOVEMENT_START = 0.08;
 const MOVEMENT_END = 0.82;
 const MAX_PIXEL_RATIO = 2;
-const MAX_BACKING_PIXELS = 8294400;
+const MAX_BACKING_PIXELS = 4147200;
+const FRAME_PIXEL_THRESHOLD = 3000000;
+const FRAME_INTERVAL = 1000 / 60;
+const FRAME_EARLY_TOLERANCE = 1;
+const OFFSCREEN_REVEAL_PIXEL_RATIO = 1.75;
 const MAX_PARTICLE_DELTA = 120;
 const MAX_TRAIL_CATCHUP = 120;
 const TRAIL_LIFETIME = 1120;
@@ -189,10 +193,13 @@ export default class GalleryOpeningRenderer {
     this.geometry = null;
     this.height = 0;
     this.lastFrameTime = null;
+    this.lastDrawTime = null;
+    this.nextDrawTime = null;
     this.lastTrailTime = -Infinity;
     this.afterglowMotes = [];
     this.particles = [];
     this.pixelRatio = 1;
+    this.frameInterval = 0;
     this.resizePending = false;
     this.spawnAccumulator = 0;
     this.spawnedParticles = 0;
@@ -201,6 +208,8 @@ export default class GalleryOpeningRenderer {
     this.trail = [];
     this.veilCanvas = null;
     this.veilContext = null;
+    this.veilFrameCanvas = null;
+    this.veilFrameContext = null;
     this.width = 0;
     this.handleResize = this.handleResize.bind(this);
     this.renderFrame = this.renderFrame.bind(this);
@@ -217,6 +226,10 @@ export default class GalleryOpeningRenderer {
     window.addEventListener('resize', this.scheduleResize, { passive: true });
     this.startTime = window.performance.now();
     this.lastFrameTime = this.startTime;
+    this.lastDrawTime = this.startTime;
+    this.nextDrawTime = this.frameInterval > 0
+      ? this.startTime + this.frameInterval
+      : null;
     this.draw(this.getCometState(0), 0);
     this.frameId = window.requestAnimationFrame(this.renderFrame);
   }
@@ -230,6 +243,8 @@ export default class GalleryOpeningRenderer {
     this.resizePending = false;
     this.startTime = null;
     this.lastFrameTime = null;
+    this.lastDrawTime = null;
+    this.nextDrawTime = null;
     this.lastTrailTime = -Infinity;
     this.spawnAccumulator = 0;
     this.spawnedParticles = 0;
@@ -242,6 +257,10 @@ export default class GalleryOpeningRenderer {
     if (this.veilCanvas) {
       this.veilCanvas.width = 1;
       this.veilCanvas.height = 1;
+    }
+    if (this.veilFrameCanvas) {
+      this.veilFrameCanvas.width = 1;
+      this.veilFrameCanvas.height = 1;
     }
   }
 
@@ -267,6 +286,14 @@ export default class GalleryOpeningRenderer {
     this.pixelRatio = pixelRatio;
     this.canvas.width = Math.max(1, Math.round(width * pixelRatio));
     this.canvas.height = Math.max(1, Math.round(height * pixelRatio));
+    this.frameInterval = (this.canvas.width * this.canvas.height) > FRAME_PIXEL_THRESHOLD
+      ? FRAME_INTERVAL
+      : 0;
+    if (this.frameInterval > 0 && this.lastDrawTime !== null) {
+      this.nextDrawTime = this.lastDrawTime + this.frameInterval;
+    } else if (this.frameInterval === 0) {
+      this.nextDrawTime = null;
+    }
     this.context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     this.geometry = createGeometry(width, height);
     this.afterglowMotes = this.createAfterglowMotes();
@@ -312,6 +339,19 @@ export default class GalleryOpeningRenderer {
     }
     this.veilCanvas.width = Math.max(1, Math.round(this.width));
     this.veilCanvas.height = Math.max(1, Math.round(this.height));
+    if (this.pixelRatio >= OFFSCREEN_REVEAL_PIXEL_RATIO) {
+      if (!this.veilFrameCanvas) {
+        this.veilFrameCanvas = document.createElement('canvas');
+        this.veilFrameContext = this.veilFrameCanvas.getContext('2d');
+      }
+      if (this.veilFrameContext) {
+        this.veilFrameCanvas.width = this.veilCanvas.width;
+        this.veilFrameCanvas.height = this.veilCanvas.height;
+      }
+    } else if (this.veilFrameCanvas) {
+      this.veilFrameCanvas.width = 1;
+      this.veilFrameCanvas.height = 1;
+    }
     const { veilContext } = this;
     veilContext.setTransform(1, 0, 0, 1, 0, 0);
     veilContext.clearRect(0, 0, this.width, this.height);
@@ -534,7 +574,6 @@ export default class GalleryOpeningRenderer {
         this.spawnAccumulator -= 1;
       }
     }
-    this.trail = this.trail.filter(point => elapsed - point.time < TRAIL_LIFETIME);
   }
 
   getTrailPoint(point, elapsed, lifetime, turbulence) {
@@ -553,7 +592,7 @@ export default class GalleryOpeningRenderer {
     }
     const { context } = this;
     const [firstRecord] = points;
-    const lastRecord = points.slice(-1)[0];
+    const lastRecord = points[points.length - 1];
     const first = this.getTrailPoint(
       firstRecord,
       elapsed,
@@ -623,7 +662,7 @@ export default class GalleryOpeningRenderer {
     }
     const { context } = this;
     const [firstRecord] = points;
-    const lastRecord = points.slice(-1)[0];
+    const lastRecord = points[points.length - 1];
     const gradient = context.createLinearGradient(
       firstRecord.x,
       firstRecord.y,
@@ -668,7 +707,7 @@ export default class GalleryOpeningRenderer {
     }
     const { context } = this;
     const [firstRecord] = points;
-    const lastRecord = points.slice(-1)[0];
+    const lastRecord = points[points.length - 1];
     const cool = mixColor(PEARL_COOL, this.theme.start, 0.16);
     const warm = mixColor(PEARL_WARM, this.theme.end, 0.16);
 
@@ -987,27 +1026,55 @@ export default class GalleryOpeningRenderer {
 
   drawVeil(elapsed) {
     if (!this.veilCanvas || !this.veilContext) {
-      return;
+      return false;
     }
     const alpha = 1 - smoothstep(VEIL_FADE_START, VEIL_FADE_END, elapsed);
     if (alpha <= 0.001) {
-      return;
+      return false;
     }
-    const { context } = this;
+    const { context, veilFrameContext } = this;
+    const useOffscreenReveal = elapsed >= VEIL_REVEAL_START
+      && this.pixelRatio >= OFFSCREEN_REVEAL_PIXEL_RATIO
+      && veilFrameContext;
+    if (!useOffscreenReveal) {
+      context.save();
+      context.globalCompositeOperation = 'copy';
+      context.globalAlpha = alpha;
+      context.drawImage(
+        this.veilCanvas,
+        0,
+        0,
+        this.width,
+        this.height,
+      );
+      context.restore();
+      this.drawVeilReveal(elapsed, context);
+      return true;
+    }
+
+    veilFrameContext.save();
+    veilFrameContext.setTransform(1, 0, 0, 1, 0, 0);
+    veilFrameContext.globalCompositeOperation = 'copy';
+    veilFrameContext.globalAlpha = alpha;
+    veilFrameContext.drawImage(this.veilCanvas, 0, 0);
+    veilFrameContext.restore();
+    this.drawVeilReveal(elapsed, veilFrameContext);
+
     context.save();
-    context.globalCompositeOperation = 'source-over';
-    context.globalAlpha = alpha;
+    context.globalCompositeOperation = 'copy';
+    context.globalAlpha = 1;
     context.drawImage(
-      this.veilCanvas,
+      this.veilFrameCanvas,
       0,
       0,
       this.width,
       this.height,
     );
     context.restore();
+    return true;
   }
 
-  drawVeilReveal(elapsed) {
+  drawVeilReveal(elapsed, targetContext = this.context) {
     if (elapsed >= VEIL_FADE_END) {
       return;
     }
@@ -1039,7 +1106,7 @@ export default class GalleryOpeningRenderer {
     const featherStop = featherWidth / outerWidth;
     const middleX = (revealStart.x + revealHead.x) * 0.5;
     const middleY = (revealStart.y + revealHead.y) * 0.5;
-    const { context } = this;
+    const context = targetContext;
     const featherGradient = context.createLinearGradient(
       middleX - (this.geometry.normal.x * outerWidth * 0.5),
       middleY - (this.geometry.normal.y * outerWidth * 0.5),
@@ -1145,9 +1212,9 @@ export default class GalleryOpeningRenderer {
 
   draw(comet, elapsed) {
     const { context } = this;
-    context.clearRect(0, 0, this.width, this.height);
-    this.drawVeil(elapsed);
-    this.drawVeilReveal(elapsed);
+    if (!this.drawVeil(elapsed)) {
+      context.clearRect(0, 0, this.width, this.height);
+    }
     this.drawTrails(elapsed);
     this.drawAirflow(comet, elapsed);
     this.drawCutGlow(elapsed);
@@ -1157,11 +1224,23 @@ export default class GalleryOpeningRenderer {
   }
 
   renderFrame(timestamp) {
+    let resized = false;
     if (this.resizePending) {
       this.resizePending = false;
       this.handleResize();
+      resized = true;
     }
     const elapsed = timestamp - this.startTime;
+    if (elapsed >= this.duration) {
+      this.stop();
+      return;
+    }
+    if (!resized
+      && this.frameInterval > 0
+      && timestamp + FRAME_EARLY_TOLERANCE < this.nextDrawTime) {
+      this.frameId = window.requestAnimationFrame(this.renderFrame);
+      return;
+    }
     const frameDelta = Math.max(0, timestamp - this.lastFrameTime);
     const particleDelta = Math.min(MAX_PARTICLE_DELTA, frameDelta);
     const comet = this.getCometState(elapsed);
@@ -1169,10 +1248,18 @@ export default class GalleryOpeningRenderer {
     this.updateParticles(comet, elapsed, particleDelta);
     this.draw(comet, elapsed);
     this.lastFrameTime = timestamp;
-    if (elapsed < this.duration) {
-      this.frameId = window.requestAnimationFrame(this.renderFrame);
+    this.lastDrawTime = timestamp;
+    if (this.frameInterval > 0) {
+      if (resized
+        || this.nextDrawTime === null
+        || this.nextDrawTime + this.frameInterval <= timestamp) {
+        this.nextDrawTime = timestamp + this.frameInterval;
+      } else {
+        this.nextDrawTime += this.frameInterval;
+      }
     } else {
-      this.stop();
+      this.nextDrawTime = null;
     }
+    this.frameId = window.requestAnimationFrame(this.renderFrame);
   }
 }
