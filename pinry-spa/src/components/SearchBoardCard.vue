@@ -38,6 +38,7 @@
 
 <script>
 import imageVariant from './utils/imageVariant';
+import cardAvatarUrl from './utils/avatarVariant';
 
 export default {
   name: 'SearchBoardCard',
@@ -50,8 +51,7 @@ export default {
       if (!this.owner) {
         return '';
       }
-      return (this.owner.avatar && this.owner.avatar.small)
-        || `//gravatar.com/avatar/${this.owner.gravatar || ''}?s=28`;
+      return cardAvatarUrl(this.owner, 28);
     },
     pinCount() {
       return Number.isFinite(this.board.total_pins) ? this.board.total_pins : 0;

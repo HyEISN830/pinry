@@ -9,7 +9,7 @@ html body .content-stats.content-stats {
 
 html body .content-stat.content-stat {
   display: inline-flex;
-  min-height: 30px;
+  min-height: var(--content-card-stat-height, 30px);
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
@@ -51,6 +51,29 @@ html body .content-stat.content-stat--passive {
   padding-left: 0.4rem;
 }
 
+html body .pin-card .content-stats.content-stats,
+html body .comic-card .content-stats.content-stats {
+  gap: 0.34rem;
+}
+
+html body .pin-card .content-stat.content-stat,
+html body .comic-card .content-stat.content-stat {
+  gap: 0.26rem;
+  padding-right: 0.46rem;
+  padding-left: 0.46rem;
+}
+
+html body .pin-card .content-stat.content-stat--passive,
+html body .comic-card .content-stat.content-stat--passive {
+  padding-right: 0.36rem;
+  padding-left: 0.36rem;
+}
+
+html body .content-stat.content-stat--interactive:focus-visible {
+  outline: 2px solid var(--color-focus-ring, var(--accent, #7e57c2));
+  outline-offset: 2px;
+}
+
 .content-source-link {
   position: relative;
   display: inline-flex;
@@ -58,7 +81,7 @@ html body .content-stat.content-stat--passive {
   gap: 0.32rem;
   min-width: 0;
   max-width: 100%;
-  min-height: 26px;
+  min-height: var(--content-card-source-height, 26px);
   padding: 0.2rem 0.56rem 0.2rem 0.68rem;
   overflow: hidden;
   border: 1px solid var(--color-line-soft, rgba(148, 163, 184, 0.34));
@@ -85,6 +108,12 @@ html body .content-stat.content-stat--passive {
     border-color 180ms ease,
     background-position 360ms ease,
     box-shadow 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.pin-card .content-source-link,
+.comic-card .content-source-link {
+  padding: 0.14rem 0.5rem 0.14rem 0.6rem;
+  line-height: 1.2;
 }
 
 .content-source-link::after {
@@ -260,8 +289,15 @@ html[data-motion='reduce'] .content-source-link::after {
 }
 
 @media (pointer: coarse) {
-  html body .content-stat.content-stat--interactive,
+  html body .content-stat.content-stat {
+    min-height: var(--content-card-stat-height-coarse, var(--content-card-stat-height, 30px));
+  }
+
+  html body .content-stat.content-stat--interactive {
+    min-height: var(--content-card-stat-height-coarse, 44px);
+  }
+
   html body .content-source-link.content-source-link {
-    min-height: 44px;
+    min-height: var(--content-card-source-height-coarse, 44px);
   }
 }

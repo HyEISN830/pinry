@@ -1153,18 +1153,10 @@ $avatar-height: 30px;
   }
   .pin-tag {
     display: inline-flex;
-    margin: 0.12rem 0.18rem 0.12rem 0;
+    margin: 0.06rem 0.14rem 0.06rem 0;
+    vertical-align: middle;
     a {
-      display: inline-flex;
-      align-items: center;
       max-width: 100%;
-      padding: 0.12rem 0.42rem;
-      border-radius: 999px;
-      color: var(--accent-foreground, #1f6feb);
-      background: var(--accent-soft-gradient, var(--accent-soft, #eaf3ff));
-      font-size: 13px;
-      font-weight: 800;
-      line-height: 1.35;
     }
     a:hover {
       color: var(--accent-foreground, #0f4fb8);
@@ -1289,7 +1281,7 @@ $avatar-height: 30px;
     padding: 12px;
     font-size: 14px;
     > .pin-info {
-      line-height: 19px;
+      line-height: 1.3;
       width: calc(var(--pin-card-width, #{$pin-preview-width}) - 50px);
       padding-left: $avatar-width + 5px;
     }

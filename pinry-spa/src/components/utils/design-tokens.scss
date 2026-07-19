@@ -117,6 +117,18 @@
   --z-page-opening: 2147483647;
 }
 
+// Pin and Comic cards opt into denser metadata without shrinking the same
+// shared controls in readers, previews, board badges, or standalone search tags.
+.pin-card,
+.comic-card {
+  --content-card-tag-height: 26px;
+  --content-card-tag-height-coarse: 28px;
+  --content-card-stat-height: 28px;
+  --content-card-stat-height-coarse: 30px;
+  --content-card-source-height: 24px;
+  --content-card-source-height-coarse: 30px;
+}
+
 html[data-theme="dark"] {
   --shadow-xs: 0 4px 14px rgba(0, 0, 0, 0.26);
   --shadow-sm: 0 12px 32px rgba(0, 0, 0, 0.34);

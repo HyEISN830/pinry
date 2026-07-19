@@ -97,6 +97,7 @@
 import imageVariant from './utils/imageVariant';
 import motionPreference from './utils/motionPreference';
 import format from './utils/format';
+import cardAvatarUrl from './utils/avatarVariant';
 
 const VISIBLE_COMIC_TAGS = 4;
 
@@ -127,7 +128,7 @@ export default {
     coverStyle() { return { '--comic-cover-image': this.coverImageUrl ? `url("${this.coverImageUrl}")` : 'none' }; },
     visibleTags() { return (this.comic.tags || []).slice(0, VISIBLE_COMIC_TAGS); },
     hiddenTagCount() { return Math.max(0, (this.comic.tags || []).length - VISIBLE_COMIC_TAGS); },
-    avatarUrl() { const user = this.comic.submitter || {}; return (user.avatar && user.avatar.small) || `//gravatar.com/avatar/${user.gravatar}?s=28`; },
+    avatarUrl() { return cardAvatarUrl(this.comic.submitter, 28); },
     hasSource() { return !!(this.comic.referer || '').trim(); },
     isWebSource() { return /^https?:\/\//i.test((this.comic.referer || '').trim()); },
     sourceText() { return (this.comic.referer || '').trim(); },

@@ -1,5 +1,6 @@
 import pinHandler from './PinHandler';
 import imageVariant from './imageVariant';
+import cardAvatarUrl from './avatarVariant';
 
 function escapeMediaUrl(url) {
   if (!url) {
@@ -37,8 +38,7 @@ export default function createPinDisplayItem(pin) {
   item.tags = source.tags || [];
   item.boards = source.boards || [];
   item.author = submitter.username || '';
-  item.avatar = (submitter.avatar && submitter.avatar.small)
-    || `//gravatar.com/avatar/${submitter.gravatar || ''}?s=30`;
+  item.avatar = cardAvatarUrl(submitter, 30);
   item.large_image_url = pinImage.image ? pinHandler.escapeUrl(pinImage.image) : null;
   item.original_image_url = source.url || item.large_image_url;
   item.motion_photo = pinImage.motion_photo

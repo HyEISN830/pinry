@@ -242,6 +242,7 @@
       </div>
 
       <button
+        ref="mobileToggle"
         class="mobile-toggle"
         :class="{ 'is-active': active }"
         type="button"
@@ -424,20 +425,62 @@
             </button>
           </div>
         </div>
-        <div class="mobile-language-row">
-          <button
-            v-for="locale in $i18n.availableLocales"
-            :key="`mobile-locale-${locale}`"
-            type="button"
-            @click="setLocale(locale)">
-            {{ langs[locale] }}
-          </button>
-        </div>
+      </section>
+
+      <section class="mobile-accordion">
+        <button
+          id="pinry-mobile-language-trigger"
+          class="mobile-accordion__trigger"
+          type="button"
+          :class="{ 'is-active': isMobileSectionOpen('language') }"
+          :aria-expanded="isMobileSectionOpen('language') ? 'true' : 'false'"
+          aria-controls="pinry-mobile-language-items"
+          @click="toggleMobileSection('language')">
+          <b-icon icon="translate" custom-size="mdi-19px"></b-icon>
+          <span>{{ $t("languageLabel") }}</span>
+          <b-icon
+            class="mobile-accordion__chevron"
+            icon="chevron-down"
+            custom-size="mdi-20px">
+          </b-icon>
+        </button>
+        <transition name="mobile-accordion-reveal">
+          <div
+            v-if="isMobileSectionOpen('language')"
+            id="pinry-mobile-language-items"
+            class="mobile-section mobile-accordion__items mobile-language-row"
+            role="region"
+            aria-labelledby="pinry-mobile-language-trigger">
+            <button
+              v-for="locale in $i18n.availableLocales"
+              :key="`mobile-locale-${locale}`"
+              type="button"
+              :class="{ 'is-current': $i18n.locale === locale }"
+              :aria-pressed="$i18n.locale === locale ? 'true' : 'false'"
+              @click="setLocale(locale)">
+              {{ langs[locale] }}
+            </button>
+          </div>
+        </transition>
       </section>
 
       <section class="mobile-section is-account">
-        <button v-show="!user.loggedIn" type="button" @click="logIn">{{ $t("logInLink") }}</button>
-        <button v-show="user.loggedIn" type="button" @click="logOut">{{ $t("logOutLink") }}</button>
+        <button
+          v-show="!user.loggedIn"
+          class="mobile-account-action"
+          type="button"
+          @click="logIn">
+          <b-icon icon="login" custom-size="mdi-18px"></b-icon>
+          {{ $t("logInLink") }}
+        </button>
+        <button
+          v-show="user.loggedIn"
+          class="mobile-account-action mobile-account-action--logout"
+          type="button"
+          @click="logOut">
+          <b-icon icon="logout" custom-size="mdi-18px"></b-icon>
+          {{ $t("logOutLink") }}
+        </button>
       </section>
     </div>
   </header>
@@ -639,10 +682,18 @@ export default {
       );
     },
     setLocale(locale) {
+      const restoreMobileFocus = this.active && this.isMobileViewport();
       this.$i18n.locale = locale;
       localStorage.setItem('localeCode', locale);
       document.documentElement.lang = locale;
       this.closeMenu();
+      if (restoreMobileFocus) {
+        this.$nextTick(() => {
+          if (this.$refs.mobileToggle) {
+            this.$refs.mobileToggle.focus();
+          }
+        });
+      }
     },
     toggleDropdown(name) {
       this.clearDropdownCloseTimer();
@@ -1431,6 +1482,32 @@ export default {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-xs);
+  }
+  .mobile-language-row button.is-current {
+    border-color: var(--color-accent-border);
+    color: var(--color-accent-foreground);
+    background: var(--color-accent-soft-gradient);
+    box-shadow: var(--shadow-xs);
+  }
+  .mobile-language-row button.is-current:focus-visible {
+    box-shadow: var(--focus-ring);
+  }
+  .mobile-panel .mobile-account-action {
+    justify-content: center;
+    min-height: 46px;
+    border-color: var(--color-line-soft);
+    color: var(--color-text-strong);
+    background: var(--color-surface-2);
+    box-shadow: var(--shadow-xs);
+  }
+  .mobile-panel .mobile-account-action--logout {
+    color: var(--color-text-muted);
+  }
+  .mobile-panel .mobile-account-action--logout:hover,
+  .mobile-panel .mobile-account-action--logout:focus-visible {
+    border-color: var(--color-accent-border);
+    color: var(--color-accent-foreground);
+    background: var(--color-accent-soft-gradient);
   }
 }
 @media screen and (max-width: 460px) {

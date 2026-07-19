@@ -22,7 +22,7 @@ html body .content-tag-pill.content-tag-pill {
   display: inline-flex;
   align-items: center;
   max-width: 100%;
-  min-height: 28px;
+  min-height: var(--content-card-tag-height, 28px);
   padding: 0.24rem 0.62rem;
   overflow: hidden;
   border: 1px solid var(--accent-border, var(--color-accent-border, rgba(126, 87, 194, 0.28)));
@@ -47,6 +47,17 @@ html body .content-tag-pill.content-tag-pill {
     background-color 180ms var(--motion-ease-standard, ease),
     box-shadow 200ms var(--motion-ease-standard, ease),
     transform 220ms var(--motion-ease-standard, ease) !important;
+}
+
+html body .pin-card .content-tag-pill.content-tag-pill,
+html body .comic-card .content-tag-pill.content-tag-pill {
+  padding: 0.16rem 0.56rem;
+  line-height: 1.2;
+}
+
+html body .content-tag-pill.content-tag-pill:focus-visible {
+  outline: 2px solid var(--color-focus-ring, var(--accent, #7e57c2));
+  outline-offset: 2px;
 }
 
 html body .content-tag-pill.content-tag-pill::before {
@@ -100,8 +111,14 @@ html[data-motion='reduce'] body .content-tag-pill.content-tag-pill::before {
 
 @media (pointer: coarse) {
   html body .content-tag-pill.content-tag-pill {
-    min-height: 40px;
+    min-height: var(--content-card-tag-height-coarse, 40px);
     padding-right: 0.72rem;
     padding-left: 0.72rem;
+  }
+
+  html body .pin-card .content-tag-pill.content-tag-pill,
+  html body .comic-card .content-tag-pill.content-tag-pill {
+    padding-right: 0.66rem;
+    padding-left: 0.66rem;
   }
 }

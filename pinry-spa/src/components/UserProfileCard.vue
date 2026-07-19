@@ -59,6 +59,7 @@
 
 <script>
 import api from './api';
+import { profileCardAvatarUrl } from './utils/avatarVariant';
 
 export default {
   name: 'UserProfileCard.vue',
@@ -133,8 +134,7 @@ export default {
             );
             return;
           }
-          this.user.avatar = (user.avatar && user.avatar.medium)
-            || `//gravatar.com/avatar/${user.gravatar}?s=72`;
+          this.user.avatar = profileCardAvatarUrl(user);
           this.user.username = user.username;
           this.user.meta = user;
         },
