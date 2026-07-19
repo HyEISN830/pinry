@@ -26,6 +26,10 @@ const DEEP_SPACE_TOP = [5, 7, 20];
 const DEEP_SPACE_MIDDLE = [11, 9, 28];
 const DEEP_SPACE_BOTTOM = [4, 7, 19];
 const DEEP_SPACE_EDGE = [2, 3, 10];
+const NEBULA_BLUE = [77, 118, 186];
+const NEBULA_VIOLET = [121, 76, 176];
+const DISTANT_STAR_COOL = [184, 218, 255];
+const DISTANT_STAR_WARM = [255, 220, 241];
 const AIRFLOW_LANES = [
   {
     alpha: 0.19,
@@ -75,6 +79,10 @@ function pulseAround(value, center, radius) {
 function seededUnit(index, salt) {
   const value = Math.sin(((index + 1) * 12.9898) + (salt * 78.233)) * 43758.5453;
   return value - Math.floor(value);
+}
+
+function seededSigned(index, salt) {
+  return (seededUnit(index, salt) * 2) - 1;
 }
 
 function parseHexColor(value) {
@@ -382,6 +390,9 @@ export default class GalleryOpeningRenderer {
     veilContext.fillStyle = themeWash;
     veilContext.fillRect(0, 0, this.width, this.height);
 
+    this.drawCachedNebula(veilContext);
+    this.drawCachedStars(veilContext);
+
     const centerX = this.width * 0.5;
     const centerY = this.height * 0.42;
     const vignetteRadius = Math.hypot(this.width, this.height) * 0.58;
@@ -398,6 +409,116 @@ export default class GalleryOpeningRenderer {
     vignette.addColorStop(1, rgba(DEEP_SPACE_EDGE, 0.36));
     veilContext.fillStyle = vignette;
     veilContext.fillRect(0, 0, this.width, this.height);
+    veilContext.setTransform(1, 0, 0, 1, 0, 0);
+    veilContext.globalAlpha = 1;
+    veilContext.globalCompositeOperation = 'source-over';
+  }
+
+  drawCachedNebula(targetContext) {
+    const context = targetContext;
+    const shortEdge = Math.min(this.width, this.height);
+    const isCompact = this.geometry.isPortrait || this.width < 760;
+    const clouds = [
+      {
+        alpha: isCompact ? 0.052 : 0.064,
+        color: mixColor(NEBULA_BLUE, this.theme.start, 0.18),
+        radius: shortEdge * (isCompact ? 0.36 : 0.32),
+        scaleX: isCompact ? 1.15 : 1.8,
+        scaleY: isCompact ? 1.2 : 0.78,
+        x: this.width * (isCompact ? 0.28 : 0.22),
+        y: this.height * (isCompact ? 0.24 : 0.28),
+      },
+      {
+        alpha: isCompact ? 0.044 : 0.056,
+        color: mixColor(NEBULA_VIOLET, this.theme.end, 0.2),
+        radius: shortEdge * (isCompact ? 0.32 : 0.29),
+        scaleX: isCompact ? 1.08 : 1.65,
+        scaleY: isCompact ? 1.22 : 0.82,
+        x: this.width * (isCompact ? 0.7 : 0.76),
+        y: this.height * (isCompact ? 0.64 : 0.58),
+      },
+      {
+        alpha: isCompact ? 0.03 : 0.038,
+        color: mixColor(NEBULA_BLUE, NEBULA_VIOLET, 0.52),
+        radius: shortEdge * (isCompact ? 0.27 : 0.24),
+        scaleX: isCompact ? 1.3 : 1.9,
+        scaleY: isCompact ? 0.88 : 0.58,
+        x: this.width * 0.51,
+        y: this.height * (isCompact ? 0.44 : 0.38),
+      },
+    ];
+
+    context.save();
+    for (let index = 0; index < clouds.length; index += 1) {
+      const cloud = clouds[index];
+      context.save();
+      context.translate(cloud.x, cloud.y);
+      context.rotate(seededSigned(index, 21) * 0.22);
+      context.scale(cloud.scaleX, cloud.scaleY);
+      const gradient = context.createRadialGradient(
+        0,
+        0,
+        cloud.radius * 0.04,
+        0,
+        0,
+        cloud.radius,
+      );
+      gradient.addColorStop(0, rgba(cloud.color, cloud.alpha));
+      gradient.addColorStop(0.34, rgba(cloud.color, cloud.alpha * 0.62));
+      gradient.addColorStop(0.72, rgba(cloud.color, cloud.alpha * 0.2));
+      gradient.addColorStop(1, rgba(cloud.color, 0));
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.arc(0, 0, cloud.radius, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    }
+    context.restore();
+  }
+
+  drawCachedStars(targetContext) {
+    const context = targetContext;
+    const isCompact = this.geometry.isPortrait || this.width < 760;
+    const starBudget = isCompact ? 14 : 24;
+    const shortEdge = Math.min(this.width, this.height);
+    const edgePadding = Math.min(34, shortEdge * 0.055);
+
+    context.save();
+    for (let index = 0; index < starBudget; index += 1) {
+      const x = edgePadding
+        + (seededUnit(index, 31) * Math.max(1, this.width - (edgePadding * 2)));
+      const y = edgePadding
+        + (seededUnit(index, 32) * Math.max(1, this.height - (edgePadding * 2)));
+      const size = (0.32 + (seededUnit(index, 33) * 0.72))
+        * (isCompact ? 0.82 : 1);
+      const alpha = 0.12 + (seededUnit(index, 34) * 0.2);
+      const color = seededUnit(index, 35) > 0.52
+        ? mixColor(DISTANT_STAR_COOL, this.theme.start, 0.12)
+        : mixColor(DISTANT_STAR_WARM, this.theme.end, 0.1);
+      const halo = context.createRadialGradient(x, y, 0, x, y, size * 3.2);
+      halo.addColorStop(0, rgba(WHITE, alpha * 0.92));
+      halo.addColorStop(0.22, rgba(color, alpha * 0.68));
+      halo.addColorStop(1, rgba(color, 0));
+      context.fillStyle = halo;
+      context.beginPath();
+      context.arc(x, y, size * 3.2, 0, Math.PI * 2);
+      context.fill();
+
+      if (size > 0.8 && index % 5 === 0) {
+        const arm = size * 2.8;
+        context.globalAlpha = alpha * 0.38;
+        context.strokeStyle = rgba(color, 0.72);
+        context.lineWidth = 0.45;
+        context.beginPath();
+        context.moveTo(x - arm, y);
+        context.lineTo(x + arm, y);
+        context.moveTo(x, y - (arm * 0.52));
+        context.lineTo(x, y + (arm * 0.52));
+        context.stroke();
+        context.globalAlpha = 1;
+      }
+    }
+    context.restore();
   }
 
   getCometState(elapsed) {
