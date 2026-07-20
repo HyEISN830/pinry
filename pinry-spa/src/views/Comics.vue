@@ -70,6 +70,7 @@
               :comic="comic"
               :current-username="user.loggedIn ? user.meta.username : null"
               :like-busy="comic.likeBusy"
+              shelf-layout
               @read="openComic"
               @delete="deleteComic"
               @toggle-like="toggleComicLike">
@@ -1253,32 +1254,6 @@ html[data-motion='full'] .comic-page-button__surface {
     var(--shadow-card, 0 18px 50px rgba(15, 23, 42, 0.16));
   transform-style: preserve-3d;
   will-change: transform;
-}
-
-.comic-card::before,
-.comic-card::after {
-  content: "";
-  position: absolute;
-  left: var(--space-sm, 12px);
-  right: var(--space-sm, 12px);
-  height: 12px;
-  border: 1px solid var(--accent-border, rgba(126, 87, 194, 0.22));
-  border-radius: 0 0 var(--radius-sm, 8px) var(--radius-sm, 8px);
-  background: var(--accent-soft-gradient, var(--accent-soft, #faf7ff));
-  pointer-events: none;
-}
-
-.comic-card::before {
-  bottom: -7px;
-  z-index: -1;
-}
-
-.comic-card::after {
-  bottom: -13px;
-  left: var(--space-lg, 24px);
-  right: var(--space-lg, 24px);
-  background: var(--surface-accent, #f0ebff);
-  z-index: -2;
 }
 
 .comic-card-shell.is-tilting {

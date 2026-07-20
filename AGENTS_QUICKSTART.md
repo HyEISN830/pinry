@@ -5,9 +5,9 @@ visual-debug guide for this repository. It is written for Codex/agent sessions
 and team members who need to make a focused change without loading the whole
 repository or replaying earlier release conversations.
 
-Architecture map last refreshed at **R81 / v3.3.5r / `00c1b2e`**. The runtime
-sections remain valid after that release unless a later commit changes the
-referenced entry points.
+Architecture map last refreshed at **R82 / v3.3.6r**. Use `git log -1` for the
+exact current commit. The runtime sections remain valid unless a later commit
+changes the referenced entry points.
 
 The order is intentional: use sections A-F to choose the smallest relevant
 surface first. Read sections 1-13 only when Chrome or the isolated runtime is
@@ -286,6 +286,7 @@ the preferred component API.
 | Motion | `--motion-duration-*`, `--motion-ease-*`, hover/tilt tokens |
 | Layout/layers | `--container-*`, breakpoint helpers, `--z-*` |
 | Card metadata density | `--content-card-tag/stat/source-height` and coarse-pointer variants |
+| Comic book depth | `--comic-stack-depth/sheet-height/near-*/rear-*`; mobile/coarse overrides stay in `design-tokens.scss` |
 
 ### D.3 Rules for tokenized UI changes
 
@@ -353,6 +354,7 @@ data, or step-by-step hidden chain-of-thought.
 | R78-R79 | Card metadata height is controlled through shared density tokens; Comic stacked-sheet decoration must remain outside clipping; mobile avatars choose larger derivatives. Original media stays permission guarded, while derivatives are paced. |
 | R80 | Static derivatives are 240px `thumbnail`, 480px `medium`, 600px `standard`, and 125px square. Desktop cards prefer `medium`; mobile/coarse cards prefer `standard`; animated GIF cards prefer `animated_thumbnail_fast`. Language choices use EN/FR/ZH code badges. |
 | R81 | Create/My menu items explicitly share a 14px typography baseline. Create is a distinct action surface (desktop creative rows, mobile three-tile grid); My remains a resource-navigation list. Preserve this semantic distinction. |
+| R82 | A Comic card is one physical book object. The Grid/Masonry root is measurement-only; an inner frame owns entrance motion, an inner book owns the two attached sheets and tilt, and the clipped card owns content. Embedded rows opt into an equal-height shelf while standalone/personal/search Masonry remains natural-height. |
 
 ### E.1 Current thumbnail and delivery contract
 
@@ -421,6 +423,44 @@ historical backfill risk, not as evidence that new uploads omit derivatives.
   `process_image_fetch_jobs` management worker is mandatory. Current startup
   scripts do not launch it automatically; prefer one worker until claim logic
   is made multi-worker safe.
+
+### E.5 Comic book-card layout contract (R82)
+
+- `ComicCard.vue` is the shared visual source of truth. Its root
+  `.comic-card-shell` may also be a Masonry tile, so it must remain untransformed
+  and must not own sheets positioned against a stretched Grid row.
+- The required hierarchy is shell -> `.comic-card-frame.motion-card-enter` ->
+  `.comic-book.motion-tilt-card` -> `.comic-card`. The frame alone owns entry
+  motion, the book moves the card and sheets as one object, and only the card
+  clips cover/content to its rounded border.
+- The two sheets are real, decorative `aria-hidden` spans. Do not move them
+  into the clipped card or replace them with `.motion-tilt-card::after`;
+  reduced-motion rules intentionally hide that global glare pseudo-element.
+- Only the embedded `Comics.vue` row passes `shelf-layout`. Its flex chain
+  fills the Grid row and keeps the source/stat footer at the bottom. `/comics`,
+  personal Comics, and search Comics retain content-driven height, with the
+  stack depth included in Masonry measurement and gutter calculations.
+- Geometry comes from the `--comic-stack-*` design tokens: desktop uses 12px
+  total depth and 10px sheets; mobile/coarse uses 10px and 8px. Surfaces mix
+  semantic card/accent colors, use two layers only, and keep just one restrained
+  rear shadow.
+- Tilt accepts fine mouse pointers only, measures the untransformed frame, and
+  enables `will-change` only while tilting. Touch/coarse pointers skip the rAF
+  work. Reduced motion disables transform/glare but preserves the static pages.
+
+R82 validation evidence: at 2048x1111 the Home fixtures with 2/2/1/2 tags had
+identical 675.6px card bodies and a 3px page overlap. `/comics` retained natural
+675.6/671.1/644.5px heights; the next tile followed the shortest column with
+the exact 16px gutter. At 390x844, stack depth reduced to 10px, overlap stayed
+2px, and document width did not overflow. Light/dark, solid/gradient, full and
+reduced motion all passed in the dedicated Chrome window. The only console
+messages were external Chrome-extension message-channel errors; no Vue/app
+errors appeared. Screenshots remain runtime artifacts outside the repository.
+
+Known global follow-up: the site preference drives `html[data-motion]`, but it
+does not yet automatically inherit OS `prefers-reduced-motion`. Also avoid
+reviving old page-scoped Comic visual rules in `Comics.vue`; shared card changes
+belong in `ComicCard.vue` and the semantic token layer.
 
 ## F. Validation, release, and handoff contract
 
