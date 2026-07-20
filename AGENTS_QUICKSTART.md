@@ -523,6 +523,76 @@ fixed it without evidence.
   targeted suites and the exact blocker. Never summarize a failed full suite
   as fully passing.
 
+## G. Remote deployment storage maintenance contract
+
+### G.1 Storage ownership and cleanup boundary
+
+- The deployment source convention is `/opt/src/pinry`; the Compose project is
+  `/opt/stacks/pinry`.
+- Treat `/opt/stacks/pinry/data/**` as persistent production data. The Compose
+  bind mount exposes it as `/data`, including SQLite databases and their
+  `-wal`/`-shm`/journal files, original media, thumbnails, avatars, Motion
+  Photos, and upload chunks. Never classify this tree as build residue.
+- Preserve Compose files, overrides, `.env*`, certificates, secrets, backups,
+  `pinry/settings/local_settings.py`, tracked source, and Git history.
+- Repeated image builds normally grow Docker's BuildKit cache and leave the
+  replaced image dangling. A small source tree is not evidence that the Docker
+  data root is also small.
+
+### G.2 Read-only audit before deletion
+
+Use the saved Termark asset for remote commands; do not request credentials or
+bypass it with direct `ssh`, `scp`, or `sftp`. Before cleanup:
+
+1. Run `docker compose config` and `docker compose ps -a` from
+   `/opt/stacks/pinry`; verify the data bind mount and whether Pinry is down.
+2. Record the exact ID of `local/pinry-custom:latest`. When its Compose stack
+   is down, Docker may label this current deploy image "reclaimable" merely
+   because no container references it. That label alone does not authorize
+   deletion.
+3. Compare `df -h /`, `docker system df -v`, `docker builder du`, and
+   `docker image ls --filter dangling=true`.
+4. Inspect the source and persistent-data sizes separately. Do not read or
+   print `.env` contents during a storage audit.
+
+### G.3 Safe first-line cleanup
+
+After the audit proves the current image is tagged and persistent data is a
+bind mount, the conservative cleanup pair is:
+
+```sh
+docker builder prune -f
+docker image prune -f
+```
+
+The first command removes unused build cache; the second removes dangling
+images only. Recheck the recorded Pinry image ID immediately afterward. It must
+still exist and match exactly. Leave the application in its prior running or
+stopped state unless the user explicitly asks to start it.
+
+Do not use `docker system prune -a`, `docker image prune -a`,
+`docker volume prune`, blanket container/network pruning, manual deletion under
+Docker/containerd storage, or `git clean -fdX`. Do not delete
+`/opt/stacks/pinry/data/static`: generated static files and persistent media
+share that tree. Source-side caches may be removed only by exact verified path,
+never as a substitute for measuring Docker storage first.
+
+### G.4 Post-clean verification and maintenance baseline
+
+Repeat the disk/Docker audit, confirm that the current image ID and persistent
+data remain present, confirm no unexpected service changed state, and report
+both reclaimed and deliberately retained space. Build cache reported as active
+or `0B reclaimable` is not residue that should be forced away.
+
+The 2026-07-20 maintenance pass established the current baseline: unused
+BuildKit records released about 2.64GB and dangling images released about
+940.1MB, approximately 3.58GB total. Root usage changed from 19GB to 16GB and
+free space from 57GB to 60GB (25% to 21%). The current Pinry image, source,
+Compose configuration, and 398MB persistent-data tree were preserved, and
+Pinry remained down. Docker subsequently showed 3.212GB of active,
+non-reclaimable build cache; it also called the stopped stack's 1.517GB current
+Pinry image reclaimable, so that image was intentionally retained.
+
 ## 1. Chrome debugging contract
 
 ### 1.1 Reuse one dedicated Chrome window
