@@ -10,8 +10,14 @@ from django.urls import reverse
 from PIL import Image as PILImage
 from rest_framework.test import APITestCase
 
-from core.media_views import original_image_id_for_path
+from core.media_views import (
+    original_image_id_for_path,
+    thumbnail_sizes_for_path,
+    thumbnail_throttle_rate_for_path,
+    throttled_media_content,
+)
 from core.models import Image, Pin
+from core.serializers import ImageSerializer
 from django_images.models import Thumbnail
 from users.models import User
 
@@ -23,10 +29,11 @@ class OriginalImageDeliveryTests(APITestCase):
         self.media_settings = override_settings(
             MEDIA_ROOT=self.media_root,
             IMAGE_PREVIEW_THROTTLE_BYTES_PER_SECOND=1024 * 1024,
-            IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND=1024,
+            IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND=64 * 1024,
         )
         self.media_settings.enable()
         original_image_id_for_path.cache_clear()
+        thumbnail_sizes_for_path.cache_clear()
         self.owner = User.objects.create_user(
             username='original-owner',
             password='password',
@@ -50,6 +57,7 @@ class OriginalImageDeliveryTests(APITestCase):
 
     def tearDown(self):
         original_image_id_for_path.cache_clear()
+        thumbnail_sizes_for_path.cache_clear()
         Image.objects.all().delete()
         self.media_settings.disable()
         shutil.rmtree(self.media_root, ignore_errors=True)
@@ -135,6 +143,102 @@ class OriginalImageDeliveryTests(APITestCase):
             sum(call.args[0] for call in sleep.call_args_list),
             0,
         )
+
+    def test_thumbnail_variants_use_size_specific_throttle_rates(self):
+        expected_rates = {
+            'thumbnail': 64 * 1024,
+            'medium': 128 * 1024,
+            'standard': 256 * 1024,
+            'square': 64 * 1024,
+            'animated_thumbnail_fast': 256 * 1024,
+        }
+        colors = {
+            'thumbnail': 'red',
+            'medium': 'green',
+            'standard': 'blue',
+            'square': 'yellow',
+            'animated_thumbnail_fast': 'purple',
+        }
+
+        for size, expected_rate in expected_rates.items():
+            with self.subTest(size=size):
+                payload = self.image_bytes(
+                    size=(128, 128),
+                    image_format='BMP',
+                    color=colors[size],
+                )
+                thumbnail = Thumbnail.objects.create(
+                    original=self.image,
+                    size=size,
+                    image=SimpleUploadedFile(
+                        '{}.bmp'.format(size),
+                        payload,
+                        content_type='image/bmp',
+                    ),
+                )
+
+                self.assertEqual(
+                    thumbnail_throttle_rate_for_path(thumbnail.image.name),
+                    expected_rate,
+                )
+                with mock.patch(
+                    'core.media_views.throttled_media_content',
+                    wraps=throttled_media_content,
+                ) as throttle:
+                    response = self.client.get(thumbnail.image.url)
+                    body = b''.join(response.streaming_content)
+
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(body, payload)
+                self.assertEqual(throttle.call_count, 1)
+                self.assertEqual(throttle.call_args.args[1], expected_rate)
+
+    def test_thumbnail_rate_cache_is_invalidated_when_derivative_changes(self):
+        payload = self.image_bytes(
+            size=(128, 128),
+            image_format='BMP',
+            color='orange',
+        )
+        thumbnail = Thumbnail.objects.create(
+            original=self.image,
+            size='medium',
+            image=SimpleUploadedFile(
+                'cached-medium.bmp',
+                payload,
+                content_type='image/bmp',
+            ),
+        )
+        path = thumbnail.image.name
+
+        self.assertEqual(thumbnail_sizes_for_path(path), ('medium',))
+        thumbnail.delete()
+        self.assertEqual(thumbnail_sizes_for_path(path), ())
+
+    def test_legacy_image_medium_is_lazily_generated_and_serialized(self):
+        Thumbnail.objects.get_or_create_at_sizes(
+            self.image,
+            ['thumbnail', 'standard', 'square'],
+        )
+        self.assertFalse(
+            Thumbnail.objects.filter(
+                original=self.image,
+                size='medium',
+            ).exists(),
+        )
+
+        first = self.image.medium
+        second = self.image.medium
+
+        self.assertEqual(first.pk, second.pk)
+        self.assertEqual(
+            Thumbnail.objects.filter(
+                original=self.image,
+                size='medium',
+            ).count(),
+            1,
+        )
+        serialized = ImageSerializer(self.image).data
+        self.assertIsNotNone(serialized['medium'])
 
     def test_avatar_media_is_not_treated_as_a_thumbnail(self):
         avatar_payload = b'avatar-payload' * 512

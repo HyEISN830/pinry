@@ -350,8 +350,8 @@ must obey all of these rules:
   both SQLite and media resolve inside the exact runtime root.
 - Never fetch images from the network and never copy production media. Generate
   deterministic local JPEG/PNG fixtures with Pillow.
-- Generate every required `thumbnail`, `standard`, and `square` derivative;
-  the API expects all three.
+- Generate every required `thumbnail`, `medium`, `standard`, and `square`
+  derivative; the API expects all four.
 - Use a normal, non-staff, non-superuser `visual_debug` account and `.invalid`
   email/URLs only. Generate a new random password with `secrets`; do not print
   it or use it for any real account.
@@ -374,7 +374,7 @@ The reference dataset contains:
 - 6 Comics and 24 ComicPages: 1/3/4/5/8-page cases, mixed ratios, long/empty
   metadata, sources, likes, and one private Comic.
 - 2 Boards: one public mixed-ratio board and one private board.
-- Fully local originals and all three thumbnail sizes.
+- Fully local originals and all four thumbnail sizes.
 
 Run the helper from the repository root so project modules are importable:
 
@@ -800,7 +800,8 @@ capture artifacts. It does not alter the repository or system Python.
 - Effective DB is `/data/db.sqlite3` or media is `/data/media`: stop. Restore
   the environment variables and inspect `pinry/settings/local_settings.py`.
 - Images are absent or API returns 500: confirm the seed generated original,
-  `thumbnail`, `standard`, and `square` records under the isolated media root.
+  `thumbnail`, `medium`, `standard`, and `square` records under the isolated
+  media root.
 - Port 8000 is occupied: inspect the owning process. Do not kill an unknown
   process and do not casually move Django to another port; the Vue proxy is
   fixed to 8000.

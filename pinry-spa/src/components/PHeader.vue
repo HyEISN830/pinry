@@ -218,9 +218,13 @@
             <button
               v-for="locale in $i18n.availableLocales"
               :key="`locale-${locale}`"
+              class="language-option"
               type="button"
               @click="setLocale(locale)">
-              {{ langs[locale] }}
+              <span class="language-code-icon" aria-hidden="true">
+                {{ languageCodeIcon(locale) }}
+              </span>
+              <span>{{ langs[locale] }}</span>
             </button>
           </div>
         </div>
@@ -454,11 +458,15 @@
             <button
               v-for="locale in $i18n.availableLocales"
               :key="`mobile-locale-${locale}`"
+              class="language-option"
               type="button"
               :class="{ 'is-current': $i18n.locale === locale }"
               :aria-pressed="$i18n.locale === locale ? 'true' : 'false'"
               @click="setLocale(locale)">
-              {{ langs[locale] }}
+              <span class="language-code-icon" aria-hidden="true">
+                {{ languageCodeIcon(locale) }}
+              </span>
+              <span>{{ langs[locale] }}</span>
             </button>
           </div>
         </transition>
@@ -601,6 +609,9 @@ export default {
     },
     isMobileSectionOpen(name) {
       return this.mobileSectionOpen === name;
+    },
+    languageCodeIcon(locale) {
+      return String(locale).split(/[-_]/)[0].slice(0, 3).toUpperCase();
     },
     accentGroupLabel(kind) {
       return kind === 'gradient'
@@ -1098,6 +1109,27 @@ export default {
   color: var(--color-accent-foreground);
   border-color: var(--color-accent-border);
   background: var(--color-accent-soft);
+}
+.language-option {
+  white-space: nowrap;
+}
+.language-code-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 2.15rem;
+  height: 1.5rem;
+  padding: 0 var(--space-2xs);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-accent-foreground);
+  background: var(--color-accent-soft-gradient);
+  font-family: var(--font-sans);
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
 }
 .theme-popover {
   min-width: 288px;

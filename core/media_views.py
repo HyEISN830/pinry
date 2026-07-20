@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.views.static import serve
 
 from core.models import Image
-from django_images.models import Image as StoredImage
+from django_images.models import Image as StoredImage, Thumbnail
 
 
 _UNTHROTTLED_MEDIA_PREFIXES = (
@@ -78,6 +78,41 @@ def original_image_id_for_path(path):
     return Image.objects.filter(image=path).values_list('pk', flat=True).first()
 
 
+@lru_cache(maxsize=16384)
+def thumbnail_sizes_for_path(path):
+    """Return every derivative size sharing an exact stored media path."""
+    return tuple(
+        Thumbnail.objects.filter(image=path)
+        .order_by('size')
+        .values_list('size', flat=True)
+    )
+
+
+def thumbnail_throttle_rate_for_path(path):
+    """Resolve derivative pacing by the size recorded for this exact path."""
+    if not is_thumbnail_media_path(path):
+        return 0
+
+    fallback_rate = getattr(
+        settings,
+        'IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND',
+        64 * 1024,
+    )
+    size_rates = getattr(
+        settings,
+        'IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND_BY_SIZE',
+        {},
+    )
+    sizes = thumbnail_sizes_for_path(path)
+    if not sizes:
+        return fallback_rate
+
+    # Derivatives can share a content-addressed path when an original is
+    # smaller than multiple requested sizes. The strictest applicable rate
+    # preserves every named size's limit in that ambiguous case.
+    return min(size_rates.get(size, fallback_rate) for size in sizes)
+
+
 @receiver(
     post_save,
     sender=Image,
@@ -98,8 +133,19 @@ def original_image_id_for_path(path):
     sender=StoredImage,
     dispatch_uid='clear_guarded_media_cache_after_image_delete',
 )
+@receiver(
+    post_save,
+    sender=Thumbnail,
+    dispatch_uid='clear_guarded_media_cache_after_thumbnail_save',
+)
+@receiver(
+    post_delete,
+    sender=Thumbnail,
+    dispatch_uid='clear_guarded_media_cache_after_thumbnail_delete',
+)
 def clear_original_media_path_cache(**kwargs):
     original_image_id_for_path.cache_clear()
+    thumbnail_sizes_for_path.cache_clear()
 
 
 def serve_guarded_media(request, path):
@@ -116,11 +162,7 @@ def serve_guarded_media(request, path):
         document_root=settings.MEDIA_ROOT,
         show_indexes=False,
     )
-    throttle_rate = getattr(
-        settings,
-        'IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND',
-        64 * 1024,
-    )
+    throttle_rate = thumbnail_throttle_rate_for_path(path)
     if (
         throttle_rate > 0
         and is_thumbnail_media_path(path)

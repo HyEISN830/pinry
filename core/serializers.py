@@ -83,6 +83,7 @@ class ImageSerializer(serializers.ModelSerializer):
             "width",
             "height",
             "standard",
+            "medium",
             "thumbnail",
             "animated_thumbnail",
             "motion_photo",
@@ -94,6 +95,7 @@ class ImageSerializer(serializers.ModelSerializer):
         }
 
     standard = ThumbnailSerializer(read_only=True)
+    medium = ThumbnailSerializer(read_only=True)
     thumbnail = ThumbnailSerializer(read_only=True)
     animated_thumbnail = serializers.SerializerMethodField()
     motion_photo = serializers.SerializerMethodField()

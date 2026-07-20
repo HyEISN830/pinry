@@ -72,6 +72,7 @@ class Image(BaseImage):
 
     class Sizes:
         standard = "standard"
+        medium = "medium"
         thumbnail = "thumbnail"
         square = "square"
         animated_thumbnail = "animated_thumbnail"
@@ -84,6 +85,31 @@ class Image(BaseImage):
         return Thumbnail.objects.get(
             original=self, size=self.Sizes.standard
         )
+
+    @property
+    def medium(self):
+        try:
+            return Thumbnail.objects.get(
+                original=self,
+                size=self.Sizes.medium,
+            )
+        except Thumbnail.DoesNotExist:
+            # Existing images predate the medium derivative. Serialize them
+            # safely by creating it once on first access. Locking and checking
+            # again inside the transaction avoids duplicate compression when
+            # concurrent requests discover the missing row together.
+            with transaction.atomic():
+                locked_image = Image.objects.select_for_update().get(pk=self.pk)
+                try:
+                    return Thumbnail.objects.get(
+                        original=locked_image,
+                        size=self.Sizes.medium,
+                    )
+                except Thumbnail.DoesNotExist:
+                    return Thumbnail.objects.get_or_create_at_sizes(
+                        locked_image,
+                        [self.Sizes.medium],
+                    )[0]
 
     @property
     def thumbnail(self):

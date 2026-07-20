@@ -177,6 +177,7 @@ IMAGE_PATH = 'core.utils.upload_path'
 
 IMAGE_SIZES = {
     'thumbnail': {'size': [240, 0]},
+    'medium': {'size': [480, 0]},
     'standard': {'size': [600, 0]},
     'square': {'crop': True, 'size': [125, 125]},
 }
@@ -186,6 +187,22 @@ IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND = _env_int(
     'IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND',
     64 * 1024,
 )
+IMAGE_THUMBNAIL_THROTTLE_BYTES_PER_SECOND_BY_SIZE = {
+    # thumbnail and square intentionally use the legacy global request-time
+    # fallback. Keeping them out of this map preserves environment overrides.
+    'medium': _env_int(
+        'IMAGE_MEDIUM_THROTTLE_BYTES_PER_SECOND',
+        128 * 1024,
+    ),
+    'standard': _env_int(
+        'IMAGE_STANDARD_THROTTLE_BYTES_PER_SECOND',
+        256 * 1024,
+    ),
+    'animated_thumbnail_fast': _env_int(
+        'IMAGE_ANIMATED_THUMBNAIL_FAST_THROTTLE_BYTES_PER_SECOND',
+        256 * 1024,
+    ),
+}
 IMAGE_UPLOAD_THROTTLE_BYTES_PER_SECOND = _env_int(
     'IMAGE_UPLOAD_THROTTLE_BYTES_PER_SECOND',
     1024 * 1024,

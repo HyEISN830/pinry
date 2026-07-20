@@ -22,6 +22,10 @@ class CreateImageTest(TestCase):
             response = self.client.post(reverse('image-list'), {'image': image})
         image = Image.objects.latest('pk')
         self.assertEqual(response.json()['id'], image.pk)
+        self.assertIn('medium', response.json())
+        self.assertTrue(
+            image.thumbnail_set.filter(size='medium').exists(),
+        )
 
     def test_post_error(self):
         response = self.client.post(reverse('image-list'), {'image': ''})
