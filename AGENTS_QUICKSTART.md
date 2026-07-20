@@ -329,10 +329,18 @@ destroy/replay, cap pixel ratio/work budgets, tolerate resize and long frame
 deltas, and provide a reduced-motion/no-opening path. CSS motion uses the
 shared duration/easing tokens rather than new literal timing curves.
 
-## E. Decision record and known risks (R68-R81)
+## E. Decision record and known risks (R68 onward)
 
 This section records final, verifiable engineering reasons and regression
 lessons. It is not a transcript of private reasoning.
+
+**Standing maintenance rule:** every future iteration must update this section
+in the same change. Add a compact release entry explaining the chosen outcome,
+why that approach was selected, the invariants future work must preserve, the
+validation evidence, and any unresolved risk. If a decision supersedes an old
+one, keep the history but mark the replacement release clearly. Record durable
+engineering conclusions rather than chat transcripts, credentials, private
+data, or step-by-step hidden chain-of-thought.
 
 | Release(s) | Final decision and reason that must survive |
 | --- | --- |
