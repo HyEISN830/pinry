@@ -58,10 +58,28 @@
             <b-icon icon="plus-circle-outline" custom-size="mdi-18px"></b-icon>
             <span>{{ $t("createLink") }}</span>
           </button>
-          <div class="nav-popover" @click.stop>
-            <button type="button" @click="createPin">{{ $t("pinLink") }}</button>
-            <button type="button" @click="createBoard">{{ $t("boardLink") }}</button>
-            <button type="button" @click="createComic">{{ $t("comicLink") }}</button>
+          <div class="nav-popover create-popover menu-item-list" @click.stop>
+            <button class="create-option" type="button" @click="createPin">
+              <span class="create-option__icon" aria-hidden="true">
+                <b-icon icon="image-outline" custom-size="mdi-18px"></b-icon>
+              </span>
+              <span class="create-option__label">{{ $t("pinLink") }}</span>
+              <span class="create-option__mark" aria-hidden="true">+</span>
+            </button>
+            <button class="create-option" type="button" @click="createBoard">
+              <span class="create-option__icon" aria-hidden="true">
+                <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
+              </span>
+              <span class="create-option__label">{{ $t("boardLink") }}</span>
+              <span class="create-option__mark" aria-hidden="true">+</span>
+            </button>
+            <button class="create-option" type="button" @click="createComic">
+              <span class="create-option__icon" aria-hidden="true">
+                <ComicIcon class="create-option__comic-icon"></ComicIcon>
+              </span>
+              <span class="create-option__label">{{ $t("comicLink") }}</span>
+              <span class="create-option__mark" aria-hidden="true">+</span>
+            </button>
           </div>
         </div>
 
@@ -84,7 +102,7 @@
             </svg>
             <span>{{ $t("myLink") }}</span>
           </button>
-          <div class="nav-popover" @click.stop>
+          <div class="nav-popover mine-popover menu-item-list" @click.stop>
             <router-link
               :to="{ name: 'user', params: {user: user.meta.username} }"
               @click.native="closeDropdown">
@@ -301,18 +319,27 @@
           <div
             v-if="isMobileSectionOpen('create')"
             id="pinry-mobile-create-items"
-            class="mobile-section mobile-accordion__items">
-            <button type="button" @click="createPin">
-              <b-icon icon="image-outline" custom-size="mdi-18px"></b-icon>
-              <span>{{ $t("pinLink") }}</span>
+            class="mobile-section mobile-accordion__items mobile-create-items menu-item-list">
+            <button class="create-option" type="button" @click="createPin">
+              <span class="create-option__icon" aria-hidden="true">
+                <b-icon icon="image-outline" custom-size="mdi-18px"></b-icon>
+              </span>
+              <span class="create-option__label">{{ $t("pinLink") }}</span>
+              <span class="create-option__mark" aria-hidden="true">+</span>
             </button>
-            <button type="button" @click="createBoard">
-              <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
-              <span>{{ $t("boardLink") }}</span>
+            <button class="create-option" type="button" @click="createBoard">
+              <span class="create-option__icon" aria-hidden="true">
+                <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
+              </span>
+              <span class="create-option__label">{{ $t("boardLink") }}</span>
+              <span class="create-option__mark" aria-hidden="true">+</span>
             </button>
-            <button type="button" @click="createComic">
-              <ComicIcon class="mobile-comic-icon"></ComicIcon>
-              <span>{{ $t("comicLink") }}</span>
+            <button class="create-option" type="button" @click="createComic">
+              <span class="create-option__icon" aria-hidden="true">
+                <ComicIcon class="create-option__comic-icon"></ComicIcon>
+              </span>
+              <span class="create-option__label">{{ $t("comicLink") }}</span>
+              <span class="create-option__mark" aria-hidden="true">+</span>
             </button>
           </div>
         </transition>
@@ -338,7 +365,7 @@
           <div
             v-if="isMobileSectionOpen('mine')"
             id="pinry-mobile-mine-items"
-            class="mobile-section mobile-accordion__items">
+            class="mobile-section mobile-accordion__items mobile-mine-items menu-item-list">
             <router-link
               :to="{ name: 'user', params: {user: user.meta.username} }"
               @click.native="closeMenu">
@@ -1110,6 +1137,80 @@ export default {
   border-color: var(--color-accent-border);
   background: var(--color-accent-soft);
 }
+.menu-item-list > a,
+.menu-item-list > button {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.2;
+}
+.create-popover {
+  min-width: 206px;
+  gap: 6px;
+}
+.nav-popover .create-option {
+  position: relative;
+  min-height: 46px;
+  padding: var(--space-2xs) var(--space-xs);
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--color-accent-border) 72%, transparent);
+  background:
+    linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--color-accent-soft) 82%, var(--color-surface-1)),
+      color-mix(in srgb, var(--color-surface-2) 78%, transparent)
+    );
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--color-accent) 72%, transparent);
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+.nav-popover .create-option:hover {
+  transform: translateX(2px);
+  box-shadow:
+    inset 3px 0 0 var(--color-accent),
+    0 8px 18px var(--color-theme-glow);
+}
+.create-option__icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-xs);
+  color: var(--color-accent-foreground);
+  background: color-mix(in srgb, var(--color-surface-1) 70%, transparent);
+  box-shadow: var(--shadow-xs);
+}
+.create-option__comic-icon {
+  width: 18px;
+  height: 18px;
+}
+.create-option__label {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.create-option__mark {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  margin-left: auto;
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-accent-foreground);
+  background: var(--color-accent-soft-gradient);
+  font-size: 0.9rem;
+  font-weight: 950;
+  line-height: 1;
+}
 .language-option {
   white-space: nowrap;
 }
@@ -1472,6 +1573,56 @@ export default {
     border-color: color-mix(in srgb, var(--color-line-soft) 78%, transparent);
     background: color-mix(in srgb, var(--color-surface-1) 68%, transparent);
   }
+  .mobile-create-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .mobile-panel .mobile-create-items .create-option {
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    gap: 6px;
+    min-height: 88px;
+    padding: var(--space-xs) var(--space-2xs);
+    overflow: hidden;
+    border-color: color-mix(in srgb, var(--color-accent-border) 76%, transparent);
+    background:
+      linear-gradient(
+        150deg,
+        color-mix(in srgb, var(--color-accent-soft) 88%, var(--color-surface-1)),
+        color-mix(in srgb, var(--color-surface-1) 72%, transparent)
+      );
+    box-shadow: inset 0 3px 0 color-mix(in srgb, var(--color-accent) 70%, transparent);
+    text-align: center;
+  }
+  .mobile-panel .mobile-create-items .create-option:hover {
+    border-color: var(--color-accent-border);
+    background: var(--color-accent-soft-gradient);
+    box-shadow:
+      inset 0 3px 0 var(--color-accent),
+      0 8px 18px var(--color-theme-glow);
+  }
+  .mobile-panel .mobile-create-items .create-option:focus-visible {
+    border-color: var(--color-accent-border);
+    background: var(--color-accent-soft-gradient);
+    box-shadow: var(--focus-ring);
+  }
+  .mobile-create-items .create-option__icon {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+  }
+  .mobile-create-items .create-option__mark {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    margin-left: 0;
+    font-size: 0.78rem;
+  }
+  .mobile-create-items .create-option__label {
+    width: 100%;
+  }
   .mobile-accordion-reveal-enter-active,
   .mobile-accordion-reveal-leave-active {
     overflow: hidden;
@@ -1546,6 +1697,9 @@ export default {
   .mobile-section {
     grid-template-columns: 1fr;
   }
+  .mobile-section.mobile-create-items {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .mobile-accent-row {
     grid-template-columns: repeat(6, 1fr);
   }
@@ -1556,8 +1710,12 @@ export default {
 
 html[data-motion='reduce'] .mobile-accordion__chevron,
 html[data-motion='reduce'] .mobile-accordion-reveal-enter-active,
-html[data-motion='reduce'] .mobile-accordion-reveal-leave-active {
+html[data-motion='reduce'] .mobile-accordion-reveal-leave-active,
+html[data-motion='reduce'] .nav-popover .create-option {
   transition: none;
+}
+html[data-motion='reduce'] .nav-popover .create-option:hover {
+  transform: none;
 }
 
 /* R6 nav anti-overlap polish */
