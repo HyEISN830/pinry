@@ -1,11 +1,459 @@
 # hyeisn-Pinry Agent Quickstart
 
-This document defines the shared local visual-debug workflow for this repository.
-It is intended for Codex/agent sessions and team members who need a real Django
-backend, deterministic Pin/Comic data, and reproducible Chrome screenshots.
+This is the primary architecture, change-routing, UI-token, handoff, and local
+visual-debug guide for this repository. It is written for Codex/agent sessions
+and team members who need to make a focused change without loading the whole
+repository or replaying earlier release conversations.
 
-The order is intentional: establish the Chrome debugging contract first, then
-prepare the isolated runtime.
+Architecture map last refreshed at **R81 / v3.3.5r / `00c1b2e`**. The runtime
+sections remain valid after that release unless a later commit changes the
+referenced entry points.
+
+The order is intentional: use sections A-F to choose the smallest relevant
+surface first. Read sections 1-13 only when Chrome or the isolated runtime is
+actually needed. Do not dump this complete file into context during every task.
+
+## A. Context-safe first minute
+
+### A.1 Establish the exact baseline
+
+Run these read-only commands before editing:
+
+```powershell
+git status --short --branch
+git log -5 --oneline --decorate
+rg -n '^## ' AGENTS_QUICKSTART.md
+```
+
+- Preserve unrelated or pre-existing worktree changes. They belong to the
+  user unless the current task proves otherwise.
+- Read only the task row in section C, the applicable token rules in section
+  D, and the validation row in section F.
+- Locate symbols with `rg -n` before opening a file. For long files, read a
+  bounded range with `Get-Content ... | Select-Object -Skip ... -First ...`.
+- Do not begin by printing the whole renderer, every Vue component, every
+  migration, `rg --files` for the entire repository, or this entire document.
+- Before resuming interrupted work, inspect `git diff` and the handoff capsule
+  below. Continue from the current state; do not restart completed work.
+
+### A.2 Keep a compact task capsule
+
+Use this state shape in plans, progress notes, or handoffs. It is deliberately
+small enough to survive context compaction:
+
+```text
+Release / version:
+Objective and acceptance criteria:
+Current status (done / in progress / not started):
+Files intentionally changed:
+Decisions and invariants that must survive:
+Validation already run and exact result:
+Runtime / Chrome state and artifact paths:
+Git state (branch, commit, push):
+Next concrete action:
+```
+
+Never store passwords, tokens, cookies, private media paths, or hidden
+chain-of-thought in a capsule. Record final engineering reasons, observable
+evidence, tradeoffs, and unresolved risks instead.
+
+### A.3 Route the task before reading deeply
+
+| Task | Read first | Usually skip |
+| --- | --- | --- |
+| Header, cards, page layout, theme, language | C.2, D, F.1 | Backend internals and runtime setup |
+| Pin/Comic/Board API or schema | B.3, C.1, F.1 | Canvas renderer and unrelated views |
+| Likes or viewed counts | C.1 `Likes / views`, E | Thumbnail and opening-animation code |
+| Thumbnail, original image, upload, avatar | C.1 `Images / media`, C.3, E | Unrelated page styling |
+| Search result layout or pagination | C.1/C.2 `Search` | Opening animation and profile editor |
+| Opening animation or motion | C.2 `Opening`, D.4, E | Django models unless preference API changes |
+| Chrome visual QA | Sections 1, 5, 8, 9 | First-time setup when runtime already exists |
+| Fresh or migrated debug environment | Sections 2-8 | Product UI internals until health checks pass |
+| Documentation-only change | A, B-F, `git diff --check` | Starting Django or Chrome without a visual need |
+
+Parallel work is useful when agents own different files. Do not assign two
+agents to edit the same Vue component, migration, settings block, or this
+quickstart simultaneously. The primary agent must integrate and review the
+shared diff before validation.
+
+## B. Repository architecture
+
+### B.1 Runtime stack
+
+- **Backend:** Django 2.2 + Django REST Framework. The verified local runtime
+  uses CPython 3.9; do not use the machine's Python 3.12/3.14.
+- **Frontend:** Vue 2.6 + Vue Router history mode + Buefy/Bulma, built with Vue
+  CLI 4, Node 18, and pnpm 9. There is no Vuex store; state is component-local,
+  event-bus based, API derived, or persisted in local storage.
+- **Data:** Django models use the configured database. The isolated workflow
+  uses SQLite; media files live in configured Django storage outside the repo.
+- **Rendering:** normal UI is DOM/CSS; the opening animation is one Canvas 2D
+  surface controlled by a small Vue lifecycle wrapper.
+- **Delivery:** Django serves the built SPA shell and `/api/v2/`. The history
+  fallback in `pinry/urls.py` returns `index.html` for non-API routes.
+
+```text
+Browser
+  -> Vue Router view -> Vue component -> components/api.js
+                                      -> /api/v2/
+                                         -> DRF ViewSet / action
+                                            -> Serializer
+                                               -> Model / configured DB
+
+Image element -> /media/<path> -> serve_guarded_media
+                                -> original redirect + permission endpoint
+                                -> or size-aware thumbnail stream
+
+Theme selection -> theme.js -> gradientThemePresets.js -> CSS variables
+Opening toggle  -> openingPreference.js -> GalleryPageOpening.vue
+                                         -> galleryOpeningRenderer.js (Canvas)
+```
+
+### B.2 Top-level ownership
+
+| Path | Responsibility |
+| --- | --- |
+| `core/` | Pin, Board, Comic, image proxy, uploads, likes/views, API serializers/viewsets, permissions, media delivery, migrations, tests |
+| `django_images/` | Low-level original/thumbnail records, resize/crop/encode utilities, derivative file lifecycle |
+| `users/` | User/profile API, avatar source and 30/48/96px derivatives, login/logout/token behavior |
+| `pinry/` | Django settings, root URLs, WSGI, upload handler, generated SPA template/static delivery |
+| `pinry_plugins/` | Plugin loading/hooks; thumbnail pre-creation hooks live here |
+| `pinry-spa/src/` | Vue application, routes, views, components, API client, theme/motion/i18n/token systems |
+| `pinry-spa/public/` | Source PWA icons and public shell assets |
+| `docs/` | Project documentation assets; not the active SPA implementation |
+| `AGENTS_QUICKSTART.md` | Architecture map, handoff contract, and isolated Chrome/runtime workflow |
+
+Generated SPA output under `pinry/static/spa/` and
+`pinry/templates/index.html` is build output and is git-ignored. Build it for
+local QA, but do not stage it.
+
+### B.3 Backend request flow
+
+1. `pinry/urls.py` mounts DRF at `/api/v2/`, profile routes, guarded media,
+   admin, and the SPA history fallback.
+2. `core/views.py` registers the Pin/Image/Upload/Board/Comic/Search ViewSets,
+   applies permissions/throttles, annotates likes/views, and defines custom
+   actions such as `like`, `viewed`, and `original`.
+3. `core/serializers.py` is the public JSON contract and the main create/update
+   orchestration layer. Privacy filters here must agree with ViewSet queries.
+4. `core/models.py` owns persisted entities, image-fetch jobs, chunk sessions,
+   motion-photo records, uniqueness constraints, and cleanup signals.
+5. `core/likes.py` defines canonical authenticated/anonymous actor identities.
+   Likes and viewed counts intentionally share this de-duplication model.
+6. `core/media_views.py` canonicalizes `/media/` paths, prevents original-image
+   permission bypasses, identifies derivative size from the database, and
+   applies per-size pacing.
+7. `django_images/models.py` and `django_images/utils.py` generate and store the
+   actual image derivatives.
+
+### B.4 Frontend request and composition flow
+
+1. `pinry-spa/src/main.js` installs Vue/Buefy/i18n, global directives, API
+   feedback, saved preferences, and shared SCSS systems.
+2. `pinry-spa/src/App.vue` owns the persistent shell: `PHeader`, route
+   transition, back-to-top progress, and page-opening overlay. Only its
+   `<PHeader app-shell>` renders; legacy per-view header instances are inert
+   compatibility shells, so navigation changes belong in `PHeader.vue` once.
+3. `pinry-spa/src/router/index.js` is the route-to-view map.
+4. Views compose reusable components; `components/api.js` is the frontend API
+   boundary. Do not scatter new endpoint strings through components.
+5. Shared visual behavior lives in `components/utils/*.scss` and helpers in
+   `components/utils/*.js`; page-specific layout remains in its Vue file.
+   Masonry owns the outer tile transform, so hover/entrance transforms belong
+   on an inner card/frame and layout-ready/resize observers must be cleaned up.
+
+## C. Modification entry points
+
+### C.1 Backend change router
+
+| Change | Primary entry points | Required companions / invariants |
+| --- | --- | --- |
+| Pin/Board/Comic field or relation | `core/models.py`, new `core/migrations/`, `core/serializers.py` | Query/privacy in `core/views.py`; frontend contract; targeted API tests |
+| API list/detail/action | `core/views.py`, `core/serializers.py` | Register only through existing `drf_router`; preserve owner/private filters and pagination shape |
+| Likes / views | `core/likes.py`, `core/models.py`, `core/views.py`, `core/throttles.py` | Actor-key compatibility, uniqueness, race idempotence, serializer annotations; `core/tests/likes.py`, `core/tests/viewed.py` |
+| Aggregate search | `AggregateSearchViewSet` in `core/views.py` | `Search.vue`, result components, per-bucket offsets/limits; Pins alone use masonry |
+| Static image size or GIF tier | `pinry/settings/base.py`, `core/models.py`, `core/serializers.py`, `django_images/` | Historical-data strategy, `imageVariant.js`, media rate mapping, README/example settings, image tests |
+| Original/thumbnail delivery | `core/media_views.py`, `ImageViewSet.original`, `pinry/urls.py` | Never weaken private-original checks or canonical-path handling; cache invalidation on Image/Thumbnail save/delete |
+| Direct/chunked image or avatar upload | `core/chunked_uploads.py`, `core/upload_views.py`, `core/models.py` | `chunkedUpload.js`, `FileUpload.vue`/`AvatarCropper.vue`; preserve offset, actor-rate, timeout, cleanup semantics |
+| Remote image fetch / motion photo | `ImageManager` and `ImageFetchJob` in `core/models.py`, management command, `core/motion_photo.py` | Serializer status fields, async setting, cleanup and image-fetch tests |
+| User/profile/avatar | `users/models.py`, `users/serializers.py`, `users/views.py` | `avatarVariant.js`, profile components, 30/48/96px size contract |
+| Settings or deployment behavior | `pinry/settings/base.py`, `development.py`, `docker.py`, `local_settings.example.py` | Environment override compatibility; run effective-setting checks before data writes |
+| Plugin hook | `pinry_plugins/runner.py`, loader, plugin class | Keep plugin failure isolated and cover with `pinry_plugins/tests.py` |
+
+### C.2 Frontend change router
+
+| Surface | Primary entry points | Shared dependencies to inspect |
+| --- | --- | --- |
+| App shell, header, create/my menus, theme/language/logout | `App.vue`, `PHeader.vue` | `theme.js`, `gradientThemePresets.js`, motion/opening preferences, all locale JSON files |
+| Pin masonry/card | `Pins.vue`, `pinDisplayItem.js` | `PinHandler.js`, `imageVariant.js`, `avatarVariant.js`, `grid-layout.scss`, `content-card-actions.scss` |
+| Pin detail overlay | `PinPreview.vue` | original-image cache/API, `viewed.js`, source/share helpers, content-card tokens |
+| Comic list/card | `views/Comics.vue`, `ComicCard.vue`, `PersonalComics.vue` | `SearchComicMasonry.vue`, image/avatar variants, shared action styles |
+| Comic detail/reader | `views/ComicReader.vue` | Comic API, `viewed.js`, original-image handling, compact detail metadata tokens |
+| Comic creation | `comic/ComicCreateModal.vue` and upload progress components | chunked upload/API, shared create-modal system |
+| Board/profile/avatar | `Boards.vue`, Board editors, profile views/components, `AvatarCropper.vue` | `avatarVariant.js`, `user-shell.scss`, collection shell/count styles |
+| Search | `views/Search.vue` | `SearchPinMasonry.vue`, `SearchPinCard.vue`, `SearchComicMasonry.vue`, `SearchBoardCard.vue`, cached search state; `search/SearchPanel.vue` is legacy and currently unreferenced |
+| Opening animation | `transitions/GalleryPageOpening.vue`, `galleryOpeningRenderer.js` | `openingPreference.js`, `motionPreference.js`, theme variables; no DOM curtain layers |
+| Routes / 404 | `router/index.js`, target view, `PageNotFound.vue` | Django history fallback must continue excluding API/admin/static/media |
+| API call or upload client | `components/api.js`, `chunkedUpload.js` | CSRF/feedback setup in `main.js`; keep endpoint knowledge centralized |
+| Text / language | all three `components/utils/i18n/locales/*.json`, `components/utils/i18n/index.js` | Check desktop and 390px layouts; preserve locale normalization |
+| Shared modal/loading/action UI | corresponding `*-system.scss` plus adopting component | Global imports in `main.js`; do not duplicate system CSS locally |
+
+### C.3 High-risk dependency recipes
+
+**Adding an API field**
+
+```text
+model + migration (if persisted)
+  -> serializer field / annotation
+  -> ViewSet query or action
+  -> components/api.js
+  -> every card/detail/search consumer
+  -> en/zh/fr text when visible
+  -> backend tests + lint/build + visual QA
+```
+
+**Adding or changing an image derivative**
+
+```text
+IMAGE_SIZES / animated options
+  -> Image property and ImageSerializer
+  -> upload and URL-fetch generation
+  -> historical-image backfill policy
+  -> imageVariant.js selection and fallback
+  -> media size lookup / rate policy
+  -> seed rules, README/example settings, image tests
+```
+
+Do not put expensive file generation or database writes into a list/read path
+without an explicit migration/backfill plan. See the current `medium` caveat
+in E.2.
+
+**Changing a card metadata control**
+
+```text
+shared semantic class in content-card-actions.scss
+  -> density variable in design-tokens.scss
+  -> Pin card + Comic card + search card
+  -> PinPreview + ComicReader when detail behavior is intended
+  -> coarse-pointer and 390px checks
+```
+
+### C.4 Domain naming and write invariants
+
+- `core.models.Image` is a proxy; the real Image/Thumbnail tables and their
+  schema migrations live in `django_images/`.
+- Pin creation and ComicPage creation accept exactly one of a remote `url` or
+  existing `image_by_id`. Pin updates do not swap the image implicitly.
+- `(comic, order)` is unique. Page reorder uses a temporary high range before
+  normalization; a naive single-pass rewrite can violate the constraint.
+- List queries for private objects must use `filter_private_pin/board/comic`;
+  object permissions alone do not prevent list/search leakage.
+- `Board.pins` is the board-to-pin relation, while the reverse name on a Pin is
+  also `pins`; confirm model direction before changing filters or cover logic.
+- Pin/ComicPage deletion removes the underlying image only after no other Pin
+  or ComicPage references it.
+
+## D. UI token contract
+
+### D.1 Sources of truth
+
+| Layer | File | Purpose |
+| --- | --- | --- |
+| Theme source values | `App.vue` root/dark variables | Safe initial light/dark values before saved theme application |
+| Theme catalog | `utils/gradientThemePresets.js` | Solid/gradient palettes, contrast correction, light/dark CSS-variable payloads |
+| Theme application | `utils/theme.js` | Persists selection and writes preset variables/data attributes to `<html>` |
+| Semantic/design tokens | `utils/design-tokens.scss` | `--color-*`, fonts, spacing, radii, shadows, breakpoints, motion, z-index, card density |
+| SCSS helpers | `utils/_ui-tokens.scss` | Breakpoint/spacing/radius maps and non-emitting mixins/functions |
+| Motion helpers | `utils/_motion-mixins.scss`, `motion-system.scss` | Focus, hover, entrance, tilt, and reduced-motion behavior |
+| Shared systems | `utils/*-system.scss`, `grid-layout.scss`, `content-card-actions.scss` | Reusable modal, loading, grid, metadata, user, collection, and search behavior |
+
+Components should consume semantic variables such as
+`--color-surface-card`, `--color-text-strong`, `--color-accent-foreground`,
+`--space-sm`, `--radius-md`, `--shadow-card`, and motion tokens. Theme source
+variables such as `--accent` and `--surface-1` are compatibility inputs, not
+the preferred component API.
+
+### D.2 Token categories
+
+| Need | Use |
+| --- | --- |
+| Surface/text/border | `--color-surface-*`, `--color-text-*`, `--color-line-soft`, `--color-border-*` |
+| Accent/gradient/glow | `--color-accent-*`, `--color-theme-glow*` |
+| Typography | `--font-sans`, `--font-display`, `--font-mono`; set an explicit shared size/line-height for mixed `<a>`/`<button>` groups |
+| Spacing | `--space-2xs` through `--space-3xl` |
+| Corners | `--radius-xs` through `--radius-xl`, `--radius-pill`, `--radius-card` |
+| Elevation/focus | `--shadow-xs/sm/card/hover/floating`, `--focus-ring` |
+| Motion | `--motion-duration-*`, `--motion-ease-*`, hover/tilt tokens |
+| Layout/layers | `--container-*`, breakpoint helpers, `--z-*` |
+| Card metadata density | `--content-card-tag/stat/source-height` and coarse-pointer variants |
+
+### D.3 Rules for tokenized UI changes
+
+1. Do not hardcode a new brand color in a component. Add/derive it in the
+   theme preset or semantic token layer, then consume the alias.
+2. Use raw pixel values only for truly local geometry such as an icon glyph,
+   canvas primitive, or one-off optical alignment. Reusable spacing, radius,
+   elevation, duration, and layers require tokens.
+3. Do not copy shared card action, loading, modal, search pill, user shell, or
+   collection shell CSS into another component. Extend the shared system or
+   add a scoped modifier.
+4. Respect `html[data-theme]`, `html[data-accent-kind]`, and
+   `html[data-motion='reduce']`. Reduced motion must not leave hidden timers,
+   transforms, Canvas loops, or interaction blockers running.
+5. Interactive controls need visible `:focus-visible`, disabled/busy state,
+   adequate contrast, and a stable accessible name. Decorative icons/marks
+   are `aria-hidden`.
+6. Use the shared responsive media profile in `responsiveMedia.js` when JS
+   behavior must follow mobile/coarse-pointer policy; use token breakpoints or
+   the established media query for CSS layout.
+7. Breakpoints have different meanings: media quality is 860px/coarse pointer,
+   navigation switches at 980px, and global nav height changes at 760px. Do
+   not merge them merely to make the numbers uniform.
+8. Never introduce an arbitrary z-index above `--z-page-opening`. Use the
+   shared layer scale and verify modal/header/opening interactions.
+9. Every visible label must exist in en/zh/fr. Test the longest locale, not
+   only the current language.
+10. Locale files and this document are UTF-8. On Windows, use
+    `Get-Content -Encoding utf8` when the console otherwise renders CJK or box
+    drawing characters as mojibake; do not "repair" correctly encoded text.
+
+### D.4 Theme and motion extension checklist
+
+When adding a theme, change `gradientThemePresets.js`, supply accessible light
+and dark foregrounds, and let `theme.js` populate the existing variables.
+Verify normal/hover/focus/disabled controls, light/dark mode, solid/gradient
+accent kinds, and the opening renderer's theme sampling.
+
+When adding animation, use `requestAnimationFrame` for Canvas, cancel it during
+destroy/replay, cap pixel ratio/work budgets, tolerate resize and long frame
+deltas, and provide a reduced-motion/no-opening path. CSS motion uses the
+shared duration/easing tokens rather than new literal timing curves.
+
+## E. Decision record and known risks (R68-R81)
+
+This section records final, verifiable engineering reasons and regression
+lessons. It is not a transcript of private reasoning.
+
+| Release(s) | Final decision and reason that must survive |
+| --- | --- |
+| R68-R71 | The original curtain/comet concept established the visual direction, but layered CSS curtain/compositor effects flickered across desktop and mobile browsers. R71.1 isolated the comet and proved the curtain was the unstable surface. |
+| R69-R70 | The comet moved from fixed DOM particles to Canvas for responsive trails, bloom, dust, star glints, aerodynamic lines, theme gradients, bounded pixel ratio, resize continuity, and replay safety. Keep those effects in the renderer, not dozens of DOM nodes. |
+| R72-R74 | The stable architecture is a **single Canvas deep-space veil + comet**. Static nebula/star work is cached, large canvases use adaptive frame/pixel budgets, reduced motion disables it, and the independent opening toggle defaults off. Do not reintroduce animated DOM/CSS curtains or multiple full-screen filtered surfaces. |
+| R75 | Pin and Comic `viewed` records mirror the like actor-key/de-dup model. Counts are annotated in list APIs; detail/open surfaces record once and update UI. Search Pins use their own masonry component; other search buckets keep their established layout. |
+| R76 | The formal-deployment UI pass consolidated semantic colors, actions, responsive details, 404/search/reader polish, sharing, contrast, and PWA icons. New UI should extend the token/system layer instead of creating another visual dialect. |
+| R77 | Mobile cards use sharper images and smaller batches to offset bandwidth/memory. Long/tall desktop thumbnails also needed more detail; selection belongs in the central variant helper, not per-card heuristics. |
+| R78-R79 | Card metadata height is controlled through shared density tokens; Comic stacked-sheet decoration must remain outside clipping; mobile avatars choose larger derivatives. Original media stays permission guarded, while derivatives are paced. |
+| R80 | Static derivatives are 240px `thumbnail`, 480px `medium`, 600px `standard`, and 125px square. Desktop cards prefer `medium`; mobile/coarse cards prefer `standard`; animated GIF cards prefer `animated_thumbnail_fast`. Language choices use EN/FR/ZH code badges. |
+| R81 | Create/My menu items explicitly share a 14px typography baseline. Create is a distinct action surface (desktop creative rows, mobile three-tile grid); My remains a resource-navigation list. Preserve this semantic distinction. |
+
+### E.1 Current thumbnail and delivery contract
+
+| Variant | Geometry | Normal card use | Default pace |
+| --- | --- | --- | --- |
+| `thumbnail` | 240px wide | legacy/fallback | 64 KiB/s |
+| `medium` | 480px wide | desktop static cards | 128 KiB/s |
+| `standard` | 600px wide | mobile/coarse static cards | 256 KiB/s |
+| `square` | 125x125 crop | square/legacy consumers | unchanged legacy fallback, normally 64 KiB/s |
+| `animated_thumbnail_fast` | 180px wide, max 48 frames | animated GIF card priority | 256 KiB/s |
+| original | source geometry | authorized detail/reader only | 1 MiB/s preview stream |
+
+New uploads and URL-fetched images generate every configured static derivative
+at creation; GIFs additionally generate the animated derivative. Avatar
+30/48/96px sizes are a separate user-profile contract and are not image-card
+tiers.
+
+Original files must route through `/api/v2/images/<id>/original/` permission
+checks and the preview stream. Never make a raw `/media/` alias a private-image
+bypass. Thumbnail size cannot be inferred from the content-addressed URL; use
+the `Thumbnail.image -> size` database mapping and clear its cache on changes.
+Generated thumbnails are currently served without per-object authorization;
+private-content safety therefore also depends on APIs not leaking private
+thumbnail URLs. Do not describe every `/media/` response as permission guarded.
+
+### E.2 SQLite historical-medium caveat
+
+Images created before R80 have no `medium` row. The current `Image.medium`
+property lazily generates it under a transaction. On SQLite, concurrent first
+reads after deployment can contend for the database-wide writer lock and emit
+`database is locked`.
+
+Preferred follow-up architecture:
+
+1. provide a bounded management command to backfill missing `medium` files
+   sequentially during maintenance;
+2. run it with one writer/application worker against verified media/DB paths;
+3. make normal list/read serialization side-effect free after backfill;
+4. retain upload-time generation for all new work.
+
+Until that change lands, treat a burst of post-deploy lock errors as a known
+historical backfill risk, not as evidence that new uploads omit derivatives.
+
+### E.3 Likes and viewed identity contract
+
+- Authenticated records use `user:<id>`; anonymous records use a salted
+  `anon:v1:<hash>`. Reads/de-duplication retain compatibility with legacy
+  `ip:<hash>` keys so old records do not count twice.
+- A Like is a toggle; a View is idempotent. Database uniqueness and the
+  post-conflict recheck make concurrent requests report the winning state.
+- Only trust `X-Forwarded-For` when the direct peer is configured in
+  `TRUSTED_PROXY_IPS`.
+- Pin/Comic list, detail, and search responses must retain all four fields:
+  `likes_count`, `viewer_liked`, `viewed_count`, and `viewer_viewed`.
+
+### E.4 Upload and remote-fetch state contract
+
+- Chunk upload state is `uploading -> processing -> complete|failed`; offsets
+  are server-authoritative, completion is idempotent, and final image handling
+  must pass through `ImageSerializer` so all derivatives exist.
+- Avatar completion passes through `UserProfile.set_avatar()` to create the
+  independent 30/48/96px sizes.
+- Remote fetch is synchronous by default. If
+  `IMAGE_FETCH_ASYNC_ENABLED=true`, Web requests can temporarily expose fetch
+  status without an image and a separate
+  `process_image_fetch_jobs` management worker is mandatory. Current startup
+  scripts do not launch it automatically; prefer one worker until claim logic
+  is made multi-worker safe.
+
+## F. Validation, release, and handoff contract
+
+### F.1 Minimum validation matrix
+
+| Change surface | Minimum checks |
+| --- | --- |
+| Vue markup/style/helper | Vue lint, production build, relevant desktop view, 390x844 mobile view, console, light/dark when theme-sensitive |
+| Header/theme/language | anonymous and owner state, longest locale, keyboard focus, reduced motion, viewport reset and explicit logout |
+| Django model/API | `manage.py check`, `makemigrations --check --dry-run`, targeted tests, serializer response inspection |
+| Likes/views | `core.tests.likes`, `core.tests.viewed`, anonymous/authenticated de-dup and concurrent/idempotent behavior |
+| Image/media/tier | `core.tests.original_images`, `core.tests.views`, `django_images.tests`, real API derivative URL and private-original denial |
+| Chunk upload/avatar | `core.tests.chunked_uploads`, relevant `users.tests`, interrupted/resumed upload and actual dimensions |
+| Search | targeted backend response plus Pin/Board/Comic/Tag UI; load-more offsets and Pin masonry |
+| Opening/motion | lint/build, full/reduced/off states, desktop/mobile/portrait, resize, replay, frame smoothness |
+| Documentation only | path/symbol spot checks, heading scan, `git diff --check` |
+
+The isolated runtime installs runtime requirements, not every development test
+dependency. `django_images.tests` imports tracked dev dependency
+`qrcode==7.3.1`; install the tracked dev set or that exact package in the
+isolated venv before calling this an application failure. As of R81, the
+isolated full suite also has a pre-existing
+`users.tests.AvatarUploadTest.test_upload_avatar_creates_multiple_sizes`
+failure where the immediate response contains an empty small avatar. Reproduce
+and report it separately; do not claim an unrelated release introduced or
+fixed it without evidence.
+
+### F.2 Version and git convention
+
+- Recent owner releases are identified by commit subjects such as
+  `v3.3.5r R81`. They are not synchronized with `pyproject.toml`, the SPA
+  package version, or a Git tag. Do not change/tag those unless requested.
+- Unless the current user request explicitly says otherwise, completed release
+  work includes commit and push on the current branch after validation.
+- Stage only intentional source/docs files. Never stage generated SPA output,
+  runtime data, credentials, screenshots, logs, PID files, or user changes.
+- Finish with a clean `git status --short --branch`, confirm the upstream ref,
+  and put commit/push state in the handoff capsule.
+- If validation is blocked by a known baseline issue, report the exact passing
+  targeted suites and the exact blocker. Never summarize a failed full suite
+  as fully passing.
 
 ## 1. Chrome debugging contract
 
