@@ -5,7 +5,7 @@ visual-debug guide for this repository. It is written for Codex/agent sessions
 and team members who need to make a focused change without loading the whole
 repository or replaying earlier release conversations.
 
-Architecture map last refreshed at **R82 / v3.3.6r**. Use `git log -1` for the
+Architecture map last refreshed at **R82 / v3.3.6.1r**. Use `git log -1` for the
 exact current commit. The runtime sections remain valid unless a later commit
 changes the referenced entry points.
 
@@ -355,6 +355,7 @@ data, or step-by-step hidden chain-of-thought.
 | R80 | Static derivatives are 240px `thumbnail`, 480px `medium`, 600px `standard`, and 125px square. Desktop cards prefer `medium`; mobile/coarse cards prefer `standard`; animated GIF cards prefer `animated_thumbnail_fast`. Language choices use EN/FR/ZH code badges. |
 | R81 | Create/My menu items explicitly share a 14px typography baseline. Create is a distinct action surface (desktop creative rows, mobile three-tile grid); My remains a resource-navigation list. Preserve this semantic distinction. |
 | R82 | A Comic card is one physical book object. The Grid/Masonry root is measurement-only; an inner frame owns entrance motion, an inner book owns the two attached sheets and tilt, and the clipped card owns content. Embedded rows opt into an equal-height shelf while standalone/personal/search Masonry remains natural-height. |
+| R82 patch | `v3.3.6.1r` restored true 3D hover on desktop and hybrid-input devices. Trust the live mouse `PointerEvent`, not primary `hover/pointer` capability queries; keep perspective on the book itself and let its entrance frame return to an untransformed state. |
 
 ### E.1 Current thumbnail and delivery contract
 
@@ -456,6 +457,25 @@ the exact 16px gutter. At 390x844, stack depth reduced to 10px, overlap stayed
 reduced motion all passed in the dedicated Chrome window. The only console
 messages were external Chrome-extension message-channel errors; no Vue/app
 errors appeared. Screenshots remain runtime artifacts outside the repository.
+
+The `v3.3.6.1r` hover repair established two additional invariants:
+
+- Do not veto a confirmed `pointerType === 'mouse'` with `(hover:hover)` or
+  `(pointer:fine)`. Those media features describe the primary input and report
+  coarse/no-hover on many touch laptops even while an attached mouse is active.
+  Touch and pen events remain excluded, and `data-motion='reduce'` remains the
+  hard accessibility veto. Scale follows `.is-tilting`, not sticky `:hover`.
+- The final `.comic-book` transform must contain
+  `perspective(var(--tilt-perspective))`. The intervening entrance frame uses
+  `animation-fill-mode: backwards` so its completed animation leaves real
+  `transform:none` and `filter:none`; retaining an identity matrix/filter with
+  `both` creates a 3D-flattening boundary that makes rotation look flat.
+
+Chrome validation forced the primary media state to `hover:none` and
+`pointer:coarse`, then supplied a real mouse pointer event. The card still
+reached `rotateX:2.52deg`, `rotateY:3.36deg`, `glare:0.2`, and a perspective
+matrix; ordinary desktop input and reset-to-identity also passed. The emulated
+input state was cleared before handoff.
 
 Known global follow-up: the site preference drives `html[data-motion]`, but it
 does not yet automatically inherit OS `prefers-reduced-motion`. Also avoid

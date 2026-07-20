@@ -183,8 +183,7 @@ export default {
     cancelTiltFrame() { if (this.tiltFrame) { window.cancelAnimationFrame(this.tiltFrame); this.tiltFrame = null; } },
     scheduleTilt(event) {
       if (motionPreference.isReducedMotionEnabled()) return;
-      if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-      if (event.pointerType && event.pointerType !== 'mouse') return;
+      if (!event || event.pointerType !== 'mouse') return;
       const { frame, shell } = this.$refs;
       const point = event;
       if (!frame || !shell || !point) return;
@@ -243,6 +242,7 @@ export default {
 .comic-card-shell.is-tilting { z-index: 3; }
 .comic-card-frame,
 .comic-book { min-width: 0; }
+.comic-card-shell .comic-card-frame.motion-card-enter { animation-fill-mode: backwards; }
 .comic-book {
   position: relative;
   isolation: isolate;
@@ -337,5 +337,4 @@ export default {
 .comic-stats { margin-top:8px; }
 .comic-like { display:inline-flex; align-items:center; gap:.28rem; min-height:30px; margin-top:0; padding:0 .58rem; border:1px solid var(--color-border-soft,var(--line-soft,#e0e6ef)); border-radius:999px; color:var(--color-text-muted,var(--text-muted,#64748b)); background:var(--color-surface-muted,var(--surface-2,#f8fafc)); cursor:pointer; font-size:13px; font-weight:800; }.comic-like:hover,.comic-like.is-liked { color:var(--accent-foreground,#7e57c2); border-color:var(--accent,#7e57c2); background:var(--accent-soft-gradient,var(--accent-soft,rgba(126,87,194,.14))); }.comic-like:disabled { opacity:.72; cursor:wait; }
 .comic-viewed { display:inline-flex; align-items:center; gap:.28rem; min-height:30px; padding:0 .48rem; color:var(--color-text-muted,var(--text-muted,#64748b)); font-size:13px; font-weight:800; }
-@media (hover:none) { .motion-tilt-card { transform:none !important; }.comic-glare { display:none; } }
 </style>
