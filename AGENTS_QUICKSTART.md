@@ -5,7 +5,7 @@ visual-debug guide for this repository. It is written for Codex/agent sessions
 and team members who need to make a focused change without loading the whole
 repository or replaying earlier release conversations.
 
-Architecture map last refreshed at **R82 / v3.3.6.1r**. Use `git log -1` for the
+Architecture map last refreshed at **R83 / v3.3.6.2r**. Use `git log -1` for the
 exact current commit. The runtime sections remain valid unless a later commit
 changes the referenced entry points.
 
@@ -356,6 +356,7 @@ data, or step-by-step hidden chain-of-thought.
 | R81 | Create/My menu items explicitly share a 14px typography baseline. Create is a distinct action surface (desktop creative rows, mobile three-tile grid); My remains a resource-navigation list. Preserve this semantic distinction. |
 | R82 | A Comic card is one physical book object. The Grid/Masonry root is measurement-only; an inner frame owns entrance motion, an inner book owns the two attached sheets and tilt, and the clipped card owns content. Embedded rows opt into an equal-height shelf while standalone/personal/search Masonry remains natural-height. |
 | R82 patch | `v3.3.6.1r` restored true 3D hover on desktop and hybrid-input devices. Trust the live mouse `PointerEvent`, not primary `hover/pointer` capability queries; keep perspective on the book itself and let its entrance frame return to an untransformed state. |
+| R83 | Mobile/coarse Pin board search is an in-flow panel inside the modal body; desktop alone keeps the anchored Buefy dropdown. Never portal a keyboard-focused popup from a scrollable modal to `body`: Buefy 0.8.20 snapshots absolute coordinates and does not follow Visual Viewport or modal scrolling. |
 
 ### E.1 Current thumbnail and delivery contract
 
@@ -481,6 +482,39 @@ Known global follow-up: the site preference drives `html[data-motion]`, but it
 does not yet automatically inherit OS `prefers-reduced-motion`. Also avoid
 reviving old page-scoped Comic visual rules in `Comics.vue`; shared card changes
 belong in `ComicCard.vue` and the semantic token layer.
+
+### E.6 Pin board-search modal contract (R83)
+
+- `FilterSelect.vue` is shared by Create Pin, Edit Pin, and Add2Board. On a
+  mobile/coarse profile (`MOBILE_MEDIA_QUERY`), render `.board-search-inline`
+  in the modal body flow. Do not mount a Buefy `append-to-body` dropdown in
+  this profile. Desktop keeps the anchored `.board-search-dropdown`, but its
+  portaled menu must use viewport-fixed positioning while `body.is-noscroll`:
+  Buefy writes viewport coordinates while the keep-scroll Modal applies a
+  negative `body.style.top`, so absolute positioning subtracts scroll twice.
+- The modal shell is a flex column and `.create-modal-body` owns scrolling;
+  preserve `min-height: 0` on every flex boundary. A keyboard-focused search
+  field must remain inside the intersection of that body and the Visual
+  Viewport, not merely inside the layout viewport.
+- Opening the inline panel focuses its input and binds `window.resize` plus
+  `visualViewport.resize/scroll`. Use an animation-frame correction followed
+  by delayed settle passes (the keyboard animation can move the modal in more
+  than one frame). Closing must remove all listeners/timers and return focus to
+  the search trigger.
+- Mobile acceptance evidence: Chrome Create/Edit/Add2Board passed at
+  390x844 and with a simulated keyboard at 390x520; filtering and selection
+  returned the board value, collapsed `aria-expanded`, kept the panel/input
+  visible, and left zero `.board-search-dropdown` portal nodes. Landscape
+  844x390 also passed with the same in-flow panel. Desktop 1280x900 retained
+  the Buefy floating dropdown with no inline panel. At 699.2px page scroll its
+  menu remained fully visible, 8px below the trigger; closing the Modal removed
+  every portal and restored the exact scroll position. Runtime screenshots,
+  including `r83-desktop-dropdown-fixed.png`, belong under the external
+  visual-debug artifact directory and are never committed.
+- The durable failure mode is Buefy 0.8.20's one-time absolute-coordinate
+  calculation: a portal inside a scrollable modal becomes detached after IME
+  resize/scroll. Do not reintroduce that architecture without a positioning
+  strategy that tracks both the modal body and `visualViewport`.
 
 ## F. Validation, release, and handoff contract
 

@@ -13,6 +13,14 @@
   animation: create-modal-backdrop-in var(--motion-duration-standard) var(--motion-ease-standard) both;
 }
 
+.pinry-create-modal .animation-content {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+}
+
 .pinry-create-modal .modal-content {
   width: auto;
   max-width: none;
@@ -22,6 +30,9 @@
 }
 
 .pinry-create-modal .create-modal-card {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
   width: min(94vw, var(--create-modal-width, 760px));
   max-height: calc(100vh - var(--space-xl) - var(--space-xl));
   max-height: calc(100dvh - var(--space-xl) - var(--space-xl));
@@ -135,6 +146,8 @@
 }
 
 .pinry-create-modal .create-modal-body {
+  min-height: 0;
+  flex: 1 1 auto;
   max-height: calc(100vh - 190px);
   max-height: calc(100dvh - 190px);
   padding: var(--space-lg);

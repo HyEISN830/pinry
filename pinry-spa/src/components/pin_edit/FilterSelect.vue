@@ -14,6 +14,7 @@
     <b-field>
       <div class="filter-select-actions">
         <b-dropdown
+          v-if="!usesInlineSearch"
           ref="searchDropdown"
           class="board-search-dropdown"
           position="is-bottom-right"
@@ -61,6 +62,18 @@
           </div>
         </b-dropdown>
         <button
+          v-else
+          ref="inlineSearchTrigger"
+          class="button board-action board-action--search"
+          :class="{ 'is-active': searchPopupOpen }"
+          type="button"
+          aria-haspopup="dialog"
+          :aria-expanded="searchPopupOpen ? 'true' : 'false'"
+          @click="toggleInlineSearch">
+          <b-icon icon="magnify" custom-size="mdi-18px"></b-icon>
+          <span>{{ $t("searchBoardButton") }}</span>
+        </button>
+        <button
           @click="createNewBoard"
           class="button board-action board-action--create"
           type="button">
@@ -76,6 +89,43 @@
         </button>
       </div>
     </b-field>
+    <transition name="board-search-inline">
+      <div
+        v-if="usesInlineSearch && searchPopupOpen"
+        class="board-search-inline"
+        role="dialog"
+        :aria-label="$t('searchBoardButton')">
+        <div class="board-search-popup">
+          <div class="board-search-popup__heading">
+            <b-icon icon="magnify" custom-size="mdi-18px"></b-icon>
+            <strong>{{ $t("searchBoardButton") }}</strong>
+          </div>
+          <b-input
+            ref="inlineSearchInput"
+            v-model="searchText"
+            icon="magnify"
+            expanded
+            v-bind:placeholder="$t('searchBoardPlaceholder')"
+            maxlength="128">
+          </b-input>
+          <div class="board-search-list">
+            <button
+              v-for="option in availableOptions"
+              :key="option.value"
+              class="board-search-option"
+              :class="{ 'is-selected': isSelected(option.value) }"
+              type="button"
+              @click="select(option)">
+              <b-icon icon="folder-multiple-image" custom-size="mdi-18px"></b-icon>
+              <span>{{ option.name }}</span>
+            </button>
+            <div class="board-search-empty" v-if="availableOptions.length === 0">
+              {{ $t("pinCreateModalEmptySlot") }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -83,6 +133,10 @@
 import API from '../api';
 import ModelForm from '../utils/ModelForm';
 import AutoComplete from '../utils/AutoComplete';
+import {
+  MOBILE_MEDIA_QUERY,
+  usesMobileMediaProfile,
+} from '../utils/responsiveMedia';
 
 const fields = ['name'];
 
@@ -138,7 +192,38 @@ export default {
       createdOptions: [],
       searchPopupOpen: false,
       searchText: '',
+      usesInlineSearch: usesMobileMediaProfile(),
+      mobileMediaQuery: null,
+      inlineViewport: null,
+      inlineViewportFrame: null,
+      inlineViewportTimers: [],
     };
+  },
+  mounted() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    if (typeof window.matchMedia === 'function') {
+      this.mobileMediaQuery = window.matchMedia(MOBILE_MEDIA_QUERY);
+      this.syncSearchPresentation(this.mobileMediaQuery);
+      if (typeof this.mobileMediaQuery.addEventListener === 'function') {
+        this.mobileMediaQuery.addEventListener('change', this.syncSearchPresentation);
+      } else if (typeof this.mobileMediaQuery.addListener === 'function') {
+        this.mobileMediaQuery.addListener(this.syncSearchPresentation);
+      }
+      return;
+    }
+    this.syncSearchPresentation();
+  },
+  beforeDestroy() {
+    this.unbindInlineViewport();
+    if (this.mobileMediaQuery) {
+      if (typeof this.mobileMediaQuery.removeEventListener === 'function') {
+        this.mobileMediaQuery.removeEventListener('change', this.syncSearchPresentation);
+      } else if (typeof this.mobileMediaQuery.removeListener === 'function') {
+        this.mobileMediaQuery.removeListener(this.syncSearchPresentation);
+      }
+    }
   },
   methods: {
     getSelectedBoards() {
@@ -169,25 +254,175 @@ export default {
       }
     },
     closeSearchPopup() {
+      const shouldRestoreFocus = this.usesInlineSearch && this.searchPopupOpen;
       const dropdown = this.$refs.searchDropdown;
       if (dropdown) {
         dropdown.isActive = false;
       }
       this.searchPopupOpen = false;
+      this.unbindInlineViewport();
+      if (shouldRestoreFocus) {
+        this.$nextTick(
+          () => {
+            const trigger = this.$refs.inlineSearchTrigger;
+            if (trigger && typeof trigger.focus === 'function') {
+              trigger.focus();
+            }
+          },
+        );
+      }
+    },
+    focusSearchInput() {
+      this.$nextTick(
+        () => {
+          const input = this.usesInlineSearch
+            ? this.$refs.inlineSearchInput
+            : this.$refs.searchInput;
+          if (!input || typeof input.focus !== 'function') {
+            return;
+          }
+          input.focus();
+          if (this.usesInlineSearch) {
+            this.settleInlineSearchVisibility();
+          }
+        },
+      );
+    },
+    openSearchPopup() {
+      this.searchText = '';
+      this.syncAvailableOptions();
+      this.searchPopupOpen = true;
+      if (this.usesInlineSearch) {
+        this.bindInlineViewport();
+      }
+      this.focusSearchInput();
+    },
+    toggleInlineSearch() {
+      if (this.searchPopupOpen) {
+        this.closeSearchPopup();
+        return;
+      }
+      this.openSearchPopup();
+    },
+    bindInlineViewport() {
+      this.unbindInlineViewport();
+      if (typeof window === 'undefined') {
+        return;
+      }
+      this.inlineViewport = window.visualViewport || null;
+      window.addEventListener('resize', this.scheduleInlineSearchVisibility);
+      if (this.inlineViewport) {
+        this.inlineViewport.addEventListener(
+          'resize',
+          this.scheduleInlineSearchVisibility,
+        );
+        this.inlineViewport.addEventListener(
+          'scroll',
+          this.scheduleInlineSearchVisibility,
+        );
+      }
+    },
+    unbindInlineViewport() {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', this.scheduleInlineSearchVisibility);
+      }
+      if (this.inlineViewport) {
+        this.inlineViewport.removeEventListener(
+          'resize',
+          this.scheduleInlineSearchVisibility,
+        );
+        this.inlineViewport.removeEventListener(
+          'scroll',
+          this.scheduleInlineSearchVisibility,
+        );
+      }
+      this.inlineViewport = null;
+      if (this.inlineViewportFrame !== null && typeof window !== 'undefined') {
+        window.cancelAnimationFrame(this.inlineViewportFrame);
+      }
+      this.inlineViewportFrame = null;
+      this.inlineViewportTimers.forEach(timer => window.clearTimeout(timer));
+      this.inlineViewportTimers = [];
+    },
+    settleInlineSearchVisibility() {
+      this.scheduleInlineSearchVisibility();
+      [120, 320].forEach(
+        (delay) => {
+          const timer = window.setTimeout(
+            () => this.scheduleInlineSearchVisibility(),
+            delay,
+          );
+          this.inlineViewportTimers.push(timer);
+        },
+      );
+    },
+    scheduleInlineSearchVisibility() {
+      if (!this.usesInlineSearch || !this.searchPopupOpen) {
+        return;
+      }
+      if (this.inlineViewportFrame !== null) {
+        window.cancelAnimationFrame(this.inlineViewportFrame);
+      }
+      this.inlineViewportFrame = window.requestAnimationFrame(
+        () => {
+          this.inlineViewportFrame = null;
+          const input = this.$refs.inlineSearchInput;
+          const inputElement = input && input.$el
+            ? input.$el.querySelector('input')
+            : null;
+          if (!inputElement) {
+            return;
+          }
+          const modalBody = inputElement.closest('.create-modal-body');
+          if (!modalBody) {
+            inputElement.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            return;
+          }
+          const viewport = window.visualViewport;
+          const viewportTop = viewport ? viewport.offsetTop : 0;
+          const viewportBottom = viewportTop
+            + (viewport ? viewport.height : window.innerHeight);
+          const bodyRect = modalBody.getBoundingClientRect();
+          const inputRect = inputElement.getBoundingClientRect();
+          const inset = 8;
+          const visibleTop = Math.max(bodyRect.top, viewportTop) + inset;
+          const visibleBottom = Math.min(bodyRect.bottom, viewportBottom) - inset;
+          if (inputRect.bottom > visibleBottom) {
+            modalBody.scrollTop += inputRect.bottom - visibleBottom;
+          } else if (inputRect.top < visibleTop) {
+            modalBody.scrollTop -= visibleTop - inputRect.top;
+          }
+        },
+      );
+    },
+    syncSearchPresentation(event) {
+      let shouldUseInlineSearch;
+      if (event && typeof event.matches === 'boolean') {
+        shouldUseInlineSearch = event.matches;
+      } else if (this.mobileMediaQuery) {
+        shouldUseInlineSearch = this.mobileMediaQuery.matches;
+      } else {
+        const documentWidth = typeof document !== 'undefined' && document.documentElement
+          ? document.documentElement.clientWidth
+          : 0;
+        const viewportWidth = window.innerWidth || documentWidth || 0;
+        shouldUseInlineSearch = viewportWidth > 0 && viewportWidth <= 860;
+      }
+      if (shouldUseInlineSearch === this.usesInlineSearch) {
+        return;
+      }
+      const dropdown = this.$refs.searchDropdown;
+      if (dropdown) {
+        dropdown.isActive = false;
+      }
+      this.searchPopupOpen = false;
+      this.unbindInlineViewport();
+      this.usesInlineSearch = shouldUseInlineSearch;
     },
     onSearchPopupActiveChange(isActive) {
       this.searchPopupOpen = isActive;
       if (isActive) {
-        this.searchText = '';
-        this.syncAvailableOptions();
-        this.$nextTick(
-          () => {
-            const input = this.$refs.searchInput;
-            if (input && typeof input.focus === 'function') {
-              input.focus();
-            }
-          },
-        );
+        this.openSearchPopup();
       }
     },
     isSelected(value) {
@@ -295,6 +530,7 @@ export default {
   gap: var(--space-xs);
 }
 .board-search-dropdown,
+.board-action--search,
 .board-action--create {
   flex: 1 1 calc(50% - var(--space-xs));
   min-width: 124px;
@@ -357,6 +593,24 @@ export default {
   color: var(--color-accent-foreground);
   background: transparent;
 }
+.board-search-inline {
+  margin-top: var(--space-xs);
+}
+.board-search-inline .board-search-popup {
+  width: 100%;
+  box-shadow: var(--shadow-sm);
+}
+.board-search-inline-enter-active,
+.board-search-inline-leave-active {
+  transition:
+    opacity var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+.board-search-inline-enter,
+.board-search-inline-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
 .board-search-popup {
   width: min(360px, calc(100vw - var(--space-lg)));
   padding: var(--space-sm);
@@ -397,6 +651,12 @@ export default {
   overflow-y: auto;
   scrollbar-color: var(--color-accent-border) transparent;
 }
+@media screen and (max-width: 860px), (hover: none) and (pointer: coarse) {
+  .board-search-inline .board-search-list {
+    max-height: min(240px, 34dvh);
+  }
+}
+
 .board-search-option {
   display: flex;
   width: 100%;
@@ -447,6 +707,10 @@ export default {
   min-width: 0;
   padding-top: var(--space-xs);
 }
+body.is-noscroll .board-search-dropdown.dropdown .dropdown-menu {
+  /* Buefy calculates viewport coordinates while scroll="keep" offsets body. */
+  position: fixed !important;
+}
 .board-search-dropdown.dropdown .dropdown-content {
   padding: 0;
   overflow: visible;
@@ -454,5 +718,9 @@ export default {
   border-radius: var(--radius-md);
   background: transparent;
   box-shadow: none;
+}
+html[data-motion='reduce'] .board-search-inline-enter-active,
+html[data-motion='reduce'] .board-search-inline-leave-active {
+  transition: none;
 }
 </style>
